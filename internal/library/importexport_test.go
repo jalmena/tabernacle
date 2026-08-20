@@ -395,3 +395,69 @@ func TestImportZipRejectsGarbage(t *testing.T) {
 		t.Error("garbage was accepted as an archive")
 	}
 }
+
+// Restoring a backup over a collection that already holds it must be a no-op,
+// not a way to double everything. This is the property that makes the backup
+// story usable rather than merely present.
+func TestImportingABackupTwiceIsIdempotent(t *testing.T) {
+	ctx := context.Background()
+	h := newHarness(t)
+	h.writeSong(t, "Traditional/Amazing Grace.song", "Amazing Grace", "Traditional", "")
+	h.writeSong(t, "A/Other.song", "Other", "A", "")
+	if _, err := h.lib.Sync(ctx); err != nil {
+		t.Fatal(err)
+	}
+
+	var out bytes.Buffer
+	if _, err := h.lib.ExportZip(ctx, &out, index.Query{}); err != nil {
+		t.Fatal(err)
+	}
+	before := h.files(t)
+
+	// Restore over itself, twice.
+	for round := 1; round <= 2; round++ {
+		rep, err := h.lib.ImportZip(ctx, bytes.NewReader(out.Bytes()), int64(out.Len()))
+		if err != nil {
+			t.Fatalf("round %d: %v", round, err)
+		}
+		if len(rep.Added) != 0 {
+			t.Errorf("round %d added %d songs that were already there: %+v",
+				round, len(rep.Added), rep.Added)
+		}
+		if len(rep.Skipped) != 2 {
+			t.Errorf("round %d skipped %d, want both songs recognised", round, len(rep.Skipped))
+		}
+		for _, sk := range rep.Skipped {
+			if sk.Slug == "" {
+				t.Error("a skipped song does not say where the existing one is")
+			}
+		}
+	}
+
+	if after := h.files(t); strings.Join(before, "|") != strings.Join(after, "|") {
+		t.Errorf("restoring changed the collection:\n%v\n%v", before, after)
+	}
+	if s, _ := h.lib.Stats(ctx); s.Songs != 2 {
+		t.Errorf("the collection holds %d songs, want 2", s.Songs)
+	}
+}
+
+// A genuinely different song with the same title still gets in; only identical
+// content is recognised as already present.
+func TestImportStillAddsAChangedVersion(t *testing.T) {
+	ctx := context.Background()
+	h := newHarness(t)
+	h.writeSong(t, "A/Song.song", "Song", "A", "## Verse 1\n[G]original words\n")
+	if _, err := h.lib.Sync(ctx); err != nil {
+		t.Fatal(err)
+	}
+
+	different := songText("Song", "A") // different body
+	rep := h.lib.ImportSong(ctx, "song.song", []byte(different))
+	if len(rep.Added) != 1 {
+		t.Fatalf("a changed version was not added: %+v", rep)
+	}
+	if got := h.files(t); len(got) != 2 {
+		t.Errorf("files = %v, want both versions kept", got)
+	}
+}

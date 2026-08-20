@@ -3,6 +3,8 @@ package library
 import (
 	"archive/zip"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -220,6 +222,26 @@ func (l *Library) importOne(ctx context.Context, rep *ImportReport, name string,
 		return
 	}
 
+	// Restoring a backup over an existing collection must not duplicate it.
+	// Both forms are checked: the bytes as uploaded, which match a file written
+	// by hand, and the canonical form, which matches one this application wrote.
+	for _, candidate := range [][]byte{normalized, canonical} {
+		existing, found, err := l.idx.ByHash(ctx, hashBytes(candidate))
+		if err != nil {
+			rep.Failed = append(rep.Failed, ImportResult{Name: name, Reason: err.Error()})
+			return
+		}
+		if found {
+			rep.Skipped = append(rep.Skipped, ImportResult{
+				Name:   name,
+				Title:  s.Title,
+				Slug:   existing.Slug,
+				Reason: "ya está en la colección",
+			})
+			return
+		}
+	}
+
 	rel, err := l.fs.Create(s.Artist, s.Title, canonical)
 	if err != nil {
 		rep.Failed = append(rep.Failed, ImportResult{
@@ -291,6 +313,13 @@ func (l *Library) ExportZip(ctx context.Context, w io.Writer, q index.Query) (in
 // ExportName is the filename to offer for a backup.
 func (l *Library) ExportName() string {
 	return "tabernacle-" + l.now().Format("2006-01-02") + ".zip"
+}
+
+// hashBytes is the same fingerprint the index stores for a file, so an import
+// can tell whether it is looking at a song that is already there.
+func hashBytes(data []byte) string {
+	sum := sha256.Sum256(data)
+	return hex.EncodeToString(sum[:])
 }
 
 // isPrintableUTF8 reports whether a name is text at all. A name that is not is

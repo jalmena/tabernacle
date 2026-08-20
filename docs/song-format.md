@@ -193,3 +193,27 @@ something actually changed.
 - Multiple arrangements or translations in one file. Use separate files.
 - ChordPro import and export. The inline bracket notation is the same, so this
   is a converter rather than a format concern.
+
+## Reserved tags
+
+One tag has a meaning to the application: `favorite` marks a song as a
+favourite.
+
+It lives in the file rather than in the database on purpose. A favourite then
+survives the index being deleted, travels with a copy of the collection, and
+appears in a `git diff` as a single line. The cost is that starring a song writes
+to its file, which is fair for something done deliberately.
+
+Any other tag is yours. Nothing else is reserved, and a tag called `favorite`
+that you added by hand means exactly what the star means.
+
+## What the application derives
+
+Nothing in this list belongs in the file, and writing it there by hand would only
+create something to fall out of step:
+
+- the chords a song uses, and their order of first appearance,
+- guitar shapes for those chords,
+- the song's URL, which comes from its path,
+- how many sections and lines it has,
+- the searchable text, which is the words with the chord brackets removed.

@@ -11,8 +11,9 @@ putting in a ring binder.
 It runs as a single binary or a single container, works offline, sends nothing anywhere, and has no
 accounts.
 
-> **Status: under construction.** The `.song` format and the chord domain are complete and tested.
-> The web interface is being built. See [Roadmap](#roadmap) for what works today.
+> **Status: usable, and young.** Everything described below works and is tested. It has not yet
+> been lived with for a season, so expect rough edges in the places only real use finds. Setlists
+> and the rest of the [roadmap](#roadmap) are still to come.
 
 ---
 
@@ -21,7 +22,7 @@ accounts.
 <!-- TODO: library view, song sheet on desktop, song sheet on a phone, a chord popover
      with voicing navigation, and a printed A4 sheet. -->
 
-*Coming once the interface lands.*
+*To be added. The interface is in Spanish; note names switch between C-D-E and Do-Re-Mi.*
 
 ---
 
@@ -52,7 +53,7 @@ accounts.
 **Practical matters**
 
 - A print stylesheet that produces a real A4 song sheet: no navigation, no buttons, no stanzas
-  split across a page break.
+  split across a page break. See **[docs/printing.md](docs/printing.md)**.
 - Mobile-first, because the usual reading device is a phone propped against a guitar case.
 - Import and export `.song` files individually or as a zip.
 - Works with JavaScript disabled. Everything essential is a plain link or form.
@@ -135,6 +136,9 @@ VPN / trusted LAN
      /    \
  index.db  data/songs/*.song
 ```
+
+See **[docs/deployment.md](docs/deployment.md)** for CasaOS, Unraid, systemd, backup and
+upgrade notes.
 
 A minimal `Caddyfile`:
 
@@ -319,6 +323,8 @@ the sheet says.
 ### Chord diagrams
 
 Diagrams are generated from structured data — string, fret, finger, barre — not stored as images.
+How the dataset works, and how to add a shape, is in
+**[docs/chord-diagrams.md](docs/chord-diagrams.md)**.
 Each chord offers several genuinely playable voicings, ordered easiest first, and you can page
 through them without closing the panel. Theoretically valid but unplayable fingerings are not
 included to inflate the count.
@@ -364,10 +370,29 @@ gofmt -l .                    # formatting (should print nothing)
 go vet ./...                  # vet
 ```
 
+The tests worth knowing about, because they are what makes the architecture more than an
+intention:
+
+| Test | What it proves |
+| --- | --- |
+| `library.TestDeletingTheDatabaseLosesNothingButState` | Delete the index, rescan, and every song returns under the same URL |
+| `render.FuzzSheet` | Rendering never loses or invents a character of the words |
+| `voicing.TestCuratedShapesAreCorrect` | Every hand-typed chord shape really is that chord |
+| `voicing.TestPrimaryShapes` | The shape shown first is the one a chord reference prints |
+| `songfs.TestStoreRefusesHostilePaths` | No path can escape the collection |
+| `library.TestImportZipRefusesHostileEntries` | Zip slip, bombs, symlinks and lying headers |
+| `web.TestNoScriptEscapesFromASong` | Markup in any song field comes out as text |
+| `web.TestNoPreTrustedMarkupTypes` | No package hands a template pre-escaped markup |
+| `config.TestHostAllowedDefaultPolicy` | DNS rebinding is refused with no configuration |
+
 Fuzz targets exist for the parts that read untrusted input:
 
 ```sh
-go test ./internal/song -run FuzzParse -fuzz FuzzParse -fuzztime 30s
+go test ./internal/song    -run FuzzParse           -fuzz FuzzParse           -fuzztime 30s
+go test ./internal/songfs  -run FuzzSanitizeSegment -fuzz FuzzSanitizeSegment -fuzztime 30s
+go test ./internal/render  -run FuzzSheet           -fuzz FuzzSheet           -fuzztime 30s
+go test ./internal/voicing -run FuzzFor             -fuzz FuzzFor             -fuzztime 30s
+go test ./internal/index   -run FuzzFTSQuery        -fuzz FuzzFTSQuery        -fuzztime 30s
 ```
 
 Build the container:
@@ -412,10 +437,9 @@ cmd/tabernacle        configuration, wiring, startup sync, graceful shutdown
       internal/diagram  a shape -> SVG              (standard library only)
       internal/voicing  chord identity -> playable guitar shapes
         internal/harmony  chord symbol -> quality, intervals, simplification
-    internal/library  use cases; keeps files and index consistent
+    internal/library  use cases; keeps files and index consistent; import/export
       internal/songfs   the songs directory: confinement, scan, atomic writes
       internal/index    SQLite: migrations, search, application state
-      internal/importer pasted text -> a song
         internal/song   the .song format: parse and serialise
           internal/chord chords, note names, transposition
   internal/config     environment -> configuration
@@ -452,7 +476,16 @@ Complete and tested:
 - [x] Authoring: paste a song, edit the raw file, favourites, delete to trash
 - [x] Import and export, backup and restore
 
-Later: setlists, and whatever turns out to be genuinely useful rather than merely possible.
+Not done, in rough order of likely usefulness:
+
+- [ ] Setlists — as files in `data/setlists/`, for the same reasons songs are files
+- [ ] Renaming a song's title and artist from the interface, with the file rename optional
+- [ ] A guided metadata form, for people who would rather not meet the `.song` syntax
+- [ ] ChordPro import, which is a converter rather than a format change
+- [ ] Restoring from the trash without a file manager
+
+And whatever turns out to be genuinely useful rather than merely possible. If something about
+reading, transposing or printing is annoying in practice, that is worth an issue.
 
 ---
 

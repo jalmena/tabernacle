@@ -1,0 +1,36 @@
+---
+format: 1
+title: Greensleeves
+artist: Traditional
+key: Am
+tuning: EADGBE
+tempo: 90
+meter: 6/8
+tags: [traditional, public-domain, example]
+notes: |-
+  English ballad first registered in 1580. Words and melody are both long out of
+  copyright. Included as example content: this repository never ships
+  copyrighted songs.
+---
+
+## Verse 1
+A[Am]las my [C]love you [G]do me [Em]wrong
+To [Am]cast me [E7]off discour[Am]teously
+And [Am]I have [C]loved you [G]oh so [Em]long
+De[Am]lighting [E7]in your [Am]company
+
+## Chorus
+Green[C]sleeves was [G]all my [Em]joy
+Green[C]sleeves was [E7]my de[Am]light
+Green[C]sleeves was [G]my heart of [Em]gold
+And [Am]who but my [E7]lady Green[Am]sleeves
+
+## Interlude
+```tab
+e|-----------------|-----------------|
+B|-----0---1---0---|-----1-----------|
+G|---2---------2---|---2---2---------|
+D|-2-----------------2-------2-------|
+A|-0---------------|-----------------|
+E|-----------------|-----------------|
+```

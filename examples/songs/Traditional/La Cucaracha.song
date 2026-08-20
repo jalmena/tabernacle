@@ -1,0 +1,28 @@
+---
+format: 1
+title: La Cucaracha
+artist: Traditional
+key: C
+capo: 2
+tuning: EADGBE
+tempo: 120
+meter: 3/4
+tags: [traditional, public-domain, example, español]
+notes: |-
+  Corrido tradicional mexicano, de dominio público. Se conocen versos desde el
+  siglo XIX y existen decenas de variantes; aquí van los más difundidos.
+  Incluido como ejemplo: este repositorio nunca distribuye canciones con
+  derechos de autor.
+---
+
+## Estribillo
+La cuca[C]racha, la cuca[G7]racha,
+ya no puede cami[C]nar,
+porque no [C]tiene, porque le [G7]falta
+las dos patitas de a[C]trás.
+
+## Estrofa 1
+Una cuca[C]racha pinta
+le dijo a una cola[G7]rada:
+vámonos para mi [C]tierra
+a pasar la tempo[G7]rada.
