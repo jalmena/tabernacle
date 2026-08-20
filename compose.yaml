@@ -1,0 +1,146 @@
+# Tabernacle — your sacred repository of guitar tabs.
+#
+# Plain Docker Compose:   docker compose up -d
+# CasaOS / Zima:          App Store -> Custom Install -> paste this file
+# Portainer:              Stacks -> Add stack -> Web editor -> paste this file
+#
+# The x-casaos blocks below are extension fields. Docker Compose ignores them,
+# CasaOS uses them to draw a real app card, so one file serves both.
+name: tabernacle
+
+services:
+  tabernacle:
+    image: ghcr.io/jalmena/tabernacle:latest
+    # Building from a checkout instead of pulling:
+    #   docker compose build && docker compose up -d
+    # build:
+    #   context: .
+    #   args:
+    #     VERSION: dev
+    container_name: tabernacle
+    restart: unless-stopped
+
+    ports:
+      # host:container — change the host side if 8080 is already taken.
+      - "8080:8080"
+
+    volumes:
+      # Everything Tabernacle owns lives here: songs/, trash/ and the index.
+      # Your songs stay plain .song text files, so backing up is copying this
+      # directory and nothing else.
+      #
+      # CasaOS convention:  /DATA/AppData/tabernacle/data:/data
+      - ./data:/data
+
+    environment:
+      # --- Ownership -------------------------------------------------------
+      # Set these to the user that owns the host directory above. On a NAS this
+      # is usually what stands between a working install and a permissions
+      # error. `id -u` and `id -g` on the host will tell you.
+      PUID: "1000"
+      PGID: "1000"
+      TZ: "Europe/Madrid"
+
+      # --- Defaults you may never need to change ---------------------------
+      # TABERNACLE_ADDR: ":8080"
+      # TABERNACLE_DATA_DIR: "/data"
+      #
+      # Note names shown to a reader with no preference: english (C D E) or
+      # solfege (Do Re Mi). Either way one .song file serves both readers, and
+      # switching is one click in the interface.
+      # TABERNACLE_NOTATION: "english"
+      #
+      # How often the collection is rescanned for files changed outside the app.
+      # 0 turns it off; the Reindex button still works.
+      # TABERNACLE_SCAN_INTERVAL: "60s"
+      #
+      # Refuse every change to the collection. Useful when sharing the library
+      # with guests, since Tabernacle has no accounts of its own.
+      # TABERNACLE_READ_ONLY: "false"
+      #
+      # Serving a real domain through a reverse proxy? Set both of these. Out of
+      # the box Tabernacle accepts LAN addresses and .local names and refuses
+      # public hostnames, which blocks DNS rebinding without any configuration.
+      # TABERNACLE_BASE_URL: "https://songs.example.com"
+      # TABERNACLE_ALLOWED_HOSTS: "songs.example.com"
+      #
+      # TABERNACLE_LOG_LEVEL: "info"
+
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+
+    x-casaos:
+      volumes:
+        - container: /data
+          description:
+            en_us: Songs, trash and the search index. Back this up.
+            es_es: Canciones, papelera e índice de búsqueda. Haz copia de esto.
+      ports:
+        - container: "8080"
+          description:
+            en_us: Web interface.
+            es_es: Interfaz web.
+      envs:
+        - container: PUID
+          description:
+            en_us: User ID that owns the data directory.
+            es_es: ID de usuario propietario del directorio de datos.
+        - container: PGID
+          description:
+            en_us: Group ID that owns the data directory.
+            es_es: ID de grupo propietario del directorio de datos.
+        - container: TZ
+          description:
+            en_us: Time zone.
+            es_es: Zona horaria.
+
+x-casaos:
+  architectures:
+    - amd64
+    - arm64
+  main: tabernacle
+  store_app_id: tabernacle
+  category: Media
+  author: jalmena
+  developer: jalmena
+  scheme: http
+  port_map: "8080"
+  index: /
+  title:
+    en_us: Tabernacle
+    es_es: Tabernacle
+  tagline:
+    en_us: Your sacred repository of guitar tabs.
+    es_es: Tu sagrado repositorio de tablaturas.
+  description:
+    en_us: >-
+      A self-hosted guitar songbook. Songs are plain .song text files in a
+      directory you own, so the collection is yours to back up, edit by hand and
+      keep. Transpose a song, inspect any chord and see alternative guitar
+      voicings, switch between C-D-E and Do-Re-Mi note names, and print a real
+      A4 song sheet. Works offline, sends nothing anywhere, and needs no account.
+      Tabernacle manages music you provide; it does not supply or license any
+      musical work.
+    es_es: >-
+      Un cancionero de guitarra autoalojado. Las canciones son archivos de texto
+      .song en un directorio tuyo, así que la colección es tuya para
+      respaldarla, editarla a mano y conservarla. Transpone una canción,
+      consulta cualquier acorde y sus posiciones alternativas, cambia entre
+      notación C-D-E y Do-Re-Mi, e imprime una hoja A4 de verdad. Funciona sin
+      conexión, no envía nada a ninguna parte y no necesita cuenta. Tabernacle
+      gestiona música que tú aportas; no proporciona ni licencia ninguna obra
+      musical.
+  tips:
+    before_install:
+      en_us: >-
+        Set PUID and PGID to the owner of the data directory, otherwise the
+        container may not be able to write to it. Put your .song files in
+        data/songs/ (Artist/Title.song) or import them from the web interface.
+      es_es: >-
+        Ajusta PUID y PGID al propietario del directorio de datos, o el
+        contenedor podría no poder escribir en él. Pon tus archivos .song en
+        data/songs/ (Artista/Título.song) o impórtalos desde la interfaz web.
