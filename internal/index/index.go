@@ -22,6 +22,7 @@ import (
 	"net/url"
 	"sort"
 	"strings"
+	"sync/atomic"
 
 	_ "modernc.org/sqlite"
 )
@@ -41,8 +42,10 @@ const settingDerivedVersion = "derived_schema_version"
 
 // Index is an open connection to the index database.
 type Index struct {
-	db            *sql.DB
-	needsFullScan bool
+	db *sql.DB
+	// Read by request handlers and by the rescan ticker, written once at open
+	// and once when the first scan finishes, so it is atomic rather than plain.
+	needsFullScan atomic.Bool
 }
 
 // Open connects to the index, applies migrations and reports whether a full
@@ -98,7 +101,11 @@ func (x *Index) Close() error { return x.db.Close() }
 
 // NeedsFullScan reports whether the derived tables were just rebuilt and so
 // hold nothing yet.
-func (x *Index) NeedsFullScan() bool { return x.needsFullScan }
+func (x *Index) NeedsFullScan() bool { return x.needsFullScan.Load() }
+
+// FullScanDone records that the collection has been read into the rebuilt
+// tables, so the next caller is not told to scan all over again.
+func (x *Index) FullScanDone() { x.needsFullScan.Store(false) }
 
 // checkFTS5 fails loudly at startup rather than at the first search.
 //
@@ -168,7 +175,7 @@ func (x *Index) migrate(ctx context.Context) error {
 		}); err != nil {
 			return err
 		}
-		x.needsFullScan = true
+		x.needsFullScan.Store(true)
 	}
 	return nil
 }

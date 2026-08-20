@@ -120,32 +120,13 @@ func (s *Store) Scan(yield func(Entry) error) error {
 		if p == "." {
 			return nil
 		}
-		base := path.Base(p)
-
-		// Symlinks are never followed and never indexed. os.Root already
-		// prevents one escaping the collection, but a symlink inside it would
-		// still index the same song twice, and a loop of them would hang the
-		// walk.
-		if d.Type()&fs.ModeSymlink != 0 {
-			return nil
-		}
-		if strings.HasPrefix(base, ".") {
+		if skipEntry(p, d) {
 			if d.IsDir() {
 				return fs.SkipDir
 			}
 			return nil
 		}
 		if d.IsDir() {
-			if strings.Count(p, "/")+1 >= maxDepth {
-				return fs.SkipDir
-			}
-			return nil
-		}
-		// Skip devices, sockets and FIFOs: os.Root deliberately does not.
-		if !d.Type().IsRegular() {
-			return nil
-		}
-		if !strings.EqualFold(path.Ext(base), Ext) || base == Ext {
 			return nil
 		}
 
@@ -172,6 +153,70 @@ func (s *Store) Scan(yield func(Entry) error) error {
 		}
 		return yield(e)
 	})
+}
+
+// Paths lists the song files in the collection without reading any of them.
+//
+// Slugs have to be resolved against every path at once, because breaking a
+// collision deterministically means knowing which paths collide. This walk only
+// touches directory entries, so it costs milliseconds even on a large
+// collection, and it saves holding every parsed song in memory at the same time.
+func (s *Store) Paths() ([]string, error) {
+	var out []string
+	fsys := s.songs.FS()
+	err := fs.WalkDir(fsys, ".", func(p string, d fs.DirEntry, err error) error {
+		if err != nil {
+			if d != nil && d.IsDir() {
+				return fs.SkipDir
+			}
+			return nil
+		}
+		if p == "." {
+			return nil
+		}
+		if skipEntry(p, d) {
+			if d.IsDir() {
+				return fs.SkipDir
+			}
+			return nil
+		}
+		if d.IsDir() {
+			return nil
+		}
+		out = append(out, p)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// skipEntry reports whether a walked entry is not a song file, and is shared by
+// Scan and Paths so the two can never disagree about what is in the collection.
+//
+// Returning true for a directory means "do not descend".
+func skipEntry(p string, d fs.DirEntry) bool {
+	base := path.Base(p)
+
+	// Symlinks are never followed and never indexed. os.Root already stops one
+	// escaping the collection, but a symlink inside it would index the same song
+	// twice, and a loop of them would hang the walk.
+	if d.Type()&fs.ModeSymlink != 0 {
+		return true
+	}
+	if strings.HasPrefix(base, ".") {
+		return true
+	}
+	if d.IsDir() {
+		return strings.Count(p, "/")+1 >= maxDepth
+	}
+	// Skip devices, sockets and FIFOs: os.Root deliberately does not, and
+	// reading a FIFO would block the walk forever.
+	if !d.Type().IsRegular() {
+		return true
+	}
+	return !strings.EqualFold(path.Ext(base), Ext) || base == Ext
 }
 
 // Read returns one song, parsed, with its bytes.

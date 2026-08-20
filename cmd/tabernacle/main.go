@@ -17,6 +17,9 @@ import (
 	"time"
 
 	"github.com/jalmena/tabernacle/internal/config"
+	"github.com/jalmena/tabernacle/internal/index"
+	"github.com/jalmena/tabernacle/internal/library"
+	"github.com/jalmena/tabernacle/internal/songfs"
 )
 
 // version is set at build time with -ldflags "-X main.version=v1.2.3" and
@@ -70,8 +73,32 @@ func run() error {
 		log.Warn("read-only mode: every change to the collection will be refused")
 	}
 
+	store, err := songfs.Open(cfg.SongsDir, cfg.TrashDir, cfg.MaxSongBytes)
+	if err != nil {
+		return err
+	}
+	defer store.Close()
+
+	idx, err := index.Open(ctx, cfg.DBPath)
+	if err != nil {
+		return err
+	}
+	defer idx.Close()
+
+	lib := library.New(store, idx, log)
+
+	// Scan before serving, so the first request sees a warm index rather than an
+	// empty library. On a large first run this costs a second or two, which is
+	// the right trade for a personal tool.
+	if rep, err := lib.SyncIfNeeded(ctx); err != nil {
+		return fmt.Errorf("initial scan: %w", err)
+	} else if rep.Scanned > 0 {
+		log.Info("indexed the collection", "songs", rep.Scanned, "failed", rep.Failed)
+	}
+	lib.StartPeriodicSync(ctx, cfg.ScanInterval)
+
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /healthz", healthz)
+	mux.HandleFunc("GET /healthz", healthzHandler(lib))
 
 	srv := &http.Server{
 		Addr:    cfg.Addr,
@@ -124,15 +151,29 @@ func ensureDirs(cfg config.Config) error {
 	return nil
 }
 
-func healthz(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.Header().Set("Cache-Control", "no-store")
-	// Kept deliberately dull: a healthcheck that talks to the database would
-	// report a rebuildable index as an unhealthy container and restart-loop it.
-	_ = json.NewEncoder(w).Encode(map[string]any{
-		"status":  "ok",
-		"version": buildVersion(),
-	})
+// healthzHandler reports liveness, plus a count of what is indexed.
+//
+// It stays healthy even when the index is empty or songs fail to parse. Those
+// are conditions for the user to see in the interface, not reasons for a
+// container runtime to restart-loop a working application.
+func healthzHandler(lib *library.Library) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.Header().Set("Cache-Control", "no-store")
+
+		body := map[string]any{"status": "ok", "version": buildVersion()}
+		if stats, err := lib.Stats(r.Context()); err != nil {
+			// The index is unreachable, which the application cannot serve
+			// around, so this one really is unhealthy.
+			w.WriteHeader(http.StatusServiceUnavailable)
+			body["status"] = "unavailable"
+		} else {
+			body["songs"] = stats.Songs
+			body["artists"] = stats.Artists
+			body["broken"] = stats.Broken
+		}
+		_ = json.NewEncoder(w).Encode(body)
+	}
 }
 
 func buildVersion() string {

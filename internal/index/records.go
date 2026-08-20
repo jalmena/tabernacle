@@ -434,3 +434,34 @@ func timeFromNanos(n int64) time.Time {
 	}
 	return time.Unix(0, n)
 }
+
+// MarkBroken records that a file no longer parses, without discarding what was
+// last successfully read from it.
+//
+// Only the file's identity and the error are touched, so the title, artist,
+// tags and search rows from the last good version stay in place. That is what
+// lets a song with a typo in it remain findable, and lets the interface say
+// which line to fix, instead of the song appearing to have been lost.
+//
+// It reports false when there is no existing row, in which case the caller
+// should insert one so that the file is at least visible.
+func (x *Index) MarkBroken(ctx context.Context, rel, hash string, size int64, modTime time.Time, msg string, line int) (bool, error) {
+	res, err := x.db.ExecContext(ctx,
+		`UPDATE songs SET
+		     content_hash     = ?,
+		     size_bytes       = ?,
+		     mtime_unix_ns    = ?,
+		     parse_error      = ?,
+		     parse_error_line = ?,
+		     indexed_at       = ?
+		 WHERE rel_path = ?`,
+		hash, size, modTime.UnixNano(), msg, line, time.Now().UnixNano(), rel)
+	if err != nil {
+		return false, fmt.Errorf("index: mark %s broken: %w", rel, err)
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+	return n > 0, nil
+}

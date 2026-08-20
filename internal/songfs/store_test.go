@@ -536,3 +536,37 @@ func TestOpenRejectsBadArguments(t *testing.T) {
 		t.Error("Open accepted maxBytes of zero")
 	}
 }
+
+// Paths and Scan must agree about what counts as a song, or slug resolution
+// would be computed over a different set of files than the one indexed.
+func TestPathsAgreesWithScan(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("symlinks need privileges on Windows")
+	}
+	s, songs, _ := newStore(t)
+	write(t, songs, "Traditional/Amazing Grace.song", songBytes("Amazing Grace", "Traditional"))
+	write(t, songs, "Broken.song", []byte("not a song at all"))
+	write(t, songs, "notes.txt", []byte("ignore me"))
+	write(t, songs, ".hidden.song", songBytes("Hidden", ""))
+	write(t, songs, ".git/x.song", songBytes("Git", ""))
+	write(t, songs, "a/b/c/d/e/f/g/h/deep.song", songBytes("Deep", ""))
+	if err := os.Symlink("/etc/passwd", filepath.Join(songs, "passwd.song")); err != nil {
+		t.Fatal(err)
+	}
+
+	paths, err := s.Paths()
+	if err != nil {
+		t.Fatalf("Paths: %v", err)
+	}
+	sort.Strings(paths)
+	scanned := relPaths(scanAll(t, s))
+
+	if strings.Join(paths, "|") != strings.Join(scanned, "|") {
+		t.Errorf("Paths gave %v but Scan gave %v", paths, scanned)
+	}
+	// A file that will not parse is still a song file: it must be indexed so it
+	// can be found and repaired.
+	if len(paths) != 2 {
+		t.Errorf("Paths = %v, want the good song and the broken one", paths)
+	}
+}
