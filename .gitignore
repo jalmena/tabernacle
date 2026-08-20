@@ -1,0 +1,22 @@
+# A user's song collection is never part of this repository.
+/data/
+*.song
+!examples/songs/**/*.song
+!internal/song/testdata/*.song
+
+# The index is rebuildable from the song files, so it is never committed.
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+
+# Build output
+/bin/
+/tabernacle
+*.test
+*.out
+
+# Local environment
+.env
+.env.local
