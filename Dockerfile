@@ -31,6 +31,11 @@ RUN apk add --no-cache su-exec tzdata ca-certificates \
     && mkdir -p /data \
     && chown tabernacle:tabernacle /data
 
+LABEL org.opencontainers.image.title="Tabernacle" \
+      org.opencontainers.image.description="A self-hosted personal guitar songbook and chord library." \
+      org.opencontainers.image.source="https://github.com/jalmena/tabernacle" \
+      org.opencontainers.image.licenses="GPL-3.0-only"
+
 COPY --from=build /out/tabernacle /usr/local/bin/tabernacle
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh

@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Formatting
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            echo "These files need gofmt:"; echo "$unformatted"; exit 1
+          fi
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test
+        run: go test ./...
+
+      # The race detector needs cgo, so it gets its own step rather than being
+      # folded into the one above.
+      - name: Test with the race detector
+        run: go test -race ./...
+
+      - name: Build
+        run: go build ./cmd/tabernacle
+
+      # Short fuzzing on every push catches regressions in the parts that read
+      # untrusted input, without turning CI into a fuzzing farm.
+      - name: Fuzz briefly
+        run: |
+          go test ./internal/song   -run FuzzParse            -fuzz FuzzParse            -fuzztime 20s
+          go test ./internal/songfs -run FuzzSanitizeSegment  -fuzz FuzzSanitizeSegment  -fuzztime 20s
+
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the container image
+        run: docker build --build-arg VERSION=ci -t tabernacle:ci .
+      - name: Start it and check it answers
+        run: |
+          docker run -d --name tab -p 8080:8080 -v "$PWD/ci-data:/data" tabernacle:ci
+          for i in $(seq 1 40); do
+            curl -sf http://127.0.0.1:8080/healthz && break || sleep 0.5
+          done
+          curl -sf http://127.0.0.1:8080/healthz | tee /dev/stderr | grep -q '"status":"ok"'
+          # The application must not be running as root inside the container.
+          test "$(docker exec tab sh -c 'ps -o user= -p 1 || true')" != "root"
+          docker rm -f tab
