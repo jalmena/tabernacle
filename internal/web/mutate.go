@@ -98,6 +98,28 @@ func (s *Server) mutating(h func(http.ResponseWriter, *http.Request)) http.Handl
 	}
 }
 
+// mutatingMultipart is mutating for a handler that parses its own body.
+//
+// An upload cannot go through ParseForm, so the guards are applied and the body
+// is left for the handler, which caps it itself.
+func (s *Server) mutatingMultipart(h func(http.ResponseWriter, *http.Request)) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if s.cfg.ReadOnly {
+			s.fail(w, r, http.StatusForbidden, "Solo lectura",
+				"Esta instancia está configurada para no permitir cambios en la colección.")
+			return
+		}
+		if err := s.requireSameOrigin(r); err != nil {
+			s.log.Warn("refused a cross-origin upload",
+				"origin", r.Header.Get("Origin"), "host", r.Host, "reason", err)
+			s.fail(w, r, http.StatusForbidden, "Petición rechazada",
+				"La petición no parece venir de esta página.")
+			return
+		}
+		h(w, r)
+	}
+}
+
 // redirect sends the browser onward after a change, so a refresh does not repeat
 // it.
 func (s *Server) redirect(w http.ResponseWriter, r *http.Request, target, msg string) {

@@ -126,6 +126,8 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /songs/new", s.handleNewSong)
 	mux.HandleFunc("GET /songs/{slug}/edit", s.handleEditSong)
 	mux.HandleFunc("GET /tags", s.handleTags)
+	mux.HandleFunc("GET /import", s.handleImportForm)
+	mux.HandleFunc("GET /export", s.handleExport)
 
 	// Everything that changes the collection goes through s.mutating, which
 	// applies the read-only guard, the same-origin check and the body limit in
@@ -137,6 +139,9 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /songs/{slug}/transpose", s.mutating(s.handleRememberTranspose))
 	mux.HandleFunc("POST /songs/{slug}/commit-transpose", s.mutating(s.handleCommitTranspose))
 	mux.HandleFunc("POST /reindex", s.mutating(s.handleReindex))
+	// Import goes through the same guard, but reads its own body because it is
+	// multipart rather than a form.
+	mux.HandleFunc("POST /import", s.mutatingMultipart(s.handleImport))
 	mux.HandleFunc("GET /healthz", s.handleHealth)
 	mux.HandleFunc("GET /robots.txt", s.handleRobots)
 	mux.HandleFunc("GET /static/{version}/{path...}", s.handleStatic)

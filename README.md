@@ -450,10 +450,7 @@ Complete and tested:
 - [x] Chord diagrams, alternative voicings, and the chord panel
 
 - [x] Authoring: paste a song, edit the raw file, favourites, delete to trash
-
-In progress, in this order:
-
-- [ ] Import and export
+- [x] Import and export, backup and restore
 
 Later: setlists, and whatever turns out to be genuinely useful rather than merely possible.
 

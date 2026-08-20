@@ -8,6 +8,7 @@
 				{{range .Filters}}<a class="pill" href="{{.ClearURL}}" title="Quitar este filtro">{{.Label}} ✕</a>{{end}}
 				{{range .SortURLs}}<a class="btn btn-quiet{{if .On}} on{{end}}" href="{{.URL}}">{{.Label}}</a>{{end}}
 				<a class="btn btn-quiet" href="/tags">Etiquetas</a>
+				<a class="btn btn-quiet" href="/import">Importar</a>
 				{{if not $.Nav.ReadOnly}}
 					<a class="btn" href="/songs/new">Añadir</a>
 					<form method="post" action="/reindex">

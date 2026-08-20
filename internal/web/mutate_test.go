@@ -1,6 +1,10 @@
 package web
 
 import (
+	"archive/zip"
+	"bytes"
+	"io"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -392,4 +396,209 @@ func between(s, start, end string) string {
 		return ""
 	}
 	return rest[:j]
+}
+
+// uploadZip posts a multipart form with one file, as a browser would.
+func (ts *testServer) upload(t *testing.T, filename string, content []byte) *httptest.ResponseRecorder {
+	t.Helper()
+	var body bytes.Buffer
+	mw := multipart.NewWriter(&body)
+	fw, err := mw.CreateFormFile("files", filename)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := fw.Write(content); err != nil {
+		t.Fatal(err)
+	}
+	if err := mw.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	r := httptest.NewRequest(http.MethodPost, "/import", &body)
+	r.Host = "localhost:8080"
+	r.Header.Set("Content-Type", mw.FormDataContentType())
+	r.Header.Set("Origin", "http://localhost:8080")
+	r.Header.Set("Sec-Fetch-Site", "same-origin")
+	w := httptest.NewRecorder()
+	ts.h.ServeHTTP(w, r)
+	return w
+}
+
+func TestImportSingleUpload(t *testing.T) {
+	ts := newTestServer(t, nil)
+	w := ts.upload(t, "anything.song", []byte(pasted))
+	if w.Code != http.StatusOK {
+		t.Fatalf("upload = %d\n%s", w.Code, w.Body.String())
+	}
+	body := w.Body.String()
+	if !strings.Contains(body, "Nueva Canción") {
+		t.Errorf("the report does not name the imported song:\n%s", body)
+	}
+	// The destination came from the metadata, not from the upload's filename.
+	if _, err := os.Stat(filepath.Join(ts.songs, "Alguien", "Nueva Canción.song")); err != nil {
+		t.Errorf("the song is not where its metadata says: %v", err)
+	}
+	if !strings.Contains(ts.get(t, "/").Body.String(), "Nueva Canción") {
+		t.Error("the imported song is not in the library")
+	}
+}
+
+func TestImportZipThroughTheWeb(t *testing.T) {
+	ts := newTestServer(t, nil)
+
+	var buf bytes.Buffer
+	zw := zip.NewWriter(&buf)
+	for _, e := range []struct{ name, body string }{
+		{"a/Good.song", pasted},
+		{"../evil.song", pasted},                           // zip slip
+		{"notes.txt", "not a song"},                        // wrong kind
+		{"bad.song", "---\nformat: 1\ntitel: typo\n---\n"}, // will not parse
+	} {
+		h := &zip.FileHeader{Name: e.name, Method: zip.Deflate}
+		h.SetMode(0o644)
+		f, err := zw.CreateHeader(h)
+		if err != nil {
+			t.Fatal(err)
+		}
+		f.Write([]byte(e.body))
+	}
+	zw.Close()
+
+	w := ts.upload(t, "backup.zip", buf.Bytes())
+	if w.Code != http.StatusOK {
+		t.Fatalf("upload = %d\n%s", w.Code, w.Body.String())
+	}
+	body := w.Body.String()
+	for _, want := range []string{"añadida", "Con errores", "Omitidos"} {
+		if !strings.Contains(body, want) {
+			t.Errorf("the report is missing the %q section:\n%s", want, body)
+		}
+	}
+	// Exactly one song, and nothing outside the collection.
+	var count int
+	filepath.WalkDir(ts.songs, func(p string, d os.DirEntry, err error) error {
+		if err == nil && !d.IsDir() {
+			count++
+		}
+		return nil
+	})
+	if count != 1 {
+		t.Errorf("%d files were written, want 1", count)
+	}
+	if _, err := os.Stat(filepath.Join(filepath.Dir(ts.songs), "evil.song")); err == nil {
+		t.Fatal("the zip slip entry escaped the collection")
+	}
+}
+
+// A zip renamed to .song must still be treated as a zip: a browser's filename is
+// not evidence of anything.
+func TestImportDetectsAZipByItsContent(t *testing.T) {
+	ts := newTestServer(t, nil)
+	var buf bytes.Buffer
+	zw := zip.NewWriter(&buf)
+	h := &zip.FileHeader{Name: "x.song", Method: zip.Deflate}
+	h.SetMode(0o644)
+	f, _ := zw.CreateHeader(h)
+	f.Write([]byte(pasted))
+	zw.Close()
+
+	w := ts.upload(t, "actually-a-zip.song", buf.Bytes())
+	if w.Code != http.StatusOK {
+		t.Fatalf("upload = %d", w.Code)
+	}
+	if !strings.Contains(w.Body.String(), "Nueva Canción") {
+		t.Errorf("the archive was not unpacked:\n%s", w.Body.String())
+	}
+}
+
+func TestImportWithNoFileSelected(t *testing.T) {
+	ts := newTestServer(t, nil)
+	var body bytes.Buffer
+	mw := multipart.NewWriter(&body)
+	mw.Close()
+	r := httptest.NewRequest(http.MethodPost, "/import", &body)
+	r.Host = "localhost"
+	r.Header.Set("Content-Type", mw.FormDataContentType())
+	r.Header.Set("Origin", "http://localhost")
+	w := httptest.NewRecorder()
+	ts.h.ServeHTTP(w, r)
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("an empty upload = %d, want 400", w.Code)
+	}
+}
+
+func TestImportRefusesForeignOrigin(t *testing.T) {
+	ts := newTestServer(t, nil)
+	var body bytes.Buffer
+	mw := multipart.NewWriter(&body)
+	fw, _ := mw.CreateFormFile("files", "x.song")
+	fw.Write([]byte(pasted))
+	mw.Close()
+
+	r := httptest.NewRequest(http.MethodPost, "/import", &body)
+	r.Host = "localhost"
+	r.Header.Set("Content-Type", mw.FormDataContentType())
+	r.Header.Set("Origin", "https://evil.example")
+	r.Header.Set("Sec-Fetch-Site", "cross-site")
+	w := httptest.NewRecorder()
+	ts.h.ServeHTTP(w, r)
+
+	if w.Code != http.StatusForbidden {
+		t.Errorf("a cross-origin upload = %d, want 403", w.Code)
+	}
+	entries, _ := os.ReadDir(ts.songs)
+	if len(entries) != 0 {
+		t.Error("the refused upload wrote something")
+	}
+}
+
+func TestExportDownload(t *testing.T) {
+	ts := newTestServer(t, basicSongs())
+	w := ts.get(t, "/export")
+	if w.Code != http.StatusOK {
+		t.Fatalf("export = %d", w.Code)
+	}
+	if ct := w.Header().Get("Content-Type"); ct != "application/zip" {
+		t.Errorf("content type = %q", ct)
+	}
+	if cd := w.Header().Get("Content-Disposition"); !strings.Contains(cd, "tabernacle-") {
+		t.Errorf("content disposition = %q", cd)
+	}
+
+	data := w.Body.Bytes()
+	zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
+	if err != nil {
+		t.Fatalf("the export is not a valid archive: %v", err)
+	}
+	if len(zr.File) != 1 {
+		t.Fatalf("the archive holds %d files, want 1", len(zr.File))
+	}
+	if zr.File[0].Name != "songs/Traditional/Amazing Grace.song" {
+		t.Errorf("entry name = %q, want the collection's own layout", zr.File[0].Name)
+	}
+	// The bytes are the file's, so restoring is unzipping.
+	rc, err := zr.File[0].Open()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rc.Close()
+	got, _ := io.ReadAll(rc)
+	want, _ := os.ReadFile(filepath.Join(ts.songs, "Traditional", "Amazing Grace.song"))
+	if string(got) != string(want) {
+		t.Error("the exported bytes differ from the file on disk")
+	}
+}
+
+// Export is a read, so it stays available even when writes are refused.
+func TestExportWorksInReadOnlyMode(t *testing.T) {
+	ts := newTestServerWithEnv(t, basicSongs(), t.TempDir(), map[string]string{
+		"TABERNACLE_READ_ONLY": "true",
+	})
+	if code := ts.get(t, "/export").Code; code != http.StatusOK {
+		t.Errorf("export in read-only mode = %d", code)
+	}
+	// Import is a write, so it is not.
+	if code := ts.upload(t, "x.song", []byte(pasted)).Code; code != http.StatusForbidden {
+		t.Errorf("import in read-only mode = %d, want 403", code)
+	}
 }

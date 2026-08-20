@@ -1,0 +1,71 @@
+{{template "head" .}}
+<body>
+{{template "top" .}}
+<main class="wrap">
+	{{with .Body}}
+		<h1>Importar canciones</h1>
+
+		{{if .Problem}}<p class="notice">{{.Problem}}</p>{{end}}
+
+		{{if .Report}}
+			<h2>Resultado</h2>
+			{{if .Report.Added}}
+				<p class="count">{{len .Report.Added}} {{plural (len .Report.Added) "canción añadida" "canciones añadidas"}}.</p>
+				<ul class="songlist">
+					{{range .Report.Added}}
+						<li><a href="/songs/{{.Slug}}"><span class="t">{{.Title}}</span>
+							<span class="a">desde {{.Name}}</span></a></li>
+					{{end}}
+				</ul>
+			{{end}}
+
+			{{if .Report.Failed}}
+				<h2>Con errores</h2>
+				<ul class="songlist">
+					{{range .Report.Failed}}
+						<li><span class="t">{{.Name}}</span>
+							<span class="a">{{if .Line}}línea {{.Line}}: {{end}}{{.Reason}}</span></li>
+					{{end}}
+				</ul>
+			{{end}}
+
+			{{if .Report.Skipped}}
+				<h2>Omitidos</h2>
+				<ul class="songlist">
+					{{range .Report.Skipped}}
+						<li><span class="t">{{.Name}}</span> <span class="a">{{.Reason}}</span></li>
+					{{end}}
+				</ul>
+			{{end}}
+
+			{{if not .Report.Total}}<p class="count">No había nada que importar.</p>{{end}}
+			<p><a class="btn" href="/">Ir a la biblioteca</a></p>
+			<hr>
+		{{end}}
+
+		<p class="count">
+			Sube archivos <code>.song</code> o un <code>.zip</code> con varios.
+			Cada archivo se comprueba antes de guardar nada, y se te dice qué ha
+			entrado y qué no. La carpeta de destino se decide por el título y el
+			artista de cada canción, no por el nombre del archivo.
+		</p>
+
+		<form method="post" action="/import" enctype="multipart/form-data" class="editor">
+			<input class="btn" type="file" name="files" multiple accept=".song,.zip,text/plain,application/zip">
+			<div class="filters">
+				<button class="btn" type="submit">Importar</button>
+				<a class="btn btn-quiet" href="/">Cancelar</a>
+			</div>
+		</form>
+
+		<h2>Exportar</h2>
+		<p class="count">
+			Descarga toda la colección como <code>.zip</code>. Dentro están tus
+			archivos <code>.song</code> tal cual, así que restaurar es
+			descomprimir. También puedes copiar la carpeta directamente.
+		</p>
+		<p><a class="btn" href="/export">Descargar copia de seguridad</a></p>
+	{{end}}
+</main>
+</body>
+</html>
