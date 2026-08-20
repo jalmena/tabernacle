@@ -534,3 +534,82 @@ func FuzzSheet(f *testing.F) {
 		}
 	})
 }
+
+func TestTuningNote(t *testing.T) {
+	tests := []struct {
+		tuning string
+		want   string // substring
+	}{
+		{"", ""},
+		{"EADGBE", ""},
+		{"Drop D", "Drop D"},
+		{"DADGAD", "DADGAD"},
+		{"whatever the guy on the video said", "no se conoce"},
+	}
+	for _, tt := range tests {
+		src := "---\nformat: 1\ntitle: T\n"
+		if tt.tuning != "" {
+			src += "tuning: " + tt.tuning + "\n"
+		}
+		src += "---\n\n## Verse 1\n[G]x\n"
+
+		v := Sheet(parse(t, src), Options{Diagrams: true})
+		got := strings.ToLower(v.TuningNote)
+		if tt.want == "" {
+			if got != "" {
+				t.Errorf("tuning %q produced the note %q, want none", tt.tuning, v.TuningNote)
+			}
+			continue
+		}
+		if !strings.Contains(got, strings.ToLower(tt.want)) {
+			t.Errorf("tuning %q gave note %q, want it to mention %q", tt.tuning, v.TuningNote, tt.want)
+		}
+	}
+	// Without diagrams there is nothing to explain.
+	v := Sheet(parse(t, "---\nformat: 1\ntitle: T\ntuning: DADGAD\n---\n\n## V\n[G]x\n"), Options{})
+	if v.TuningNote != "" {
+		t.Errorf("a sheet without diagrams produced a tuning note: %q", v.TuningNote)
+	}
+}
+
+func TestChordsCarryVoicingsOnlyWhenAsked(t *testing.T) {
+	plain := Sheet(parse(t, sample), Options{})
+	for _, c := range plain.Chords {
+		if len(c.Voicings) != 0 {
+			t.Errorf("%s carries shapes although diagrams were not requested", c.Text)
+		}
+	}
+	withShapes := Sheet(parse(t, sample), Options{Diagrams: true})
+	for _, c := range withShapes.Chords {
+		if len(c.Voicings) == 0 {
+			t.Errorf("%s has no shapes", c.Text)
+			continue
+		}
+		first := c.Voicings[0]
+		if first.Index != 1 || first.Total != len(c.Voicings) {
+			t.Errorf("%s: first shape is %d of %d, want 1 of %d",
+				c.Text, first.Index, first.Total, len(c.Voicings))
+		}
+		if len(first.Frets) != 6 {
+			t.Errorf("%s: %d frets, want 6", c.Text, len(first.Frets))
+		}
+		if first.Fingering == "" {
+			t.Errorf("%s: no spoken description, so the diagram is inaccessible", c.Text)
+		}
+		if first.Name == "" {
+			t.Errorf("%s: the shape has no name", c.Text)
+		}
+	}
+}
+
+// The spoken description counts strings the way a player does, with the sixth
+// lowest, even though the data is stored the other way round.
+func TestFingeringDescriptionUsesPlayerStringNumbers(t *testing.T) {
+	v := Sheet(parse(t, "---\nformat: 1\ntitle: T\n---\n\n## V\n[C]x\n"), Options{Diagrams: true})
+	desc := v.Chords[0].Voicings[0].Fingering
+	for _, want := range []string{"6ª cuerda", "5ª cuerda traste 3", "1ª cuerda al aire"} {
+		if !strings.Contains(desc, want) {
+			t.Errorf("description %q is missing %q", desc, want)
+		}
+	}
+}

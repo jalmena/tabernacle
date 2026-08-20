@@ -447,9 +447,10 @@ Complete and tested:
 - [x] Library browsing, full-text search, tags and artists
 - [x] The song sheet: transposition, both note-name systems, the capo view, printing
 
+- [x] Chord diagrams, alternative voicings, and the chord panel
+
 In progress, in this order:
 
-- [ ] Chord diagrams and alternative voicings
 - [ ] Authoring: paste a song, edit the raw file
 - [ ] Import and export, favourites
 

@@ -99,3 +99,133 @@
 		}
 	});
 })();
+
+// The chord panel.
+//
+// Everything it shows was rendered by the server and already exists on the page,
+// in the positions appendix at the foot of the sheet. This code clones a card,
+// positions it and pages through the shapes. It does not draw a diagram, work out
+// a fingering or transpose anything: all of that is Go, where it is tested, and
+// duplicating any of it here is how the two would drift apart.
+//
+// Nothing here is required. Without it, a chord is a link to its card in the
+// appendix, which is a perfectly good way to look up a shape.
+(function () {
+	"use strict";
+
+	var pop = document.getElementById("chordpop");
+	if (!pop || typeof pop.showPopover !== "function") return;
+
+	var opener = null;
+
+	// step moves through the shapes inside one card.
+	function step(card, delta) {
+		var shapes = card.querySelectorAll(".shape");
+		if (shapes.length < 2) return;
+		var current = 0;
+		for (var i = 0; i < shapes.length; i++) {
+			if (shapes[i].classList.contains("on")) current = i;
+		}
+		var next = (current + delta + shapes.length) % shapes.length;
+		shapes[current].classList.remove("on");
+		shapes[next].classList.add("on");
+		var counter = card.querySelector(".cur");
+		if (counter) counter.textContent = String(next + 1);
+	}
+
+	// place puts the panel next to what was clicked, clamped to the viewport.
+	// Nothing scrolls: the reader's position on the page is the one thing this
+	// feature must not cost them.
+	function place(anchor) {
+		if (window.matchMedia("(max-width: 34rem)").matches) return; // bottom sheet
+		var r = anchor.getBoundingClientRect();
+		var w = pop.offsetWidth || 240;
+		var h = pop.offsetHeight || 200;
+		var gap = 8;
+
+		var left = r.left + r.width / 2 - w / 2;
+		left = Math.max(gap, Math.min(left, window.innerWidth - w - gap));
+
+		var top = r.bottom + gap;
+		if (top + h > window.innerHeight - gap) {
+			top = r.top - h - gap;           // above instead
+			if (top < gap) top = Math.max(gap, window.innerHeight - h - gap);
+		}
+		pop.style.left = Math.round(left) + "px";
+		pop.style.top = Math.round(top) + "px";
+	}
+
+	function open(anchor, id) {
+		var source = document.getElementById("acorde-" + id);
+		if (!source) return false;
+
+		pop.replaceChildren(source.cloneNode(true));
+		// The clone must not duplicate an id that is already in the document.
+		var clone = pop.firstElementChild;
+		if (clone) clone.removeAttribute("id");
+		// Always start from the shape the card is showing, which is the easiest.
+		var shapes = pop.querySelectorAll(".shape");
+		for (var i = 0; i < shapes.length; i++) {
+			shapes[i].classList.toggle("on", i === 0);
+		}
+		var counter = pop.querySelector(".cur");
+		if (counter) counter.textContent = "1";
+
+		opener = anchor;
+		if (pop.matches(":popover-open")) pop.hidePopover();
+		pop.showPopover();
+		place(anchor);
+		return true;
+	}
+
+	document.addEventListener("click", function (e) {
+		if (!e.target.closest) return;
+
+		// Paging, inside the popover or inside a card in the appendix.
+		var nav = e.target.closest("[data-step]");
+		if (nav) {
+			var card = nav.closest(".chordcard");
+			if (card) {
+				e.preventDefault();
+				step(card, parseInt(nav.getAttribute("data-step"), 10) || 1);
+			}
+			return;
+		}
+
+		var link = e.target.closest("a[data-chord]");
+		if (!link) return;
+		if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+
+		// preventDefault is what keeps the page still: the link would otherwise
+		// jump to the appendix and lose the reader's place.
+		if (open(link, link.getAttribute("data-chord"))) {
+			e.preventDefault();
+		}
+	});
+
+	pop.addEventListener("toggle", function (e) {
+		if (e.newState === "closed" && opener) {
+			opener.focus({ preventScroll: true });
+			opener = null;
+		}
+	});
+
+	document.addEventListener("keydown", function (e) {
+		if (!pop.matches(":popover-open")) return;
+		var card = pop.querySelector(".chordcard");
+		if (!card) return;
+		if (e.key === "ArrowRight") {
+			e.preventDefault();
+			step(card, 1);
+		} else if (e.key === "ArrowLeft") {
+			e.preventDefault();
+			step(card, -1);
+		}
+		// Escape and clicking outside are handled by the popover itself.
+	});
+
+	// Keep the panel attached to its chord when the window changes shape.
+	window.addEventListener("resize", function () {
+		if (pop.matches(":popover-open") && opener) place(opener);
+	});
+})();

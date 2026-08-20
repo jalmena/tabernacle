@@ -394,3 +394,108 @@ a:hover { text-decoration-thickness: 2px; }
 	a { color: inherit; text-decoration: none; }
 	a[href]::after { content: none !important; }
 }
+
+/* ------------------------------------------------------- chord positions --- */
+
+/* The appendix is not scaffolding: it is what a real songbook prints, it is the
+ * print layout, it is what works without JavaScript, and it is the markup the
+ * popover clones. The primary shape is therefore paid for exactly once. */
+.chordbook { margin: 2rem 0 0; }
+.chordbook h2 {
+	margin: 0 0 0.5rem;
+	font-size: 0.75rem;
+	font-weight: 600;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--ink-faint);
+}
+.cards {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
+	gap: 0.75rem;
+}
+.chordcard {
+	padding: 0.6rem;
+	background: var(--paper-raised);
+	border: 1px solid var(--rule);
+	border-radius: var(--radius);
+	text-align: center;
+}
+.chordcard h3 {
+	margin: 0 0 0.35rem;
+	font-size: 1.0625rem;
+	font-weight: 650;
+	color: var(--chord);
+}
+.chorddiagram {
+	display: block;
+	width: 100%;
+	max-width: 6rem;
+	height: auto;
+	margin: 0 auto;
+	color: var(--ink);
+}
+.shape { display: none; }
+.shape.on { display: block; }
+.shapename { margin: 0.3rem 0 0; font-size: 0.75rem; color: var(--ink-soft); }
+/* The spoken description is the accessible content of the picture; it is not
+ * shown twice on screen. */
+.shapedesc {
+	position: absolute;
+	width: 1px; height: 1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+}
+.chordcard > .shapedesc { position: static; width: auto; height: auto; clip-path: none;
+	white-space: normal; font-size: 0.75rem; color: var(--ink-soft); margin: 0.3rem 0 0; }
+.shapewarn { margin: 0.3rem 0 0; font-size: 0.6875rem; color: var(--warn-ink); }
+.shapenav {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.2rem;
+	margin-top: 0.35rem;
+}
+.shapenav .count { font-size: 0.75rem; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+.findchord { display: inline-block; margin-top: 0.4rem; font-size: 0.6875rem; }
+
+/* The popover. One element for the page, reused, so a song with sixty chord
+ * tokens does not carry sixty of these. */
+.chordpop {
+	max-width: 15rem;
+	padding: 0.7rem;
+	background: var(--paper-raised);
+	color: var(--ink);
+	border: 1px solid var(--rule);
+	border-radius: 10px;
+	box-shadow: 0 8px 28px rgb(0 0 0 / 22%);
+}
+.chordpop:popover-open { position: fixed; margin: 0; }
+.chordpop .chordcard { border: 0; padding: 0; background: none; }
+.chordpop .chorddiagram { max-width: 7.5rem; }
+.chordpop::backdrop { background: transparent; }
+
+/* On a phone it becomes a bottom sheet with targets a thumb can hit while the
+ * other hand is on the neck. */
+@media (max-width: 34rem) {
+	.chordpop:popover-open {
+		left: 0; right: 0; bottom: 0; top: auto;
+		max-width: none;
+		border-radius: 12px 12px 0 0;
+		border-bottom: 0;
+		padding: 1rem 1rem 1.5rem;
+	}
+	.chordpop .chorddiagram { max-width: 9rem; }
+	.chordpop .shapenav .btn { min-width: 3.25rem; }
+}
+
+@media print {
+	/* Only the primary shape is printed: a page of alternatives is not what
+	 * goes in a binder. */
+	.chordpop { display: none !important; }
+	.shapenav, .findchord { display: none !important; }
+	.chordcard { border: 1px solid #999; break-inside: avoid; page-break-inside: avoid; }
+	.cards { grid-template-columns: repeat(auto-fill, minmax(6rem, 1fr)); gap: 0.4rem; }
+	.chorddiagram { max-width: 4.5rem; }
+}

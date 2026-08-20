@@ -65,10 +65,12 @@ func New(lib *library.Library, cfg config.Config, log *slog.Logger) (*Server, er
 
 // funcs holds the template helpers.
 //
-// Every one is a value transform. None returns markup, which is what keeps the
-// escaping entirely in html/template's hands.
+// All but one are value transforms that return plain strings, which is what
+// keeps the escaping in html/template's hands. The exception, chordDiagram, is
+// documented where it is defined.
 func funcs() template.FuncMap {
 	return template.FuncMap{
+		"diagram": chordDiagram,
 		"signed": func(n int) string {
 			if n > 0 {
 				return "+" + strconv.Itoa(n)

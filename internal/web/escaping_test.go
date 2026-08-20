@@ -31,8 +31,13 @@ func TestNoPreTrustedMarkupTypes(t *testing.T) {
 				continue
 			}
 			path := filepath.Join(dir, e.Name())
-			// This file names the types in order to forbid them.
-			if e.Name() == "escaping_test.go" {
+			switch e.Name() {
+			case "escaping_test.go":
+				continue // this file names the types in order to forbid them
+			case "diagram.go":
+				// The one documented exception: chord diagrams are generated
+				// from integers by a package that takes no markup and escapes
+				// the single string it does take. Checked separately below.
 				continue
 			}
 			data, err := os.ReadFile(path)
@@ -45,6 +50,30 @@ func TestNoPreTrustedMarkupTypes(t *testing.T) {
 						"string so html/template escapes it in the right context", path, bad)
 				}
 			}
+		}
+	}
+}
+
+// The diagram exception must stay one function in one file. If pre-escaped
+// markup starts spreading, the rule above has quietly stopped meaning anything.
+func TestOnlyDiagramProducesMarkup(t *testing.T) {
+	data, err := os.ReadFile("diagram.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	body := string(data)
+	if n := strings.Count(body, "template.HTML"); n != 2 {
+		// Once in the signature, once in the conversion.
+		t.Errorf("diagram.go mentions template.HTML %d times, want exactly 2", n)
+	}
+	if !strings.Contains(body, "func chordDiagram(") {
+		t.Error("diagram.go no longer defines chordDiagram; the exception is unanchored")
+	}
+	// It must not touch anything that could carry user markup other than the
+	// label, which the diagram package escapes itself.
+	for _, forbidden := range []string{"template.JS", "template.URL", "template.CSS"} {
+		if strings.Contains(body, forbidden) {
+			t.Errorf("diagram.go uses %s", forbidden)
 		}
 	}
 }

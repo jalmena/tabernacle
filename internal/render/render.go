@@ -15,6 +15,7 @@ import (
 
 	"github.com/jalmena/tabernacle/internal/chord"
 	"github.com/jalmena/tabernacle/internal/song"
+	"github.com/jalmena/tabernacle/internal/voicing"
 )
 
 // CapoView selects which pitches the chord symbols name.
@@ -36,6 +37,14 @@ type Options struct {
 	Notation  chord.Notation
 	CapoView  CapoView
 	Print     bool
+
+	// Diagrams asks for guitar shapes alongside each chord. It is off by
+	// default so that a listing page never pays for diagrams it does not show.
+	Diagrams bool
+	// Tuning is the song's tuning, used to decide which shapes are valid. An
+	// unrecognised tuning yields no diagrams and an honest explanation rather
+	// than shapes that are quietly wrong.
+	Tuning voicing.Tuning
 }
 
 // MaxTranspose bounds the transposition controls. Beyond eleven semitones in
@@ -75,6 +84,10 @@ type SheetView struct {
 	Notation  string
 	CapoView  CapoView
 
+	// TuningNote explains an unrecognised tuning, so a reader is told why there
+	// are no diagrams instead of assuming the feature is broken.
+	TuningNote string
+
 	// Shifted is true when the displayed chords are not what the file says,
 	// which the page has to state plainly so nobody prints a sheet in the wrong
 	// key without knowing.
@@ -89,6 +102,11 @@ type SheetView struct {
 type ChordRef struct {
 	Text string // as displayed, e.g. "F#m" or "Fa#m"
 	ID   string // stable handle derived from the English spelling
+
+	// Voicings is empty unless Options.Diagrams was set.
+	Voicings []VoicingView
+	// Warning explains an approximate or missing shape, ready to display.
+	Warning string
 }
 
 // NavRef is a jump target for the section menu.
@@ -179,12 +197,25 @@ func Sheet(s song.Song, o Options) SheetView {
 	if s.Notes != "" {
 		v.Notes = strings.Split(s.Notes, "\n")
 	}
+	if o.Diagrams && s.Tuning != "" {
+		switch t, ok := voicing.ParseTuning(s.Tuning); {
+		case !ok:
+			v.TuningNote = "No se conoce la afinación " + s.Tuning +
+				", así que no se muestran posiciones de acordes."
+		case !t.Equal(voicing.Standard()):
+			// Said once for the sheet rather than on every chord, since in a
+			// song like this it applies to nearly all of them.
+			v.TuningNote = "Afinación " + t.Name +
+				": se muestran solo las posiciones estándar que siguen siendo válidas."
+		}
+	}
 
 	for _, c := range shown.Chords() {
-		v.Chords = append(v.Chords, ChordRef{
-			Text: c.Format(o.Notation),
-			ID:   ChordID(c),
-		})
+		ref := ChordRef{Text: c.Format(o.Notation), ID: ChordID(c)}
+		if o.Diagrams {
+			ref.Voicings, ref.Warning = chordVoicings(c, ref.Text, voicing.Options{Tuning: o.Tuning})
+		}
+		v.Chords = append(v.Chords, ref)
 	}
 
 	anchors := make(map[string]int)

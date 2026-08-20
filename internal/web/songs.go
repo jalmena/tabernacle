@@ -10,6 +10,7 @@ import (
 	"github.com/jalmena/tabernacle/internal/library"
 	"github.com/jalmena/tabernacle/internal/render"
 	"github.com/jalmena/tabernacle/internal/song"
+	"github.com/jalmena/tabernacle/internal/voicing"
 )
 
 // songBody is what the song templates receive.
@@ -62,10 +63,13 @@ func (s *Server) loadSong(r *http.Request) (songBody, songView, error) {
 	transpose := transposeFor(r, view.State.Transpose)
 	capo := capoViewFor(r, view.State.CapoView)
 
+	tuning, _ := voicing.ParseTuning(view.Song.Tuning)
 	sheet := render.Sheet(view.Song, render.Options{
 		Transpose: transpose,
 		Notation:  notation,
 		CapoView:  capo,
+		Diagrams:  true,
+		Tuning:    tuning,
 	})
 
 	notationName := config.NotationEnglish

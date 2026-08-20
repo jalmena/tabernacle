@@ -66,12 +66,14 @@
 			<h2>Acordes</h2>
 			<ul>
 				{{range .Sheet.Chords}}
-					<li><a class="chordref" id="chord-{{.ID}}" href="/?chord={{.Text}}"
-					       title="Ver canciones con {{.Text}}">{{.Text}}</a></li>
+					<li><a class="chordref" href="#acorde-{{.ID}}" data-chord="{{.ID}}"
+					       title="Ver la posición de {{.Text}}">{{.Text}}</a></li>
 				{{end}}
 			</ul>
 		</nav>
 	{{end}}
+
+	{{if .Sheet.TuningNote}}<p class="notice">{{.Sheet.TuningNote}}</p>{{end}}
 
 	<div class="sheet">
 		{{range .Sheet.Sections}}
@@ -84,7 +86,7 @@
 						<div class="block">
 							{{range .Lines}}
 								{{if .HasChord}}
-									<p class="line line-chords">{{range .Words}}<span class="word">{{range .Cells}}<span class="cell"><span class="chord">{{if .Chord}}<a href="/?chord={{.Chord}}" title="Canciones con {{.Chord}}">{{.Chord}}</a>{{end}}</span><span class="lyric">{{if .Annotation}}<span class="annotation">[{{.Annotation}}]</span>{{else}}{{.Text}}{{end}}</span></span>{{end}}</span>{{.Sep}}{{end}}</p>
+									<p class="line line-chords">{{range .Words}}<span class="word">{{range .Cells}}<span class="cell"><span class="chord">{{if .Chord}}<a href="#acorde-{{.ChordID}}" data-chord="{{.ChordID}}" title="Ver la posición de {{.Chord}}">{{.Chord}}</a>{{end}}</span><span class="lyric">{{if .Annotation}}<span class="annotation">[{{.Annotation}}]</span>{{else}}{{.Text}}{{end}}</span></span>{{end}}</span>{{.Sep}}{{end}}</p>
 								{{else}}
 									<p class="line">{{range .Words}}{{range .Cells}}{{if .Annotation}}<span class="annotation">[{{.Annotation}}]</span>{{else}}{{.Text}}{{end}}{{end}}{{.Sep}}{{end}}</p>
 								{{end}}
@@ -95,6 +97,43 @@
 			</section>
 		{{end}}
 	</div>
+
+	{{if .Sheet.Chords}}
+		<section class="chordbook" aria-label="Posiciones de los acordes">
+			<h2>Posiciones</h2>
+			<div class="cards">
+				{{range .Sheet.Chords}}
+					<article class="chordcard" id="acorde-{{.ID}}" data-chord="{{.ID}}">
+						<h3>{{.Text}}</h3>
+						{{if .Voicings}}
+							{{range .Voicings}}
+								<div class="shape{{if eq .Index 1}} on{{end}}" data-index="{{.Index}}">
+									{{diagram . $.Sheet.Notation}}
+									<p class="shapename">{{.Name}}</p>
+									<p class="shapedesc">{{.Fingering}}</p>
+								</div>
+							{{end}}
+							{{with index .Voicings 0}}
+								{{if gt .Total 1}}
+									<div class="shapenav">
+										<button class="btn btn-quiet" type="button" data-step="-1"
+										        aria-label="Posición anterior">←</button>
+										<span class="count"><span class="cur">1</span> de {{.Total}}</span>
+										<button class="btn btn-quiet" type="button" data-step="1"
+										        aria-label="Posición siguiente">→</button>
+									</div>
+								{{end}}
+							{{end}}
+						{{else}}
+							<p class="shapedesc">{{if .Warning}}{{.Warning}}{{else}}Sin posición conocida.{{end}}</p>
+						{{end}}
+						{{if .Warning}}{{if .Voicings}}<p class="shapewarn">{{.Warning}}</p>{{end}}{{end}}
+						<a class="findchord" href="/?chord={{.Text}}">Canciones con {{.Text}}</a>
+					</article>
+				{{end}}
+			</div>
+		</section>
+	{{end}}
 </div>
 {{end}}
 
