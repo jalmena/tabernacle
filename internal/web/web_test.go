@@ -26,7 +26,13 @@ type testServer struct {
 
 func newTestServer(t *testing.T, songs map[string]string) *testServer {
 	t.Helper()
-	base := t.TempDir()
+	return newTestServerWithEnv(t, songs, t.TempDir(), nil)
+}
+
+// newTestServerWithEnv builds a server with extra configuration, so a test can
+// exercise something like read-only mode without a second harness.
+func newTestServerWithEnv(t *testing.T, songs map[string]string, base string, extra map[string]string) *testServer {
+	t.Helper()
 	songsDir := filepath.Join(base, "songs")
 	trashDir := filepath.Join(base, "trash")
 
@@ -56,17 +62,15 @@ func newTestServer(t *testing.T, songs map[string]string) *testServer {
 		t.Fatal(err)
 	}
 
-	cfg, err := config.Load(func(k string) string {
-		switch k {
-		case "TABERNACLE_DATA_DIR":
-			return base
-		case "TABERNACLE_SONGS_DIR":
-			return songsDir
-		case "TABERNACLE_TRASH_DIR":
-			return trashDir
-		}
-		return ""
-	})
+	env := map[string]string{
+		"TABERNACLE_DATA_DIR":  base,
+		"TABERNACLE_SONGS_DIR": songsDir,
+		"TABERNACLE_TRASH_DIR": trashDir,
+	}
+	for k, v := range extra {
+		env[k] = v
+	}
+	cfg, err := config.Load(func(k string) string { return env[k] })
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -149,12 +153,14 @@ func TestRoutes(t *testing.T) {
 
 func TestMethodNotAllowed(t *testing.T) {
 	ts := newTestServer(t, basicSongs())
-	r := httptest.NewRequest(http.MethodPost, "/songs/traditional-amazing-grace", nil)
-	r.Host = "localhost"
-	w := httptest.NewRecorder()
-	ts.h.ServeHTTP(w, r)
-	if w.Code != http.StatusMethodNotAllowed {
-		t.Errorf("POST to a read-only route = %d, want 405", w.Code)
+	for _, target := range []string{"/tags", "/songs/traditional-amazing-grace/raw", "/healthz"} {
+		r := httptest.NewRequest(http.MethodPost, target, nil)
+		r.Host = "localhost"
+		w := httptest.NewRecorder()
+		ts.h.ServeHTTP(w, r)
+		if w.Code != http.StatusMethodNotAllowed {
+			t.Errorf("POST %s = %d, want 405", target, w.Code)
+		}
 	}
 }
 

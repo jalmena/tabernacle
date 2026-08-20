@@ -123,7 +123,20 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /songs/{slug}/sheet", s.handleSheetFragment)
 	mux.HandleFunc("GET /songs/{slug}/print", s.handlePrint)
 	mux.HandleFunc("GET /songs/{slug}/raw", s.handleRaw)
+	mux.HandleFunc("GET /songs/new", s.handleNewSong)
+	mux.HandleFunc("GET /songs/{slug}/edit", s.handleEditSong)
 	mux.HandleFunc("GET /tags", s.handleTags)
+
+	// Everything that changes the collection goes through s.mutating, which
+	// applies the read-only guard, the same-origin check and the body limit in
+	// one place, so a new write route cannot be added without them.
+	mux.HandleFunc("POST /songs", s.mutating(s.handleCreateSong))
+	mux.HandleFunc("POST /songs/{slug}", s.mutating(s.handleSaveSong))
+	mux.HandleFunc("POST /songs/{slug}/favorite", s.mutating(s.handleFavorite))
+	mux.HandleFunc("POST /songs/{slug}/delete", s.mutating(s.handleDelete))
+	mux.HandleFunc("POST /songs/{slug}/transpose", s.mutating(s.handleRememberTranspose))
+	mux.HandleFunc("POST /songs/{slug}/commit-transpose", s.mutating(s.handleCommitTranspose))
+	mux.HandleFunc("POST /reindex", s.mutating(s.handleReindex))
 	mux.HandleFunc("GET /healthz", s.handleHealth)
 	mux.HandleFunc("GET /robots.txt", s.handleRobots)
 	mux.HandleFunc("GET /static/{version}/{path...}", s.handleStatic)
@@ -151,6 +164,7 @@ type page struct {
 type navState struct {
 	Query    string
 	ReadOnly bool
+	Flash    string
 }
 
 // render executes a template into a buffer before writing anything.
@@ -160,6 +174,9 @@ type navState struct {
 func (s *Server) render(w http.ResponseWriter, r *http.Request, status int, name string, p page) {
 	p.AssetVersion = s.assetVersion
 	p.Nav.ReadOnly = s.cfg.ReadOnly
+	if p.Nav.Flash == "" {
+		p.Nav.Flash = flashFor(r)
+	}
 
 	var buf bytes.Buffer
 	if err := s.tpl.ExecuteTemplate(&buf, name, p); err != nil {

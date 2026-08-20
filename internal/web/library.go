@@ -202,13 +202,16 @@ func (s *Server) handleLibrary(w http.ResponseWriter, r *http.Request) {
 	s.render(w, r, http.StatusOK, "library.html", page_(title(res.Total, raw), raw, body))
 }
 
-// libraryURL rewrites one parameter of the current query, dropping it when the
-// value is empty and always resetting pagination, since page three of a
-// different filter is meaningless.
+// libraryURL rewrites one parameter of the current query.
+//
+// The parameter is dropped when the value is empty, pagination is always reset
+// because page three of a different filter is meaningless, and the flash code is
+// dropped because a message is meant to be seen once — carrying it into every
+// filter link would make it reappear on the next click.
 func libraryURL(qs map[string][]string, key, value string) string {
 	next := make(map[string][]string, len(qs)+1)
 	for k, v := range qs {
-		if k == key || k == "page" {
+		if k == key || k == "page" || k == "msg" {
 			continue
 		}
 		next[k] = v

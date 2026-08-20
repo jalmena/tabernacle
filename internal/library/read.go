@@ -206,3 +206,8 @@ func (l *Library) StartPeriodicSync(ctx context.Context, every time.Duration) {
 		}
 	}()
 }
+
+// State returns a song's saved reading preferences.
+func (l *Library) State(ctx context.Context, slug string) (index.SongState, error) {
+	return l.idx.State(ctx, slug)
+}

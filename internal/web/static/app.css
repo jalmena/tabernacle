@@ -499,3 +499,38 @@ a:hover { text-decoration-thickness: 2px; }
 	.cards { grid-template-columns: repeat(auto-fill, minmax(6rem, 1fr)); gap: 0.4rem; }
 	.chorddiagram { max-width: 4.5rem; }
 }
+
+/* -------------------------------------------------------------- authoring --- */
+
+.flash {
+	margin: 0;
+	padding: 0.5rem 0.875rem;
+	font-size: 0.875rem;
+	background: var(--chord-bg);
+	color: var(--chord);
+	border-bottom: 1px solid var(--rule);
+}
+
+.editor textarea {
+	display: block;
+	width: 100%;
+	padding: 0.7rem;
+	/* A .song file is written in fixed-width columns for a reason: tablature
+	 * only lines up that way. */
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-size: 0.875rem;
+	line-height: 1.5;
+	color: var(--ink);
+	background: var(--paper-raised);
+	border: 1px solid var(--rule);
+	border-radius: var(--radius);
+	resize: vertical;
+	tab-size: 4;
+	white-space: pre;
+	overflow-wrap: normal;
+}
+.editor textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.editor .filters { margin-top: 0.75rem; }
+
+/* Forms inside a row of buttons should not break the row. */
+.filters form, .sheet-foot form { display: inline; margin: 0; }

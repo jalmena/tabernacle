@@ -1,0 +1,35 @@
+{{template "head" .}}
+<body>
+{{template "top" .}}
+<main class="wrap">
+	{{with .Body}}
+		<h1>{{.Title}}</h1>
+
+		{{if .ErrMessage}}
+			<p class="notice">
+				{{if .ErrLine}}Línea <code>{{.ErrLine}}</code>: {{end}}{{.ErrMessage}}
+			</p>
+		{{end}}
+
+		{{if not .Editing}}
+			<p class="count">
+				Pega una canción en formato <code>.song</code>. Los acordes van entre corchetes,
+				donde caen: <code>A[G]mazing grace</code>. Las secciones empiezan con
+				<code>## Estrofa 1</code>.
+			</p>
+		{{end}}
+
+		<form method="post" action="{{.Action}}" class="editor">
+			{{if .Hash}}<input type="hidden" name="hash" value="{{.Hash}}">{{end}}
+			<textarea name="text" rows="24" spellcheck="false" autocapitalize="off"
+			          autocomplete="off" aria-label="Contenido del archivo .song"
+			          placeholder="---&#10;format: 1&#10;title: Mi canción&#10;artist: Alguien&#10;key: G&#10;---&#10;&#10;## Estrofa 1&#10;A[G]quí van las letras">{{.Text}}</textarea>
+			<div class="filters">
+				<button class="btn" type="submit">Guardar</button>
+				<a class="btn btn-quiet" href="{{.CancelURL}}">Cancelar</a>
+			</div>
+		</form>
+	{{end}}
+</main>
+</body>
+</html>

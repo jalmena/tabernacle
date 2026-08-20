@@ -18,6 +18,7 @@
 		<button class="btn" type="submit">Buscar</button>
 	</form>
 </header>
+{{if .Nav.Flash}}<p class="flash noprint" role="status">{{.Nav.Flash}}</p>{{end}}
 {{end}}
 
 {{/* The sheet and its controls. The full song page and the fragment endpoint

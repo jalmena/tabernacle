@@ -449,10 +449,11 @@ Complete and tested:
 
 - [x] Chord diagrams, alternative voicings, and the chord panel
 
+- [x] Authoring: paste a song, edit the raw file, favourites, delete to trash
+
 In progress, in this order:
 
-- [ ] Authoring: paste a song, edit the raw file
-- [ ] Import and export, favourites
+- [ ] Import and export
 
 Later: setlists, and whatever turns out to be genuinely useful rather than merely possible.
 

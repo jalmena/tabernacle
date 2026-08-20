@@ -8,6 +8,13 @@
 				{{range .Filters}}<a class="pill" href="{{.ClearURL}}" title="Quitar este filtro">{{.Label}} ✕</a>{{end}}
 				{{range .SortURLs}}<a class="btn btn-quiet{{if .On}} on{{end}}" href="{{.URL}}">{{.Label}}</a>{{end}}
 				<a class="btn btn-quiet" href="/tags">Etiquetas</a>
+				{{if not $.Nav.ReadOnly}}
+					<a class="btn" href="/songs/new">Añadir</a>
+					<form method="post" action="/reindex">
+						<button class="btn btn-quiet" type="submit"
+						        title="Buscar cambios hechos fuera de la aplicación">Revisar</button>
+					</form>
+				{{end}}
 			</div>
 		{{end}}
 
@@ -52,6 +59,7 @@
 					<p>Pon tus archivos <code>.song</code> en:</p>
 					<p><code>{{.Empty.SongsDir}}/Artista/Título.song</code></p>
 					<p>Aparecerán aquí en cuanto se revise la carpeta.</p>
+					{{if not $.Nav.ReadOnly}}<p><a class="btn" href="/songs/new">Añadir una canción</a></p>{{end}}
 				{{end}}
 			</div>
 		{{end}}

@@ -21,6 +21,8 @@ type songBody struct {
 	Broken   bool
 	ParseMsg string
 	ParseAt  int
+	Favorite bool
+	ReadOnly bool
 	PrintURL string
 	RawURL   string
 	EditURL  string
@@ -87,8 +89,11 @@ func (s *Server) loadSong(r *http.Request) (songBody, songView, error) {
 	body := songBody{
 		Slug:     slug,
 		Sheet:    sheet,
+		Favorite: view.Record.Favorite(),
+		ReadOnly: s.cfg.ReadOnly,
 		PrintURL: cur.printing().URL(),
 		RawURL:   "/songs/" + slug + "/raw",
+		EditURL:  "/songs/" + slug + "/edit",
 		Controls: controlSet{
 			DownURL:  cur.withTranspose(transpose - 1).URL(),
 			UpURL:    cur.withTranspose(transpose + 1).URL(),

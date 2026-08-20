@@ -17,7 +17,38 @@
 		{{template "songsheet" .}}
 
 		<footer class="sheet-foot noprint">
-			<a class="btn btn-quiet" href="{{.RawURL}}">Descargar .song</a>
+			<div class="filters">
+				<a class="btn btn-quiet" href="{{.RawURL}}">Descargar .song</a>
+				{{if not .ReadOnly}}
+					<a class="btn btn-quiet" href="{{.EditURL}}">Editar archivo</a>
+
+					<form method="post" action="/songs/{{.Slug}}/favorite">
+						<input type="hidden" name="on" value="{{if .Favorite}}0{{else}}1{{end}}">
+						<button class="btn btn-quiet{{if .Favorite}} on{{end}}" type="submit">
+							{{if .Favorite}}★ Favorita{{else}}☆ Favorita{{end}}
+						</button>
+					</form>
+
+					{{if .Controls.CanReset}}
+						<form method="post" action="/songs/{{.Slug}}/transpose">
+							<input type="hidden" name="t" value="{{.Controls.Transpose}}">
+							<button class="btn btn-quiet" type="submit"
+							        title="Abrir esta canción siempre en este tono">Recordar el tono</button>
+						</form>
+						<form method="post" action="/songs/{{.Slug}}/commit-transpose">
+							<input type="hidden" name="t" value="{{.Controls.Transpose}}">
+							<button class="btn btn-quiet" type="submit"
+							        title="Reescribir el archivo en este tono">Guardar en el archivo</button>
+						</form>
+					{{end}}
+
+					<form method="post" action="/songs/{{.Slug}}/delete"
+					      onsubmit="return true">
+						<button class="btn btn-quiet" type="submit"
+						        title="Mover a la papelera">Eliminar</button>
+					</form>
+				{{end}}
+			</div>
 		</footer>
 	{{end}}
 </main>
