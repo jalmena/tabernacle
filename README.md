@@ -384,9 +384,18 @@ all** and is intended to stay that way.
 The application has exactly one direct dependency: **`modernc.org/sqlite`**, a pure-Go SQLite. It
 is chosen over the faster cgo `mattn/go-sqlite3` because `CGO_ENABLED=0` yields a static binary,
 means no C toolchain is needed to build the project anywhere, and makes the arm64 image free to
-cross-compile. Be aware of the honest cost: it brings in around a dozen transitive
-`modernc.org/*` modules. At personal-library scale the performance difference is irrelevant and the
+cross-compile. At personal-library scale the performance difference is irrelevant and the
 build simplicity is not.
+
+For the record, the actual cost is one direct dependency and nine indirect ones, all from the
+same well-maintained family:
+
+```
+modernc.org/sqlite  modernc.org/libc  modernc.org/mathutil  modernc.org/memory
+golang.org/x/sys  github.com/dustin/go-humanize  github.com/google/uuid
+github.com/mattn/go-isatty  github.com/ncruces/go-strftime
+github.com/remyoudompheng/bigfft
+```
 
 Anything else needs a concrete reason that the standard library cannot address.
 
