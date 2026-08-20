@@ -1,0 +1,61 @@
+{{template "head" .}}
+<body>
+{{template "top" .}}
+<main class="wrap wrap-wide">
+	{{with .Body}}
+		{{if or .Filters .Result.Total}}
+			<div class="filters">
+				{{range .Filters}}<a class="pill" href="{{.ClearURL}}" title="Quitar este filtro">{{.Label}} ✕</a>{{end}}
+				{{range .SortURLs}}<a class="btn btn-quiet{{if .On}} on{{end}}" href="{{.URL}}">{{.Label}}</a>{{end}}
+				<a class="btn btn-quiet" href="/tags">Etiquetas</a>
+			</div>
+		{{end}}
+
+		{{if .Result.Total}}
+			<p class="count">{{.Result.Total}} {{plural .Result.Total "canción" "canciones"}}</p>
+		{{end}}
+
+		{{if .Result.Hits}}
+			<ul class="songlist">
+				{{range .Result.Hits}}
+					<li>
+						<a href="{{.URL}}">
+							<div class="t">{{if .Favorite}}★ {{end}}{{.Title}}</div>
+							{{if .Artist}}<div class="a">{{.Artist}}</div>{{end}}
+							<div class="meta">
+								{{if .Key}}<span>{{.Key}}</span>{{end}}
+								{{if .Capo}}<span>cejilla {{.Capo}}</span>{{end}}
+								{{range .Tags}}<span class="pill">{{.}}</span>{{end}}
+								{{if .Broken}}<span class="pill pill-warn">error de sintaxis</span>{{end}}
+							</div>
+							{{if .Frags}}
+								<div class="excerpt">{{range .Frags}}{{if .Hit}}<mark>{{.Text}}</mark>{{else}}{{.Text}}{{end}}{{end}}</div>
+							{{end}}
+						</a>
+					</li>
+				{{end}}
+			</ul>
+
+			{{if or .PrevURL .NextURL}}
+				<div class="filters" style="margin-top:1rem">
+					{{if .PrevURL}}<a class="btn" href="{{.PrevURL}}">← Anteriores</a>{{end}}
+					{{if .NextURL}}<a class="btn" href="{{.NextURL}}">Siguientes →</a>{{end}}
+				</div>
+			{{end}}
+		{{else}}
+			<div class="empty">
+				{{if .Empty.Searching}}
+					<p>No hay ninguna canción que coincida.</p>
+					<p><a href="/">Ver toda la biblioteca</a></p>
+				{{else}}
+					<p><b>Tu tabernáculo está vacío.</b></p>
+					<p>Pon tus archivos <code>.song</code> en:</p>
+					<p><code>{{.Empty.SongsDir}}/Artista/Título.song</code></p>
+					<p>Aparecerán aquí en cuanto se revise la carpeta.</p>
+				{{end}}
+			</div>
+		{{end}}
+	{{end}}
+</main>
+</body>
+</html>

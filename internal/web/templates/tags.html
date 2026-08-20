@@ -1,0 +1,29 @@
+{{template "head" .}}
+<body>
+{{template "top" .}}
+<main class="wrap wrap-wide">
+	{{with .Body}}
+		<h1>Etiquetas</h1>
+		{{if .Tags}}
+			<div class="filters">
+				{{range .Tags}}<a class="pill" href="/?tag={{.Name}}">{{.Name}} · {{.Count}}</a>{{end}}
+			</div>
+		{{else}}
+			<p class="count">Ninguna canción tiene etiquetas todavía.</p>
+		{{end}}
+
+		<h1>Artistas</h1>
+		{{if .Artists}}
+			<ul class="songlist">
+				{{range .Artists}}
+					<li><a href="/?artist={{.Name}}"><span class="t">{{.Name}}</span>
+						<span class="a">{{.Count}} {{plural .Count "canción" "canciones"}}</span></a></li>
+				{{end}}
+			</ul>
+		{{else}}
+			<p class="count">Todavía no hay artistas.</p>
+		{{end}}
+	{{end}}
+</main>
+</body>
+</html>

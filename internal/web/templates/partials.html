@@ -1,0 +1,117 @@
+{{define "head"}}<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>{{if .Title}}{{.Title}} · Tabernacle{{else}}Tabernacle{{end}}</title>
+<link rel="stylesheet" href="/static/{{.AssetVersion}}/app.css">
+</head>
+{{end}}
+
+{{define "top"}}
+<header class="top noprint">
+	<a class="brand" href="/">Taber<span>nacle</span></a>
+	<form class="search" role="search" action="/" method="get">
+		<input type="search" name="q" value="{{.Nav.Query}}" placeholder="Buscar canciones, artistas, letras…"
+		       aria-label="Buscar en la biblioteca" autocomplete="off">
+		<button class="btn" type="submit">Buscar</button>
+	</form>
+</header>
+{{end}}
+
+{{/* The sheet and its controls. The full song page and the fragment endpoint
+     both render this, so the two can never drift apart. */}}
+{{define "songsheet"}}
+<div class="controls noprint" id="controls">
+	<div class="group" role="group" aria-label="Transportar">
+		<a class="btn" data-sheet="down" href="{{.Controls.DownURL}}" title="Bajar un semitono" rel="nofollow">−</a>
+		<span class="now" aria-live="polite">{{if .Controls.KeyLabel}}{{.Controls.KeyLabel}}{{else}}{{.Controls.StepLabel}}{{end}}</span>
+		<a class="btn" data-sheet="up" href="{{.Controls.UpURL}}" title="Subir un semitono" rel="nofollow">+</a>
+		{{if .Controls.CanReset}}
+			<a class="btn btn-quiet" data-sheet="reset" href="{{.Controls.ResetURL}}"
+			   title="Volver al tono original ({{.Controls.OrigKey}})" rel="nofollow">Original</a>
+		{{end}}
+	</div>
+
+	<span class="sep"></span>
+
+	<a class="btn btn-quiet" data-sheet="notation" href="{{.Controls.NotationURL}}"
+	   title="Cambiar la notación de las notas" rel="nofollow">{{.Controls.NotationLabel}}</a>
+
+	{{if .Controls.ShowCapo}}
+		<a class="btn btn-quiet{{if .Controls.CapoOn}} on{{end}}" data-sheet="capo"
+		   href="{{.Controls.CapoURL}}" aria-pressed="{{if .Controls.CapoOn}}true{{else}}false{{end}}"
+		   title="Mostrar los acordes que suenan con la cejilla en el traste {{.Controls.Capo}}"
+		   rel="nofollow">Suena</a>
+	{{end}}
+
+	<a class="btn btn-quiet" href="{{.PrintURL}}">Imprimir</a>
+</div>
+
+<div id="sheet">
+	{{if .Sheet.Shifted}}
+		<p class="notice">
+			{{if .Controls.CapoOn}}
+				Se muestran los acordes que <b>suenan</b> con la cejilla en el traste {{.Controls.Capo}}.
+			{{else}}
+				Transportada {{.Controls.StepLabel}}{{if .Controls.OrigKey}} desde {{.Controls.OrigKey}}{{end}}.
+			{{end}}
+			El archivo no se ha modificado.
+		</p>
+	{{end}}
+
+	{{if .Sheet.Chords}}
+		<nav class="usedchords" aria-label="Acordes utilizados">
+			<h2>Acordes</h2>
+			<ul>
+				{{range .Sheet.Chords}}
+					<li><a class="chordref" id="chord-{{.ID}}" href="/?chord={{.Text}}"
+					       title="Ver canciones con {{.Text}}">{{.Text}}</a></li>
+				{{end}}
+			</ul>
+		</nav>
+	{{end}}
+
+	<div class="sheet">
+		{{range .Sheet.Sections}}
+			<section class="section section-{{.Kind}}" id="{{.Anchor}}">
+				{{if .Label}}<h2>{{.Label}}</h2>{{end}}
+				{{range .Blocks}}
+					{{if .Verbatim}}
+						<pre class="tab" {{if .Info}}data-kind="{{.Info}}"{{end}}>{{.Text}}</pre>
+					{{else}}
+						<div class="block">
+							{{range .Lines}}
+								{{if .HasChord}}
+									<p class="line line-chords">{{range .Words}}<span class="word">{{range .Cells}}<span class="cell"><span class="chord">{{if .Chord}}<a href="/?chord={{.Chord}}" title="Canciones con {{.Chord}}">{{.Chord}}</a>{{end}}</span><span class="lyric">{{if .Annotation}}<span class="annotation">[{{.Annotation}}]</span>{{else}}{{.Text}}{{end}}</span></span>{{end}}</span>{{.Sep}}{{end}}</p>
+								{{else}}
+									<p class="line">{{range .Words}}{{range .Cells}}{{if .Annotation}}<span class="annotation">[{{.Annotation}}]</span>{{else}}{{.Text}}{{end}}{{end}}{{.Sep}}{{end}}</p>
+								{{end}}
+							{{end}}
+						</div>
+					{{end}}
+				{{end}}
+			</section>
+		{{end}}
+	</div>
+</div>
+{{end}}
+
+{{define "songfacts"}}
+<div class="songhead">
+	<h1>{{.Sheet.Title}}</h1>
+	{{if .Sheet.Artist}}<p class="by">{{.Sheet.Artist}}</p>{{end}}
+	<ul class="facts">
+		{{if .Sheet.Key}}<li>Tono <b>{{.Sheet.Key}}</b></li>{{end}}
+		{{if .Sheet.Capo}}<li>Cejilla <b>{{.Sheet.Capo}}</b></li>{{end}}
+		{{if .Sheet.Tuning}}<li>Afinación <b>{{.Sheet.Tuning}}</b></li>{{end}}
+		{{if .Sheet.Tempo}}<li><b>{{.Sheet.Tempo}}</b> ppm</li>{{end}}
+		{{if .Sheet.Meter}}<li>Compás <b>{{.Sheet.Meter}}</b></li>{{end}}
+		{{range .Sheet.Tags}}<li><a class="pill" href="/?tag={{.}}">{{.}}</a></li>{{end}}
+	</ul>
+	{{range .Sheet.Notes}}<p class="by">{{.}}</p>{{end}}
+</div>
+{{end}}
+
+{{define "scripts"}}<script src="/static/{{.AssetVersion}}/app.js" defer></script>{{end}}

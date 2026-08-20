@@ -1,0 +1,396 @@
+/* Tabernacle.
+ *
+ * Mobile first, because the usual reading device is a phone propped against a
+ * guitar case. The song sheet gets the whole width and almost all of the
+ * contrast; everything else stays out of the way.
+ */
+
+:root {
+	--ink: #1a1a1a;
+	--ink-soft: #5c5c5c;
+	--ink-faint: #8a8a8a;
+	--paper: #fbfaf7;
+	--paper-raised: #ffffff;
+	--rule: #e2ddd3;
+	--chord: #9a3412;
+	--chord-bg: #fdf1e7;
+	--accent: #7c2d12;
+	--annotation: #6b7280;
+	--warn-bg: #fef3c7;
+	--warn-ink: #78350f;
+	--warn-rule: #fcd34d;
+
+	--sheet-width: 46rem;
+	--radius: 6px;
+
+	/* One knob for the whole sheet, so a reader can size the song to the
+	 * distance between their eyes and the music stand. */
+	--song-size: 1.0625rem;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--ink: #ece9e3;
+		--ink-soft: #a9a29a;
+		--ink-faint: #7d766e;
+		--paper: #16151300;
+		--paper: #171614;
+		--paper-raised: #1f1e1b;
+		--rule: #33302b;
+		--chord: #fdba74;
+		--chord-bg: #2c211a;
+		--accent: #fdba74;
+		--annotation: #9aa0a6;
+		--warn-bg: #2d2410;
+		--warn-ink: #fde68a;
+		--warn-rule: #7c5c12;
+	}
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+	-webkit-text-size-adjust: 100%;
+}
+
+body {
+	margin: 0;
+	background: var(--paper);
+	color: var(--ink);
+	font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+	line-height: 1.5;
+}
+
+a { color: var(--accent); }
+a:hover { text-decoration-thickness: 2px; }
+
+/* ---------------------------------------------------------------- header --- */
+
+.top {
+	position: sticky;
+	top: 0;
+	z-index: 10;
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	padding: 0.5rem 0.75rem;
+	background: var(--paper-raised);
+	border-bottom: 1px solid var(--rule);
+}
+
+/* Navigation must cost as little vertical space as possible: every line it
+ * takes is a line of song the reader cannot see. */
+.brand {
+	font-weight: 650;
+	letter-spacing: -0.01em;
+	text-decoration: none;
+	color: var(--ink);
+	white-space: nowrap;
+}
+.brand span { color: var(--chord); }
+
+.search { flex: 1; min-width: 0; display: flex; gap: 0.4rem; }
+.search input[type="search"] {
+	flex: 1;
+	min-width: 0;
+	padding: 0.45rem 0.6rem;
+	font-size: 1rem;
+	color: var(--ink);
+	background: var(--paper);
+	border: 1px solid var(--rule);
+	border-radius: var(--radius);
+}
+.search input[type="search"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.wrap { max-width: var(--sheet-width); margin: 0 auto; padding: 1rem 0.875rem 4rem; }
+.wrap-wide { max-width: 64rem; }
+
+/* ---------------------------------------------------------------- buttons --- */
+
+.btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.3rem;
+	/* 44px is the smallest target that is reliably hittable with a thumb while
+	 * holding a guitar. */
+	min-height: 2.75rem;
+	min-width: 2.75rem;
+	padding: 0 0.7rem;
+	font-size: 0.9375rem;
+	font-weight: 500;
+	color: var(--ink);
+	background: var(--paper-raised);
+	border: 1px solid var(--rule);
+	border-radius: var(--radius);
+	text-decoration: none;
+	cursor: pointer;
+}
+.btn:hover { border-color: var(--ink-faint); }
+.btn[aria-pressed="true"], .btn.on {
+	color: var(--chord);
+	border-color: var(--chord);
+	background: var(--chord-bg);
+}
+.btn-quiet { border-color: transparent; background: transparent; }
+
+/* ---------------------------------------------------------------- library --- */
+
+.songlist { list-style: none; margin: 0; padding: 0; }
+.songlist li { border-bottom: 1px solid var(--rule); }
+.songlist a {
+	display: block;
+	padding: 0.7rem 0.25rem;
+	text-decoration: none;
+	color: inherit;
+}
+.songlist a:hover { background: var(--paper-raised); }
+.songlist .t { font-weight: 550; }
+.songlist .a { color: var(--ink-soft); font-size: 0.9375rem; }
+.songlist .meta {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.4rem 0.7rem;
+	margin-top: 0.2rem;
+	font-size: 0.8125rem;
+	color: var(--ink-faint);
+}
+.songlist .excerpt {
+	margin-top: 0.25rem;
+	font-size: 0.875rem;
+	color: var(--ink-soft);
+}
+.songlist mark {
+	background: var(--chord-bg);
+	color: var(--chord);
+	border-radius: 3px;
+	padding: 0 2px;
+}
+
+.pill {
+	display: inline-block;
+	padding: 0.05rem 0.45rem;
+	font-size: 0.75rem;
+	border: 1px solid var(--rule);
+	border-radius: 999px;
+	color: var(--ink-soft);
+	text-decoration: none;
+}
+.pill-warn { background: var(--warn-bg); color: var(--warn-ink); border-color: var(--warn-rule); }
+
+.filters { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0 0 1rem; }
+.count { color: var(--ink-faint); font-size: 0.875rem; margin: 0 0 0.75rem; }
+.empty { padding: 3rem 1rem; text-align: center; color: var(--ink-soft); }
+.empty code {
+	background: var(--paper-raised);
+	border: 1px solid var(--rule);
+	border-radius: 4px;
+	padding: 0.1rem 0.3rem;
+}
+
+/* ------------------------------------------------------------------- song --- */
+
+.songhead { margin-bottom: 0.75rem; }
+.songhead h1 { margin: 0; font-size: 1.375rem; line-height: 1.25; }
+.songhead .by { margin: 0.15rem 0 0; color: var(--ink-soft); }
+.facts {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.3rem 0.6rem;
+	margin: 0.5rem 0 0;
+	padding: 0;
+	list-style: none;
+	font-size: 0.8125rem;
+	color: var(--ink-soft);
+}
+.facts b { font-weight: 600; color: var(--ink); }
+
+.notice {
+	margin: 0.75rem 0;
+	padding: 0.6rem 0.75rem;
+	font-size: 0.875rem;
+	background: var(--warn-bg);
+	color: var(--warn-ink);
+	border: 1px solid var(--warn-rule);
+	border-radius: var(--radius);
+}
+.notice code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+/* Controls sit above the song and scroll away with it: while playing, the
+ * reader wants the words, not the buttons. */
+.controls {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.35rem;
+	margin: 0.75rem 0;
+	padding: 0.5rem 0;
+	border-top: 1px solid var(--rule);
+	border-bottom: 1px solid var(--rule);
+}
+.controls .group { display: flex; align-items: center; gap: 0.25rem; }
+.controls .sep { flex: 1; }
+.controls .now {
+	min-width: 3.25rem;
+	text-align: center;
+	font-variant-numeric: tabular-nums;
+	font-size: 0.875rem;
+	color: var(--ink-soft);
+}
+
+.usedchords { margin: 0 0 1.25rem; }
+.usedchords h2 {
+	margin: 0 0 0.35rem;
+	font-size: 0.75rem;
+	font-weight: 600;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--ink-faint);
+}
+.usedchords ul { display: flex; flex-wrap: wrap; gap: 0.3rem; margin: 0; padding: 0; list-style: none; }
+
+/* A chord looks like a chord everywhere it appears: in the panel above the
+ * song and over the words themselves. */
+.chordref, .chord {
+	font-weight: 650;
+	color: var(--chord);
+	font-variant-numeric: tabular-nums;
+}
+.chordref {
+	display: inline-block;
+	padding: 0.15rem 0.5rem;
+	font-size: 0.9375rem;
+	background: var(--chord-bg);
+	border: 1px solid transparent;
+	border-radius: 4px;
+	text-decoration: none;
+}
+.chordref:hover { border-color: var(--chord); }
+
+/* -------------------------------------------------------------- the sheet --- */
+
+.sheet { font-size: var(--song-size); }
+
+.section { margin: 0 0 1.25rem; }
+.section h2 {
+	margin: 0 0 0.35rem;
+	font-size: 0.8125rem;
+	font-weight: 650;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var(--ink-soft);
+}
+.section-chorus h2 { color: var(--chord); }
+.section-chorus .block { border-left: 2px solid var(--chord-bg); padding-left: 0.6rem; margin-left: -0.6rem; }
+
+/* A stanza is the unit that must not be split across a printed page. */
+.block { margin: 0 0 0.7rem; }
+.block:last-child { margin-bottom: 0; }
+
+.line {
+	/* Preserves the spacing the writer put in the file, and still lets the line
+	 * wrap between words. */
+	white-space: pre-wrap;
+	margin: 0;
+}
+.line-chords { margin-bottom: 0.1rem; }
+
+/* A word never wraps internally. This is the whole reason the view model has a
+ * word level: in "A[G]mazing" the chord sits inside the word, and breaking
+ * there would split the word and strand the chord. */
+.word { display: inline-flex; white-space: pre; vertical-align: bottom; }
+.cell { display: inline-flex; flex-direction: column; align-items: flex-start; }
+
+.cell .chord {
+	display: block;
+	font-size: 0.8125em;
+	line-height: 1.35;
+	/* Keeps the chord row a constant height whether or not this cell has one,
+	 * so the words below stay on a straight baseline. */
+	min-height: 1.35em;
+	padding-right: 0.4em;
+	white-space: pre;
+}
+.cell .chord a { color: inherit; text-decoration: none; }
+.cell .chord a:hover { text-decoration: underline; }
+
+.annotation {
+	font-size: 0.8125em;
+	font-style: italic;
+	color: var(--annotation);
+	white-space: pre;
+}
+
+/* Tablature is fixed-width by nature and must never reflow; it scrolls inside
+ * its own box rather than forcing the page sideways. */
+.tab {
+	margin: 0 0 0.7rem;
+	padding: 0.6rem 0.7rem;
+	overflow-x: auto;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-size: 0.8125rem;
+	line-height: 1.45;
+	background: var(--paper-raised);
+	border: 1px solid var(--rule);
+	border-radius: var(--radius);
+	white-space: pre;
+	tab-size: 4;
+}
+
+.sheet-foot { margin-top: 2rem; padding-top: 0.75rem; border-top: 1px solid var(--rule); }
+
+/* ---------------------------------------------------------------- larger --- */
+
+@media (min-width: 40rem) {
+	:root { --song-size: 1.125rem; }
+	.wrap { padding: 1.5rem 1.25rem 5rem; }
+	.songhead h1 { font-size: 1.75rem; }
+}
+
+/* ----------------------------------------------------------------- print --- */
+
+@media print {
+	/* A4 with margins a home printer can actually reach. */
+	@page { size: A4 portrait; margin: 14mm 12mm; }
+
+	:root {
+		--ink: #000;
+		--ink-soft: #333;
+		--ink-faint: #555;
+		--paper: #fff;
+		--paper-raised: #fff;
+		--rule: #bbb;
+		--chord: #000;
+		--chord-bg: transparent;
+		--annotation: #444;
+		--song-size: 10.5pt;
+	}
+
+	/* Nothing interactive belongs on paper. */
+	.top, .controls, .sheet-foot, .noprint { display: none !important; }
+
+	body { background: #fff; }
+	.wrap { max-width: none; margin: 0; padding: 0; }
+
+	.songhead h1 { font-size: 15pt; }
+	.songhead .by { font-size: 11pt; }
+	.facts { font-size: 8.5pt; }
+
+	.section h2 { font-size: 8.5pt; }
+
+	/* Keep a stanza whole, and never leave a heading alone at the foot of a
+	 * page. Both are what make the difference between a printout and a song
+	 * sheet worth putting in a binder. */
+	.block, .tab { break-inside: avoid; page-break-inside: avoid; }
+	.section h2 { break-after: avoid; page-break-after: avoid; }
+	.section { break-inside: auto; }
+
+	.usedchords { break-inside: avoid; }
+	.chordref { border: 1px solid #999; background: transparent; }
+
+	.tab { border: 1px solid #999; background: transparent; }
+
+	/* A printed sheet has no use for a URL after every chord name. */
+	a { color: inherit; text-decoration: none; }
+	a[href]::after { content: none !important; }
+}

@@ -1,0 +1,26 @@
+{{template "head" .}}
+<body>
+{{template "top" .}}
+<main class="wrap">
+	{{with .Body}}
+		{{template "songfacts" .}}
+
+		{{if .Broken}}
+			<p class="notice">
+				Este archivo tiene un error de sintaxis{{if .ParseAt}} en la línea <code>{{.ParseAt}}</code>{{end}}:
+				<code>{{.ParseMsg}}</code>.
+				Se muestra la última versión que sí se pudo leer.
+				<a href="{{.RawURL}}">Descargar el archivo</a> para corregirlo.
+			</p>
+		{{end}}
+
+		{{template "songsheet" .}}
+
+		<footer class="sheet-foot noprint">
+			<a class="btn btn-quiet" href="{{.RawURL}}">Descargar .song</a>
+		</footer>
+	{{end}}
+</main>
+{{template "scripts" .}}
+</body>
+</html>

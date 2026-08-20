@@ -1,0 +1,3 @@
+{{/* Only the swappable region. The script pulls #sheet and #controls out of
+     this and replaces them in place, so the reader keeps their position. */}}
+{{with .Body}}{{template "songsheet" .}}{{end}}

@@ -4,7 +4,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -20,6 +19,7 @@ import (
 	"github.com/jalmena/tabernacle/internal/index"
 	"github.com/jalmena/tabernacle/internal/library"
 	"github.com/jalmena/tabernacle/internal/songfs"
+	"github.com/jalmena/tabernacle/internal/web"
 )
 
 // version is set at build time with -ldflags "-X main.version=v1.2.3" and
@@ -97,12 +97,14 @@ func run() error {
 	}
 	lib.StartPeriodicSync(ctx, cfg.ScanInterval)
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("GET /healthz", healthzHandler(lib))
+	srv2, err := web.New(lib, cfg, log)
+	if err != nil {
+		return err
+	}
 
 	srv := &http.Server{
 		Addr:    cfg.Addr,
-		Handler: mux,
+		Handler: srv2.Handler(),
 		// Without this a single idle connection can hold a request open
 		// indefinitely; it is the one timeout that is always worth setting.
 		ReadHeaderTimeout: 10 * time.Second,
@@ -149,31 +151,6 @@ func ensureDirs(cfg config.Config) error {
 		}
 	}
 	return nil
-}
-
-// healthzHandler reports liveness, plus a count of what is indexed.
-//
-// It stays healthy even when the index is empty or songs fail to parse. Those
-// are conditions for the user to see in the interface, not reasons for a
-// container runtime to restart-loop a working application.
-func healthzHandler(lib *library.Library) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.Header().Set("Cache-Control", "no-store")
-
-		body := map[string]any{"status": "ok", "version": buildVersion()}
-		if stats, err := lib.Stats(r.Context()); err != nil {
-			// The index is unreachable, which the application cannot serve
-			// around, so this one really is unhealthy.
-			w.WriteHeader(http.StatusServiceUnavailable)
-			body["status"] = "unavailable"
-		} else {
-			body["songs"] = stats.Songs
-			body["artists"] = stats.Artists
-			body["broken"] = stats.Broken
-		}
-		_ = json.NewEncoder(w).Encode(body)
-	}
 }
 
 func buildVersion() string {

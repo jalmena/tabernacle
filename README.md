@@ -442,14 +442,16 @@ Complete and tested:
 - [x] The `.song` format: parsing, serialisation, versioning, byte-identical round trip, fuzzing
 - [x] Chords: parsing, note names in both systems, transposition, enharmonic spelling
 - [x] Configuration, the binary, health endpoint, container image, compose packaging
+- [x] Song storage: a confined collection directory, atomic writes, rename detection
+- [x] The search index, rebuildable from the files at any time
+- [x] Library browsing, full-text search, tags and artists
+- [x] The song sheet: transposition, both note-name systems, the capo view, printing
 
 In progress, in this order:
 
-- [ ] Song storage and the search index
-- [ ] Library browsing and search
-- [ ] The song sheet, transposition and printing
-- [ ] Chord diagrams and voicings
-- [ ] Authoring, import and export, favourites and tags
+- [ ] Chord diagrams and alternative voicings
+- [ ] Authoring: paste a song, edit the raw file
+- [ ] Import and export, favourites
 
 Later: setlists, and whatever turns out to be genuinely useful rather than merely possible.
 
