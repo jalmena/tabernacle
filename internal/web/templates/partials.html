@@ -58,13 +58,6 @@
 	<a class="btn btn-quiet" data-sheet="notation" href="{{.Controls.NotationURL}}"
 	   title="Ver las notas como {{.Controls.NotationLabel}}" rel="nofollow">{{.Controls.NotationLabel}}</a>
 
-	{{if .Controls.ShowCapo}}
-		<a class="btn btn-quiet{{if .Controls.CapoOn}} on{{end}}" data-sheet="capo"
-		   href="{{.Controls.CapoURL}}" aria-pressed="{{if .Controls.CapoOn}}true{{else}}false{{end}}"
-		   title="Mostrar los acordes que suenan con la cejilla en el traste {{.Controls.Capo}}"
-		   rel="nofollow">Suena</a>
-	{{end}}
-
 	{{if .Controls.ShowSimplify}}
 		<a class="btn btn-quiet{{if .Controls.SimplifyOn}} on{{end}}" data-sheet="simplify"
 		   href="{{.Controls.SimplifyURL}}"

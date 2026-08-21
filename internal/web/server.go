@@ -395,14 +395,3 @@ func simplifyFor(r *http.Request, stored bool) bool {
 	}
 	return stored
 }
-
-func capoViewFor(r *http.Request, stored string) render.CapoView {
-	pick := r.URL.Query().Get("capo")
-	if pick == "" {
-		pick = stored
-	}
-	if pick == string(render.CapoSounding) {
-		return render.CapoSounding
-	}
-	return render.CapoWritten
-}

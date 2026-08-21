@@ -192,18 +192,25 @@ func TestNotationSwitchesToSolfege(t *testing.T) {
 	}
 }
 
-func TestTheCapoViewShowsWhatItSounds(t *testing.T) {
+// A capo is written on the sheet as information. It never moves the chords: the
+// symbols name the shapes you hold, which is what a capo is for.
+func TestTheCapoIsShownAndNeverApplied(t *testing.T) {
 	in := start(t, nil)
 	in.seed()
 
-	shapes := in.page("/songs/otro-con-cejilla")
-	if !strings.Contains(shapes, "G") {
-		t.Error("the shapes view does not show the written chords")
+	res := in.get("/songs/otro-con-cejilla")
+	if res.Status != http.StatusOK {
+		t.Fatalf("status = %d", res.Status)
 	}
-	sounding := in.page("/songs/otro-con-cejilla?capo=sounding")
-	// A capo of 2 turns a G shape into a sounding A.
-	if !strings.Contains(sounding, "A") {
-		t.Error("the sounding view does not transpose by the capo")
+	res.mustShow("Cejilla", "2")
+
+	// The chords are the written ones, here and with any leftover query.
+	chords := strings.Join(chordCards(res.Body), " ")
+	if chords != "G C D" {
+		t.Errorf("chords = %q, want \"G C D\" as written", chords)
+	}
+	if got := strings.Join(chordCards(in.page("/songs/otro-con-cejilla?capo=sounding")), " "); got != chords {
+		t.Errorf("a capo query changed the chords to %q", got)
 	}
 }
 

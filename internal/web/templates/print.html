@@ -24,11 +24,7 @@
 			     the wrong key with nothing to say so is a wasted page. */}}
 			{{if .Sheet.Shifted}}
 				<p class="transposed">
-					{{if .Controls.CapoOn}}
-						Acordes que suenan con la cejilla en el traste {{.Controls.Capo}}
-					{{else}}
-						{{.Controls.StepLabel}}{{if .Controls.OrigKey}} · original en {{.Controls.OrigKey}}{{end}}
-					{{end}}
+					{{.Controls.StepLabel}}{{if .Controls.OrigKey}} · original en {{.Controls.OrigKey}}{{end}}
 				</p>
 			{{end}}
 			{{if .Sheet.SimplifyNote}}<p class="transposed">{{.Sheet.SimplifyNote}}</p>{{end}}

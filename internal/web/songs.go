@@ -52,11 +52,6 @@ type controlSet struct {
 	NotationURL   string
 	NotationLabel string
 
-	ShowCapo bool
-	CapoURL  string
-	CapoOn   bool
-	Capo     int
-
 	// The simplify control appears only when it would change something.
 	ShowSimplify bool
 	SimplifyURL  string
@@ -120,14 +115,12 @@ func (s *Server) loadSong(r *http.Request) (songBody, songView, error) {
 
 	notation := s.notationFor(r, view.State.Notation)
 	transpose := transposeFor(r, view.State.Transpose)
-	capo := capoViewFor(r, view.State.CapoView)
 	simplify := simplifyFor(r, view.State.Simplify)
 
 	tuning, _ := voicing.ParseTuning(view.Song.Tuning)
 	sheet := render.Sheet(view.Song, render.Options{
 		Transpose: transpose,
 		Notation:  notation,
-		CapoView:  capo,
 		Diagrams:  true,
 		Tuning:    tuning,
 		Simplify:  simplify,
@@ -142,7 +135,6 @@ func (s *Server) loadSong(r *http.Request) (songBody, songView, error) {
 		Theme:           printThemeFor(r),
 		Transpose:       transpose,
 		Notation:        notationName,
-		CapoView:        capo,
 		Simplify:        simplify,
 		DefaultNotation: s.defaultNotation(view.State.Notation),
 	}
@@ -170,10 +162,6 @@ func (s *Server) loadSong(r *http.Request) (songBody, songView, error) {
 
 			NotationURL:   cur.withNotation(otherNotation(notationName)).URL(),
 			NotationLabel: notationLabel(notationName),
-
-			ShowCapo: view.Song.Capo > 0,
-			Capo:     view.Song.Capo,
-			CapoOn:   capo == render.CapoSounding,
 		},
 	}
 	// Offered when it is already on, so it can be turned off, or when turning it
@@ -182,13 +170,6 @@ func (s *Server) loadSong(r *http.Request) (songBody, songView, error) {
 	body.Controls.SimplifyOn = sheet.Simplified
 	if body.Controls.ShowSimplify {
 		body.Controls.SimplifyURL = cur.withSimplify(!simplify).URL()
-	}
-	if body.Controls.ShowCapo {
-		next := render.CapoSounding
-		if capo == render.CapoSounding {
-			next = render.CapoWritten
-		}
-		body.Controls.CapoURL = cur.withCapo(next).URL()
 	}
 
 	if view.ParseError != nil {

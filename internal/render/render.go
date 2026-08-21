@@ -18,24 +18,10 @@ import (
 	"github.com/jalmena/tabernacle/internal/voicing"
 )
 
-// CapoView selects which pitches the chord symbols name.
-type CapoView string
-
-const (
-	// CapoWritten shows the sheet exactly as written, which is what the file
-	// says and what the player fingers.
-	CapoWritten CapoView = ""
-	// CapoSounding shows the pitches that actually sound with the capo on, which
-	// is what to tell someone playing along without one.
-	CapoSounding CapoView = "sounding"
-)
-
-// Options control how a song is rendered.
 type Options struct {
 	// Transpose in semitones. Clamped and normalised by NormalizeTranspose.
 	Transpose int
 	Notation  chord.Notation
-	CapoView  CapoView
 	Print     bool
 
 	// Diagrams asks for guitar shapes alongside each chord. It is off by
@@ -85,7 +71,6 @@ type SheetView struct {
 
 	Transpose int
 	Notation  string
-	CapoView  CapoView
 
 	// TuningNote explains an unrecognised tuning, so a reader is told why there
 	// are no diagrams instead of assuming the feature is broken.
@@ -186,11 +171,6 @@ func Sheet(s song.Song, o Options) SheetView {
 	o.Transpose = NormalizeTranspose(o.Transpose)
 
 	shift := o.Transpose
-	if o.CapoView == CapoSounding {
-		// A capo raises everything it holds down, so the pitches that sound are
-		// the written ones moved up by the capo's fret.
-		shift += s.Capo
-	}
 	shown := s
 	var moved song.TransposeReport
 	if shift != 0 {
@@ -207,7 +187,6 @@ func Sheet(s song.Song, o Options) SheetView {
 		Genre:     s.Genre,
 		Transpose: o.Transpose,
 		Notation:  notationName(o.Notation),
-		CapoView:  o.CapoView,
 		Shifted:   shift != 0,
 	}
 	if s.Notes != "" {

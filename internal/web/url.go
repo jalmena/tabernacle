@@ -47,7 +47,6 @@ type songView struct {
 	Slug      string
 	Transpose int
 	Notation  string
-	CapoView  render.CapoView
 	Simplify  bool
 	Print     bool
 	Theme     string // print paper; only ever appears on a print URL
@@ -73,9 +72,6 @@ func (v songView) URL() string {
 	if v.Notation != "" && v.Notation != v.DefaultNotation {
 		q["n"] = []string{v.Notation}
 	}
-	if v.CapoView == render.CapoSounding {
-		q["capo"] = []string{string(render.CapoSounding)}
-	}
 	if v.Simplify {
 		q["s"] = []string{"1"}
 	}
@@ -99,11 +95,6 @@ func (v songView) withTranspose(n int) songView {
 
 func (v songView) withNotation(n string) songView {
 	v.Notation = n
-	return v
-}
-
-func (v songView) withCapo(c render.CapoView) songView {
-	v.CapoView = c
 	return v
 }
 

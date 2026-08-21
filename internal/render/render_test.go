@@ -367,28 +367,19 @@ func TestSolfegeNotation(t *testing.T) {
 	}
 }
 
-func TestCapoSoundingView(t *testing.T) {
-	// Capo 2, written in G. What actually sounds is A.
-	written := Sheet(parse(t, sample), Options{})
-	sounding := Sheet(parse(t, sample), Options{CapoView: CapoSounding})
+// The capo is information about the song, not a transformation of it: the
+// chords on the sheet are the shapes you hold, whatever fret the capo is on.
+func TestTheCapoIsReportedAndNeverApplied(t *testing.T) {
+	v := Sheet(parse(t, sample), Options{})
 
-	if written.Key != "G" {
-		t.Errorf("written key = %q", written.Key)
+	if v.Capo != 2 {
+		t.Errorf("capo = %d, want 2", v.Capo)
 	}
-	if sounding.Key != "A" {
-		t.Errorf("sounding key = %q, want A with a capo on the second fret", sounding.Key)
+	if v.Key != "G" {
+		t.Errorf("key = %q, want G as written", v.Key)
 	}
-	if !sounding.Shifted {
-		t.Error("the sounding view must report that the symbols are not what the file says")
-	}
-	// The capo field itself is unchanged in both.
-	if sounding.Capo != 2 {
-		t.Errorf("capo = %d", sounding.Capo)
-	}
-	// And it composes with transposition.
-	both := Sheet(parse(t, sample), Options{CapoView: CapoSounding, Transpose: 1})
-	if both.Key != "Bb" {
-		t.Errorf("capo 2 plus one semitone = %q, want Bb", both.Key)
+	if v.Shifted {
+		t.Error("an untransposed sheet reports itself as shifted")
 	}
 }
 
@@ -521,7 +512,6 @@ func FuzzSheet(f *testing.F) {
 			{},
 			{Transpose: 5},
 			{Transpose: -7, Notation: chord.Solfege},
-			{CapoView: CapoSounding},
 		} {
 			got := reconstruct(Sheet(s, o))
 			want := strings.TrimSuffix(s.PlainText(), "\n")

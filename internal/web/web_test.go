@@ -127,7 +127,7 @@ func TestRoutes(t *testing.T) {
 		{"/songs/traditional-amazing-grace/sheet", http.StatusOK},
 		{"/songs/traditional-amazing-grace/print", http.StatusOK},
 		{"/songs/traditional-amazing-grace/raw", http.StatusOK},
-		{"/songs/traditional-amazing-grace?t=2&n=solfege&capo=sounding", http.StatusOK},
+		{"/songs/traditional-amazing-grace?t=2&n=solfege", http.StatusOK},
 
 		{"/healthz", http.StatusOK},
 		{"/robots.txt", http.StatusOK},
@@ -346,8 +346,8 @@ func TestTranspositionAndNotationThroughTheURL(t *testing.T) {
 		{"/songs/traditional-amazing-grace?t=12", "G C Em D"},
 		// Nonsense degrades to the song rather than an error.
 		{"/songs/traditional-amazing-grace?t=abc", "G C Em D"},
-		// Capo 2, so what actually sounds is a tone higher.
-		{"/songs/traditional-amazing-grace?capo=sounding", "A D F#m E"},
+		// The capo is information about the song and never moves the chords.
+		{"/songs/traditional-amazing-grace?capo=sounding", "G C Em D"},
 	}
 	for _, tt := range tests {
 		if got := chordsOf(tt.target); got != tt.want {
@@ -370,7 +370,6 @@ func TestTransposingDoesNotTouchTheFile(t *testing.T) {
 	for _, target := range []string{
 		"/songs/traditional-amazing-grace?t=5",
 		"/songs/traditional-amazing-grace?t=-3&n=solfege",
-		"/songs/traditional-amazing-grace?capo=sounding",
 		"/songs/traditional-amazing-grace/print?t=7",
 	} {
 		if code := ts.get(t, target).Code; code != http.StatusOK {

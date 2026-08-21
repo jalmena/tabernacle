@@ -12,12 +12,11 @@ import (
 // SongState is a reader's saved preferences for one song.
 //
 // All of it is a convenience rather than data: losing it costs the reader a
-// couple of clicks, which is why it may live in the database at all. Notation
-// and CapoView are empty when the song follows the global default.
+// couple of clicks, which is why it may live in the database at all. Notation is
+// empty when the song follows the global default.
 type SongState struct {
 	Transpose  int
 	Notation   string
-	CapoView   string
 	Simplify   bool
 	ViewCount  int
 	LastViewed time.Time
@@ -68,9 +67,9 @@ func (x *Index) State(ctx context.Context, slug string) (SongState, error) {
 		lastViewed sql.NullInt64
 	)
 	err := x.db.QueryRowContext(ctx,
-		`SELECT transpose, notation, capo_view, simplify, view_count, last_viewed_at
+		`SELECT transpose, notation, simplify, view_count, last_viewed_at
 		 FROM song_state WHERE slug = ?`, slug,
-	).Scan(&s.Transpose, &s.Notation, &s.CapoView, &s.Simplify, &s.ViewCount, &lastViewed)
+	).Scan(&s.Transpose, &s.Notation, &s.Simplify, &s.ViewCount, &lastViewed)
 	if errors.Is(err, sql.ErrNoRows) {
 		return SongState{}, nil
 	}
@@ -86,14 +85,13 @@ func (x *Index) State(ctx context.Context, slug string) (SongState, error) {
 // SetState saves a song's reading preferences, leaving the view counters alone.
 func (x *Index) SetState(ctx context.Context, slug string, s SongState) error {
 	_, err := x.db.ExecContext(ctx,
-		`INSERT INTO song_state(slug, transpose, notation, capo_view, simplify)
-		 VALUES(?, ?, ?, ?, ?)
+		`INSERT INTO song_state(slug, transpose, notation, simplify)
+		 VALUES(?, ?, ?, ?)
 		 ON CONFLICT(slug) DO UPDATE SET
 		     transpose = excluded.transpose,
 		     notation  = excluded.notation,
-		     capo_view = excluded.capo_view,
 		     simplify  = excluded.simplify`,
-		slug, s.Transpose, s.Notation, s.CapoView, s.Simplify)
+		slug, s.Transpose, s.Notation, s.Simplify)
 	if err != nil {
 		return fmt.Errorf("index: write state for %q: %w", slug, err)
 	}

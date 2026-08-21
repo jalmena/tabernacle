@@ -314,6 +314,20 @@ func (r *response) mustNotContain(what ...string) {
 	}
 }
 
+// chordCards lists the chords the sheet's appendix names, in order. It reads the
+// appendix rather than the lyric lines because the appendix holds each chord once
+// and holds nothing else, which makes it the cheapest honest answer to "what
+// chords is this sheet in".
+func chordCards(body string) []string {
+	var out []string
+	for _, m := range chordCardPattern.FindAllStringSubmatch(body, -1) {
+		out = append(out, html.UnescapeString(m[1]))
+	}
+	return out
+}
+
+var chordCardPattern = regexp.MustCompile(`(?s)<article class="chordcard.*?<h3>(.*?)</h3>`)
+
 // --- the collection the tests read from ---
 
 const amazingGrace = `---

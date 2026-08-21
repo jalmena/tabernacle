@@ -375,7 +375,7 @@ func TestStateDefaultsAndUpdates(t *testing.T) {
 		t.Errorf("state = %+v, want the zero value", st)
 	}
 
-	if err := x.SetState(ctx, "s", SongState{Transpose: -3, CapoView: "played", Simplify: true}); err != nil {
+	if err := x.SetState(ctx, "s", SongState{Transpose: -3, Notation: "solfege", Simplify: true}); err != nil {
 		t.Fatal(err)
 	}
 	if err := x.RecordView(ctx, "s", time.Unix(1700000000, 0)); err != nil {
@@ -385,7 +385,7 @@ func TestStateDefaultsAndUpdates(t *testing.T) {
 		t.Fatal(err)
 	}
 	st, _ = x.State(ctx, "s")
-	if st.Transpose != -3 || st.CapoView != "played" || !st.Simplify {
+	if st.Transpose != -3 || st.Notation != "solfege" || !st.Simplify {
 		t.Errorf("state = %+v", st)
 	}
 	if st.ViewCount != 2 {
