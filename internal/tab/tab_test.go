@@ -1,6 +1,7 @@
 package tab
 
 import (
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -302,9 +303,12 @@ func FuzzShift(f *testing.F) {
 				if f == "/" {
 					continue
 				}
-				n := 0
-				for _, r := range f {
-					n = n*10 + int(r-'0')
+				// A digit run too long to hold in an int is not a fret, and the
+				// package leaves such a run as text. Reading it here by hand
+				// would wrap around and invent a fret that nothing produced.
+				n, err := strconv.Atoi(f)
+				if err != nil {
+					continue
 				}
 				if n > MaxFret {
 					t.Fatalf("produced fret %d on a shifted line, past the neck:\n%s", n, got)
@@ -315,8 +319,8 @@ func FuzzShift(f *testing.F) {
 }
 
 // A line the package declines to treat as tablature keeps exactly what was in
-// it, even if that is a number no guitar could play. Found by the fuzzer, which
-// is what it is for.
+// it, even if that is a number no guitar could play. Deciding not to touch
+// something is a decision to leave it alone completely.
 func TestLinesThatAreNotTabAreNeverTouched(t *testing.T) {
 	src := "|70\n|--0---0---|"
 	got, res := Shift("tab", src, 12)
