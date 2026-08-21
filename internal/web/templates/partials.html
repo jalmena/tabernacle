@@ -9,6 +9,11 @@
 </head>
 {{end}}
 
+{{/* Every screen page opens its body through this, so a chosen theme reaches the
+     one element whose custom properties everything else inherits. A class rather
+     than an inline style: the content security policy has no 'unsafe-inline'. */}}
+{{define "bodyopen"}}<body{{with .Nav.BodyClass}} class="{{.}}"{{end}}>{{end}}
+
 {{/* The header is the same on every page. Navigation that vanishes on the
      import or editor page leaves the reader with nowhere to go. */}}
 {{define "top"}}
@@ -23,8 +28,53 @@
 		<a class="btn add{{if .On}} on{{end}}" href="{{.URL}}"
 		   {{if .On}}aria-current="page"{{end}}>{{.Label}}</a>
 	{{end}}
+	{{with .Nav.Account}}
+		<a class="btn account{{if .On}} on{{end}}" href="{{.URL}}"
+		   {{if $.Nav.LoginBox}}data-login="loginpop"{{end}}
+		   {{if .On}}aria-current="page"{{end}}>{{.Label}}</a>
+	{{end}}
 </header>
+
+{{/* The login box. A native popover, opened by app.js; with no scripting the
+     button beside it is an ordinary link to /login, which carries the same form. */}}
+{{if .Nav.LoginBox}}
+<div id="loginpop" class="loginpop noprint" popover="auto">
+	<form class="loginform" method="post" action="/login">
+		<input type="hidden" name="next" value="{{.Nav.LoginNext}}">
+		<label for="loginuser">Usuario</label>
+		<input id="loginuser" name="user" autocomplete="username" autocapitalize="off"
+		       spellcheck="false" required>
+		<label for="loginpass">Contraseña</label>
+		<input id="loginpass" name="password" type="password" autocomplete="current-password" required>
+		<button class="btn" type="submit">Entrar</button>
+	</form>
+</div>
+{{end}}
+
+{{if .Nav.Unclaimed}}
+<p class="banner noprint">
+	Esta instancia no tiene ninguna cuenta, así que cualquiera que llegue a ella
+	puede cambiar la colección.
+	<a href="/settings">Crea una cuenta de administrador</a>.
+</p>
+{{end}}
 {{if .Nav.Flash}}<p class="flash noprint" role="status">{{.Nav.Flash}}</p>{{end}}
+{{end}}
+
+{{/* The settings pages leave the section row out — Canciones, Artistas and
+     Géneros are the library's vocabulary and have no business there — so this is
+     their own way around. */}}
+{{define "settingsnav"}}
+<div class="filters settingsnav noprint">
+	{{range .Tabs}}
+		<a class="btn btn-quiet{{if .On}} on{{end}}" href="{{.URL}}"
+		   {{if .On}}aria-current="page"{{end}}>{{.Label}}</a>
+	{{end}}
+	<span class="sep"></span>
+	<form method="post" action="/logout">
+		<button class="btn btn-quiet" type="submit">Cerrar sesión</button>
+	</form>
+</div>
 {{end}}
 
 {{/* One row of buttons, in the same shape the page has always had. There is a

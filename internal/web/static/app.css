@@ -627,3 +627,120 @@ body.printing .transposed {
 /* A second row of filters under the first. An inline style would be dead here:
  * the content security policy has no 'unsafe-inline' for styles. */
 .filters-spaced { margin-top: 1rem; }
+
+/* ---------- accounts ---------- */
+
+/* A chosen theme has to beat the reader's system preference, which sets its
+ * tokens on :root. Declaring them on body wins on specificity, and custom
+ * properties inherit, so every descendant follows. */
+body.theme-light {
+	--ink: #1a1a1a; --ink-soft: #5c5c5c; --ink-faint: #8a8a8a;
+	--paper: #fbfaf7; --paper-raised: #ffffff; --rule: #e2ddd3;
+	--chord: #9a3412; --chord-bg: #fdf1e7; --accent: #7c2d12;
+	--annotation: #6b7280;
+	--warn-bg: #fef3c7; --warn-ink: #78350f; --warn-rule: #fcd34d;
+}
+body.theme-dark {
+	--ink: #e8e4dc; --ink-soft: #a8a29a; --ink-faint: #78736b;
+	--paper: #171614; --paper-raised: #201e1b; --rule: #322e29;
+	--chord: #fdba74; --chord-bg: #2c211a; --accent: #fb923c;
+	--annotation: #9ca3af;
+	--warn-bg: #2a2113; --warn-ink: #fcd34d; --warn-rule: #6b5320;
+}
+
+.top .account { flex: 0 0 auto; white-space: nowrap; }
+
+/* The banner an unclaimed instance carries: informative, not alarming. */
+.banner {
+	margin: 0;
+	padding: 0.5rem 0.75rem;
+	background: var(--warn-bg);
+	color: var(--warn-ink);
+	border-bottom: 1px solid var(--warn-rule);
+	font-size: 0.9375rem;
+}
+.banner a { color: inherit; }
+
+/* The login box. On a phone it becomes a sheet at the bottom, where a thumb is. */
+.loginpop {
+	max-width: 18rem;
+	padding: 0.9rem;
+	background: var(--paper-raised);
+	color: var(--ink);
+	border: 1px solid var(--rule);
+	border-radius: 10px;
+	box-shadow: 0 8px 28px rgb(0 0 0 / 22%);
+}
+.loginpop:popover-open { position: fixed; margin: 0; }
+.loginpop::backdrop { background: transparent; }
+.loginform { display: grid; gap: 0.35rem; }
+.loginform label { font-size: 0.8125rem; color: var(--ink-soft); }
+.loginform button { margin-top: 0.4rem; }
+
+@media (max-width: 34rem) {
+	.loginpop {
+		left: 0; right: 0; bottom: 0; top: auto;
+		max-width: none;
+		border-radius: 10px 10px 0 0;
+	}
+}
+
+/* Forms on the settings pages. */
+.wrap-narrow { max-width: 30rem; }
+/* A form is narrow because a text field wider than a name is harder to read, not
+ * because the page is. The page stays full width so its own row of tabs fits on
+ * one line. */
+.stack { display: grid; gap: 0.4rem; margin: 0 0 1.5rem; max-width: 26rem; }
+.stack label { font-size: 0.8125rem; color: var(--ink-soft); }
+
+/* Text fields on the forms. Without this they keep the browser's own white,
+ * which is a bright rectangle in the middle of a dark page. */
+.stack input[type="text"],
+.stack input[type="password"],
+.stack input:not([type]),
+.resetrow input[type="password"] {
+	width: 100%;
+	padding: 0.4rem 0.55rem;
+	font: inherit;
+	color: var(--ink);
+	background: var(--paper-raised);
+	border: 1px solid var(--rule);
+	border-radius: var(--radius);
+}
+.loginform input[type="text"],
+.loginform input[type="password"],
+.loginform input:not([type]) {
+	padding: 0.4rem 0.55rem;
+	font: inherit;
+	color: var(--ink);
+	background: var(--paper);
+	border: 1px solid var(--rule);
+	border-radius: var(--radius);
+}
+.stack input:focus-visible,
+.loginform input:focus-visible,
+.resetrow input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.stack .row { margin-top: 0.5rem; }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+.choice { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.9375rem; }
+.themes { border: 0; margin: 0.5rem 0 0; padding: 0; display: grid; gap: 0.25rem; }
+.themes legend { padding: 0; font-size: 0.8125rem; color: var(--ink-soft); }
+.settingsnav form { display: inline; }
+
+/* The account table. It scrolls inside itself rather than pushing the page
+ * sideways on a phone. */
+.tablewrap { overflow-x: auto; }
+.usertable { width: 100%; border-collapse: collapse; font-size: 0.9375rem; }
+.usertable th, .usertable td {
+	padding: 0.45rem 0.6rem;
+	text-align: left;
+	border-bottom: 1px solid var(--rule);
+	white-space: nowrap;
+}
+.usertable thead th { font-size: 0.75rem; text-transform: uppercase; color: var(--ink-faint); }
+/* Inline forms rather than a flex cell: a td that is a flex container stops
+ * drawing its own border the way the rest of the row does. */
+.rowactions form { display: inline-block; }
+.rowactions form + form { margin-left: 0.3rem; }
+.resetrow td { border-bottom: 1px solid var(--rule); padding-top: 0; }
+.resetrow input { max-width: 12rem; }

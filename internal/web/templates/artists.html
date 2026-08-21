@@ -1,5 +1,5 @@
 {{template "head" .}}
-<body>
+{{template "bodyopen" .}}
 {{template "top" .}}
 <main class="wrap wrap-wide">
 	{{template "nav" .}}
@@ -17,5 +17,6 @@
 		<div class="empty"><p>Todavía no hay ningún artista en la colección.</p></div>
 	{{end}}
 </main>
+{{template "scripts" .}}
 </body>
 </html>

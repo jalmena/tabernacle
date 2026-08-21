@@ -23,6 +23,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/jalmena/tabernacle/internal/account"
 	"github.com/jalmena/tabernacle/internal/chord"
 	"github.com/jalmena/tabernacle/internal/config"
 	"github.com/jalmena/tabernacle/internal/library"
@@ -38,8 +39,15 @@ var staticFS embed.FS
 // Server holds everything the handlers need.
 type Server struct {
 	lib *library.Library
+	acc *account.Store
 	cfg config.Config
 	log *slog.Logger
+
+	// logins refuses a flood of attempts, and hashing bounds how many run at
+	// once. Both exist because a password check is expensive on purpose and
+	// reachable without a session.
+	logins  *limiter
+	hashing chan struct{}
 
 	tpl *template.Template
 	// assetVersion changes whenever an embedded asset changes, which is what
@@ -48,7 +56,7 @@ type Server struct {
 }
 
 // New parses the templates and prepares the server.
-func New(lib *library.Library, cfg config.Config, log *slog.Logger) (*Server, error) {
+func New(lib *library.Library, acc *account.Store, cfg config.Config, log *slog.Logger) (*Server, error) {
 	if log == nil {
 		log = slog.Default()
 	}
@@ -60,7 +68,16 @@ func New(lib *library.Library, cfg config.Config, log *slog.Logger) (*Server, er
 	if err != nil {
 		return nil, err
 	}
-	return &Server{lib: lib, cfg: cfg, log: log, tpl: tpl, assetVersion: version}, nil
+	return &Server{
+		lib:          lib,
+		acc:          acc,
+		cfg:          cfg,
+		log:          log,
+		tpl:          tpl,
+		assetVersion: version,
+		logins:       newLimiter(),
+		hashing:      make(chan struct{}, hashConcurrency),
+	}, nil
 }
 
 // funcs holds the template helpers.
@@ -115,6 +132,11 @@ func hashAssets() (string, error) {
 }
 
 // Handler returns the fully wrapped HTTP handler.
+// hashConcurrency bounds simultaneous password hashing. Two, so a login is never
+// queued behind more than one other and a small machine keeps a core for serving
+// pages.
+const hashConcurrency = 2
+
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 
@@ -144,6 +166,26 @@ func (s *Server) Handler() http.Handler {
 	// Import goes through the same guard, but reads its own body because it is
 	// multipart rather than a form.
 	mux.HandleFunc("POST /import", s.mutatingMultipart(s.handleImport))
+	// Accounts. The login page is public, because that is what it is for.
+	mux.HandleFunc("GET /login", s.handleLoginForm)
+	mux.HandleFunc("POST /login", s.openPost(s.handleLogin))
+	// No GET /logout: a GET that changes state is exactly what SameSite=Lax does
+	// not protect.
+	mux.HandleFunc("POST /logout", s.openPost(s.handleLogout))
+
+	mux.HandleFunc("GET /settings", s.handleSettings)
+	mux.HandleFunc("POST /settings/profile", s.authedPost(s.handleProfile))
+	mux.HandleFunc("POST /settings/password", s.authedPost(s.handlePassword))
+	mux.HandleFunc("POST /settings/sessions/revoke", s.authedPost(s.handleRevokeSessions))
+	mux.HandleFunc("POST /settings/claim", s.openPost(s.handleClaim))
+	mux.HandleFunc("POST /settings/notation", s.adminPost(s.handleSetNotation))
+
+	mux.HandleFunc("GET /settings/users", s.handleUsers)
+	mux.HandleFunc("POST /settings/users", s.adminPost(s.handleCreateUser))
+	mux.HandleFunc("POST /settings/users/{id}/role", s.adminPost(s.handleSetRole))
+	mux.HandleFunc("POST /settings/users/{id}/password", s.adminPost(s.handleResetPassword))
+	mux.HandleFunc("POST /settings/users/{id}/delete", s.adminPost(s.handleDeleteUser))
+
 	mux.HandleFunc("GET /healthz", s.handleHealth)
 	mux.HandleFunc("GET /robots.txt", s.handleRobots)
 	mux.HandleFunc("GET /static/{version}/{path...}", s.handleStatic)
@@ -155,9 +197,11 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /", s.handleNotFound)
 
 	// Outermost first. The host check comes before anything that reads the
-	// request, and the panic guard wraps everything so a bug is a 500 rather
-	// than a dead connection.
+	// request; the session is resolved once just outside the routing, so every
+	// handler and every page can ask who is looking; and the panic guard wraps
+	// everything so a bug is a 500 rather than a dead connection.
 	var h http.Handler = mux
+	h = s.authenticate(h)
 	h = s.securityHeaders(h)
 	h = s.requireAllowedHost(h)
 	h = s.logRequests(h)
@@ -186,8 +230,25 @@ type navState struct {
 
 	// Add is the primary action and lives in the header rather than among the
 	// sections, because it is something you do, not somewhere you go. Nil when
-	// the collection is read-only and there is nothing to add.
+	// nobody may write: read-only mode, or signed out of a claimed instance.
 	Add *navLink
+
+	// Account is the other header button: Acceder when signed out, Ajustes when
+	// signed in. Never nil.
+	Account *navLink
+	// UserName is empty when signed out.
+	UserName string
+	IsAdmin  bool
+	// Unclaimed drives the banner saying this instance has no administrator, and
+	// therefore that anybody who can reach it can change the collection.
+	Unclaimed bool
+	// BodyClass carries a chosen theme onto <body>, where it beats the reader's
+	// system preference.
+	BodyClass string
+	// LoginBox asks for the popover markup. Absent on the login page itself,
+	// which is the form already.
+	LoginBox  bool
+	LoginNext string
 }
 
 // navLink is one entry in the header.
@@ -220,7 +281,11 @@ func (s *Server) page(r *http.Request, title string, body any) page {
 		section = "artists"
 	case path == "/genres":
 		section = "genres"
+	case strings.HasPrefix(path, "/settings"):
+		section = "settings"
 	}
+
+	v := viewerOf(r)
 
 	// Three sections and nothing else: these are the three ways to walk the
 	// collection. Anything more and two labels start to look like each other,
@@ -234,9 +299,20 @@ func (s *Server) page(r *http.Request, title string, body any) page {
 			{Label: "Géneros", URL: "/genres", On: section == "genres"},
 		},
 	}
-	if !s.cfg.ReadOnly {
+	if !s.cfg.ReadOnly && v.MayWrite() {
 		nav.Add = &navLink{Label: "Añadir", URL: "/songs/new", On: section == "add"}
 	}
+	if v.In {
+		nav.Account = &navLink{Label: "Ajustes", URL: "/settings", On: section == "settings"}
+		nav.UserName = v.User.Name
+		nav.IsAdmin = v.User.IsAdmin()
+		nav.BodyClass = themeClass(v.User.Theme)
+	} else {
+		nav.Account = &navLink{Label: "Acceder", URL: "/login", On: path == "/login"}
+		nav.LoginBox = path != "/login"
+		nav.LoginNext = safeNext(path)
+	}
+	nav.Unclaimed = v.Unclaimed
 	return page{Title: title, Nav: nav, Body: body}
 }
 
@@ -245,6 +321,11 @@ func (s *Server) page(r *http.Request, title string, body any) page {
 // Buffering matters: a template that fails halfway through would otherwise
 // leave a truncated page already committed with a 200.
 func (s *Server) render(w http.ResponseWriter, r *http.Request, status int, name string, p page) {
+	// Every page now depends on who is asking — the header carries a name, and
+	// /settings carries a user list — so none of them may be cached by anything
+	// in between. They were never cacheable in practice; saying so is free.
+	w.Header().Set("Cache-Control", "no-store")
+
 	p.AssetVersion = s.assetVersion
 	p.Nav.ReadOnly = s.cfg.ReadOnly
 	if p.Nav.Flash == "" {

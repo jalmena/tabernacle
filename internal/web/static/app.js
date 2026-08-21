@@ -292,3 +292,26 @@
 		reader.readAsText(file, "utf-8");
 	});
 })();
+
+/* The login box.
+ *
+ * Same shape as the chord popover: it anchors on one element, feature-detects the
+ * Popover API, and returns early if either is missing. Without it the button
+ * beside the box is an ordinary link to /login, which carries the same form. */
+(function () {
+	"use strict";
+
+	var pop = document.getElementById("loginpop");
+	if (!pop || typeof pop.showPopover !== "function") return;
+
+	document.addEventListener("click", function (e) {
+		if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+		var link = e.target.closest("a[data-login]");
+		if (!link || link.getAttribute("data-login") !== "loginpop") return;
+
+		e.preventDefault();
+		pop.showPopover();
+		var first = pop.querySelector("input[name=user]");
+		if (first) first.focus();
+	});
+})();

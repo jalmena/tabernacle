@@ -28,6 +28,18 @@ var flashes = map[string]string{
 	"committed": "Tono guardado en el archivo.",
 	"reindexed": "Biblioteca revisada.",
 	"scanning":  "Ya hay una revisión en curso.",
+
+	"welcome":      "Sesión iniciada.",
+	"bye":          "Sesión cerrada.",
+	"claimed":      "Instancia reclamada. Ya tienes una cuenta de administrador.",
+	"profile":      "Perfil actualizado.",
+	"password":     "Contraseña cambiada.",
+	"logged-out":   "Se han cerrado las sesiones en todos los dispositivos.",
+	"user-created": "Cuenta creada.",
+	"user-deleted": "Cuenta eliminada.",
+	"role-changed": "Permisos actualizados.",
+	"user-reset":   "Contraseña restablecida.",
+	"notation":     "Notación por defecto actualizada.",
 }
 
 // flashFor resolves a message code, ignoring anything not in the list.
@@ -113,13 +125,41 @@ func splitHostPort(hostport string) (host, port string) {
 	return strings.TrimSuffix(strings.TrimPrefix(hostport, "["), "]"), ""
 }
 
-// mutating wraps a handler that changes something.
+// access is the least a request must be to get through a guard.
+type access int
+
+const (
+	// accessPublic asks nothing. Login and logout, and nothing else.
+	accessPublic access = iota
+	// accessWriter is any signed-in account, or anybody at all while the
+	// instance is unclaimed.
+	accessWriter
+	// accessAdmin is a signed-in administrator. Never satisfied by an unclaimed
+	// instance: claiming one is its own route with its own rule.
+	accessAdmin
+)
+
+// guard is what a write route demands before its handler runs.
+type guard struct {
+	// collection marks a route that changes songs, and therefore one that
+	// read-only mode refuses.
+	collection bool
+	minimum    access
+	// parseForm reads an ordinary form. Multipart handlers cap and read their own
+	// bodies instead.
+	parseForm bool
+}
+
+// guarded is the one place a write can be refused, so that a new write route
+// cannot be added without a read-only guard, an origin check, a privilege and a
+// body limit.
 //
-// It is one place so that no write route can be added without the origin check,
-// the read-only guard and the body limit.
-func (s *Server) mutating(h func(http.ResponseWriter, *http.Request)) http.HandlerFunc {
+// The order is deliberate. Read-only comes first and unchanged, so a read-only
+// instance stays read-only whoever is signed in. The body limit comes last, so an
+// anonymous request never gets its body read.
+func (s *Server) guarded(g guard, h func(http.ResponseWriter, *http.Request)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if s.cfg.ReadOnly {
+		if g.collection && s.cfg.ReadOnly {
 			s.fail(w, r, http.StatusForbidden, "Solo lectura",
 				"Esta instancia está configurada para no permitir cambios en la colección.")
 			return
@@ -132,40 +172,80 @@ func (s *Server) mutating(h func(http.ResponseWriter, *http.Request)) http.Handl
 				"La petición no parece venir de esta página.")
 			return
 		}
-		r.Body = http.MaxBytesReader(w, r.Body, maxFormBytes)
-		if err := r.ParseForm(); err != nil {
-			s.fail(w, r, http.StatusRequestEntityTooLarge, "Envío demasiado grande",
-				"El formulario supera el tamaño permitido.")
+		if !s.permitted(r, g.minimum) {
+			s.refusePrivilege(w, r, g.minimum)
 			return
+		}
+		if g.parseForm {
+			r.Body = http.MaxBytesReader(w, r.Body, maxFormBytes)
+			if err := r.ParseForm(); err != nil {
+				s.fail(w, r, http.StatusRequestEntityTooLarge, "Envío demasiado grande",
+					"El formulario supera el tamaño permitido.")
+				return
+			}
 		}
 		h(w, r)
 	}
 }
 
-// mutatingMultipart is mutating for a handler that parses its own body.
+func (s *Server) permitted(r *http.Request, need access) bool {
+	v := viewerOf(r)
+	switch need {
+	case accessAdmin:
+		return v.MayAdmin()
+	case accessWriter:
+		return v.MayWrite()
+	default:
+		return true
+	}
+}
+
+// refusePrivilege answers with the thing the reader can actually do about it.
 //
-// An upload cannot go through ParseForm, so the guards are applied and the body
-// is left for the handler, which caps it itself.
-func (s *Server) mutatingMultipart(h func(http.ResponseWriter, *http.Request)) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if s.cfg.ReadOnly {
-			s.fail(w, r, http.StatusForbidden, "Solo lectura",
-				"Esta instancia está configurada para no permitir cambios en la colección.")
-			return
+// Signed out, the next step is to sign in, so the login page is what they get
+// rather than a dead end that says no.
+func (s *Server) refusePrivilege(w http.ResponseWriter, r *http.Request, need access) {
+	if !viewerOf(r).In {
+		body := loginBody{
+			Next:    safeNext(r.URL.Path),
+			Problem: "Inicia sesión para guardar cambios.",
 		}
-		if err := s.requireSameOrigin(r); err != nil {
-			s.log.Warn("refused a cross-origin upload",
-				"origin", r.Header.Get("Origin"), "host", r.Host, "reason", err)
-			s.fail(w, r, http.StatusForbidden, "Petición rechazada",
-				"La petición no parece venir de esta página.")
-			return
-		}
-		h(w, r)
+		s.render(w, r, http.StatusUnauthorized, "login.html", s.page(r, "Acceder", body))
+		return
 	}
+	_ = need
+	s.fail(w, r, http.StatusForbidden, "Sin permiso",
+		"Esta acción es solo para administradores.")
 }
 
-// redirect sends the browser onward after a change, so a refresh does not repeat
-// it.
+// mutating wraps a handler that changes the collection.
+func (s *Server) mutating(h func(http.ResponseWriter, *http.Request)) http.HandlerFunc {
+	return s.guarded(guard{collection: true, minimum: accessWriter, parseForm: true}, h)
+}
+
+// mutatingMultipart wraps a handler that changes the collection and reads its own
+// body, because a multipart upload is capped by the handler that understands it.
+func (s *Server) mutatingMultipart(h func(http.ResponseWriter, *http.Request)) http.HandlerFunc {
+	return s.guarded(guard{collection: true, minimum: accessWriter}, h)
+}
+
+// adminPost wraps a handler that manages accounts or settings. Read-only mode
+// governs the collection, not the application, so it does not apply.
+func (s *Server) adminPost(h func(http.ResponseWriter, *http.Request)) http.HandlerFunc {
+	return s.guarded(guard{minimum: accessAdmin, parseForm: true}, h)
+}
+
+// authedPost wraps a handler that changes the caller's own account.
+func (s *Server) authedPost(h func(http.ResponseWriter, *http.Request)) http.HandlerFunc {
+	return s.guarded(guard{minimum: accessWriter, parseForm: true}, h)
+}
+
+// openPost wraps a handler anybody may reach: logging in, logging out, and
+// claiming an instance that has no accounts.
+func (s *Server) openPost(h func(http.ResponseWriter, *http.Request)) http.HandlerFunc {
+	return s.guarded(guard{minimum: accessPublic, parseForm: true}, h)
+}
+
 func (s *Server) redirect(w http.ResponseWriter, r *http.Request, target, msg string) {
 	if msg != "" {
 		sep := "?"

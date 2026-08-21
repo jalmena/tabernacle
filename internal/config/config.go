@@ -33,6 +33,23 @@ type Config struct {
 	TrashDir string // deleted songs land here rather than being unlinked
 	DBPath   string // the disposable index
 
+	// AccountsFile is the name of the accounts file inside DataDir. It holds
+	// password hashes and the key that signs every session, so unlike the index
+	// it cannot be regenerated and does need backing up.
+	AccountsFile string
+	// AdminUser and AdminPassword create or reset the first administrator at
+	// startup. They are read once and never stored.
+	AdminUser     string
+	AdminPassword Secret
+	// PasswordCost is the PBKDF2 iteration count for new passwords. Zero means
+	// the production figure, which is resolved where the hashing lives — this
+	// package deliberately imports nothing else from the project.
+	//
+	// It is not read from the environment: it is a security parameter, not a
+	// preference. The end-to-end tests lower it so that logging in is not the
+	// slowest thing in the suite.
+	PasswordCost int
+
 	BaseURL      *url.URL // canonical URL, used for absolute links and the host allowlist
 	AllowedHosts []string // exact Host values to accept; empty means the LAN policy below
 
@@ -45,8 +62,26 @@ type Config struct {
 	LogLevel slog.Level
 }
 
+// Secret is a configured value that must not appear in a log line.
+//
+// The application has one place that logs configuration and it names its fields
+// by hand, so this is belt and braces — but a password that can only be printed
+// on purpose is worth eight lines.
+type Secret string
+
+// String hides the value from fmt, which covers %v and %s.
+func (Secret) String() string { return "[redacted]" }
+
+// LogValue hides it from slog, which does not go through String.
+func (Secret) LogValue() slog.Value { return slog.StringValue("[redacted]") }
+
+// Reveal is the only way to read a secret, and it reads as what it is at the call
+// site.
+func (s Secret) Reveal() string { return string(s) }
+
 // Defaults, chosen so that a bare `docker run -v ...:/data` works.
 const (
+	defaultAccountsFile   = "accounts.json"
 	defaultAddr           = ":8080"
 	defaultDataDir        = "/data"
 	defaultBaseURL        = "http://localhost:8080"
@@ -100,6 +135,29 @@ func Load(getenv func(string) string) (Config, error) {
 	}
 	if within(c.SongsDir, c.TrashDir) {
 		fail("TABERNACLE_TRASH_DIR %q must not be inside the songs directory %q", c.TrashDir, c.SongsDir)
+	}
+
+	// The accounts file is a plain name inside the data directory. Allowing a
+	// path would let it land in songs/, where a scan would walk it and a reader
+	// browsing their own files would find password hashes.
+	//
+	// internal/account refuses the same things as its own last line of defence;
+	// this check exists to report the mistake at startup, by name, alongside every
+	// other one.
+	c.AccountsFile = get("TABERNACLE_ACCOUNTS_FILE", defaultAccountsFile)
+	if c.AccountsFile != filepath.Base(c.AccountsFile) ||
+		strings.ContainsAny(c.AccountsFile, `/\`) ||
+		c.AccountsFile == "." || c.AccountsFile == ".." {
+		fail("TABERNACLE_ACCOUNTS_FILE must be a filename, not a path, got %q", c.AccountsFile)
+	}
+
+	c.AdminUser = strings.TrimSpace(getenv("TABERNACLE_ADMIN_USER"))
+	c.AdminPassword = Secret(getenv("TABERNACLE_ADMIN_PASSWORD"))
+	switch {
+	case c.AdminUser == "" && c.AdminPassword != "":
+		fail("TABERNACLE_ADMIN_PASSWORD is set but TABERNACLE_ADMIN_USER is not")
+	case c.AdminUser != "" && c.AdminPassword == "":
+		fail("TABERNACLE_ADMIN_USER is set but TABERNACLE_ADMIN_PASSWORD is not")
 	}
 
 	switch c.Notation {

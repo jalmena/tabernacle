@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"log/slog"
 	"strings"
 	"testing"
@@ -255,6 +256,97 @@ func TestHostAllowedExplicitList(t *testing.T) {
 	for _, tt := range tests {
 		if got := c.HostAllowed(tt.host); got != tt.want {
 			t.Errorf("HostAllowed(%q) = %v, want %v", tt.host, got, tt.want)
+		}
+	}
+}
+
+func TestAccountsFileDefaultsAndValidation(t *testing.T) {
+	c, err := Load(env(map[string]string{"TABERNACLE_DATA_DIR": "/data"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.AccountsFile != "accounts.json" {
+		t.Errorf("AccountsFile = %q", c.AccountsFile)
+	}
+
+	// A path would let the file land in songs/, where a scan would walk it and a
+	// reader browsing their own files would find password hashes.
+	for _, bad := range []string{"songs/accounts.json", "../accounts.json", "/etc/passwd", `a\b`, "."} {
+		_, err := Load(env(map[string]string{
+			"TABERNACLE_DATA_DIR":      "/data",
+			"TABERNACLE_ACCOUNTS_FILE": bad,
+		}))
+		if err == nil {
+			t.Errorf("TABERNACLE_ACCOUNTS_FILE=%q was accepted", bad)
+			continue
+		}
+		if !strings.Contains(err.Error(), "TABERNACLE_ACCOUNTS_FILE") {
+			t.Errorf("the error for %q does not name the variable: %v", bad, err)
+		}
+	}
+}
+
+// The bootstrap pair is useless by halves, so half of it is a configuration
+// error rather than something silently ignored.
+func TestTheBootstrapAdminNeedsBothHalves(t *testing.T) {
+	tests := []struct {
+		name string
+		env  map[string]string
+		ok   bool
+	}{
+		{"neither", map[string]string{}, true},
+		{"both", map[string]string{"TABERNACLE_ADMIN_USER": "jose", "TABERNACLE_ADMIN_PASSWORD": "una contraseña larga"}, true},
+		{"user only", map[string]string{"TABERNACLE_ADMIN_USER": "jose"}, false},
+		{"password only", map[string]string{"TABERNACLE_ADMIN_PASSWORD": "una contraseña larga"}, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			vars := map[string]string{"TABERNACLE_DATA_DIR": "/data"}
+			for k, v := range tt.env {
+				vars[k] = v
+			}
+			_, err := Load(env(vars))
+			if tt.ok && err != nil {
+				t.Errorf("Load: %v", err)
+			}
+			if !tt.ok {
+				if err == nil {
+					t.Fatal("the incomplete pair was accepted")
+				}
+				if !strings.Contains(err.Error(), "TABERNACLE_ADMIN_") {
+					t.Errorf("the error does not name a variable: %v", err)
+				}
+			}
+		})
+	}
+}
+
+// A password that can only be printed on purpose.
+func TestASecretDoesNotPrintItself(t *testing.T) {
+	c, err := Load(env(map[string]string{
+		"TABERNACLE_DATA_DIR":       "/data",
+		"TABERNACLE_ADMIN_USER":     "jose",
+		"TABERNACLE_ADMIN_PASSWORD": "correcthorsebattery",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.AdminPassword.Reveal() != "correcthorsebattery" {
+		t.Fatalf("Reveal = %q", c.AdminPassword.Reveal())
+	}
+
+	for _, rendered := range []string{
+		fmt.Sprintf("%v", c.AdminPassword),
+		fmt.Sprintf("%s", c.AdminPassword),
+		fmt.Sprint(c.AdminPassword),
+		c.AdminPassword.String(),
+		c.AdminPassword.LogValue().String(),
+		// The whole config, which is the accident this guards against.
+		fmt.Sprintf("%v", c),
+		fmt.Sprintf("%+v", c),
+	} {
+		if strings.Contains(rendered, "correcthorsebattery") {
+			t.Errorf("the password appears in %q", rendered)
 		}
 	}
 }

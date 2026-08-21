@@ -1,0 +1,85 @@
+{{template "head" .}}
+{{template "bodyopen" .}}
+{{template "top" .}}
+<main class="wrap">
+	{{with .Body}}
+		{{template "settingsnav" .}}
+
+		{{if .Problem}}<p class="notice" role="alert">{{.Problem}}</p>{{end}}
+
+		<h1>Usuarios</h1>
+		<div class="tablewrap">
+			<table class="usertable">
+				<thead>
+					<tr>
+						<th scope="col">Usuario</th>
+						<th scope="col">Permisos</th>
+						<th scope="col">Creada</th>
+						<th scope="col">Último acceso</th>
+						<th scope="col"><span class="shapedesc">Acciones</span></th>
+					</tr>
+				</thead>
+				<tbody>
+					{{range .Users}}
+						<tr>
+							<th scope="row">{{.Name}}{{if .Self}} <span class="quiet">(tú)</span>{{end}}</th>
+							<td>{{if .Admin}}Administrador{{else}}Usuario{{end}}</td>
+							<td>{{.Created}}</td>
+							<td>{{if .LastSeen}}{{.LastSeen}}{{else}}<span class="quiet">nunca</span>{{end}}</td>
+							<td class="rowactions">
+								{{if not .Self}}
+									<form method="post" action="/settings/users/{{.ID}}/role">
+										<input type="hidden" name="role"
+										       value="{{if .Admin}}user{{else}}admin{{end}}">
+										<button class="btn btn-quiet" type="submit">
+											{{if .Admin}}Quitar administrador{{else}}Hacer administrador{{end}}
+										</button>
+									</form>
+									<form method="post" action="/settings/users/{{.ID}}/delete">
+										<button class="btn btn-quiet" type="submit">Eliminar</button>
+									</form>
+								{{end}}
+							</td>
+						</tr>
+						<tr class="resetrow">
+							<td colspan="5">
+								<form class="row" method="post" action="/settings/users/{{.ID}}/password">
+									<label for="pw-{{.ID}}" class="quiet">Nueva contraseña para {{.Name}}</label>
+									<input id="pw-{{.ID}}" name="password" type="password"
+									       autocomplete="new-password" required>
+									<button class="btn btn-quiet" type="submit">Restablecer</button>
+								</form>
+							</td>
+						</tr>
+					{{end}}
+				</tbody>
+			</table>
+		</div>
+
+		<h2>Crear una cuenta</h2>
+		<p class="quiet">
+			No hay registro abierto: las cuentas las crea un administrador. Eliminar una
+			cuenta no toca ninguna canción.
+		</p>
+		<form class="stack" method="post" action="/settings/users">
+			<label for="newuser">Usuario</label>
+			<input id="newuser" name="user" autocomplete="off" autocapitalize="off"
+			       spellcheck="false" required>
+			<label for="newpassword">Contraseña</label>
+			<input id="newpassword" name="password" type="password"
+			       autocomplete="new-password" required>
+			<div class="row">
+				<label class="choice">
+					<input type="radio" name="role" value="user" checked> Usuario
+				</label>
+				<label class="choice">
+					<input type="radio" name="role" value="admin"> Administrador
+				</label>
+				<button class="btn" type="submit">Crear</button>
+			</div>
+		</form>
+	{{end}}
+</main>
+{{template "scripts" .}}
+</body>
+</html>

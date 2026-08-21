@@ -1,5 +1,5 @@
 {{template "head" .}}
-<body>
+{{template "bodyopen" .}}
 {{template "top" .}}
 <main class="wrap">
 	{{template "nav" .}}
@@ -29,5 +29,6 @@
 		<p><a class="btn" href="/">Ir a las canciones</a></p>
 	{{end}}
 </main>
+{{template "scripts" .}}
 </body>
 </html>

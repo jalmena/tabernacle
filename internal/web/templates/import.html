@@ -1,5 +1,5 @@
 {{template "head" .}}
-<body>
+{{template "bodyopen" .}}
 {{template "top" .}}
 <main class="wrap">
 	{{template "nav" .}}
@@ -68,5 +68,6 @@
 		<p><a class="btn" href="/export">Descargar copia de seguridad</a></p>
 	{{end}}
 </main>
+{{template "scripts" .}}
 </body>
 </html>

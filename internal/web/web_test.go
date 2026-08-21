@@ -6,11 +6,13 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/jalmena/tabernacle/internal/account"
 	"github.com/jalmena/tabernacle/internal/config"
 	"github.com/jalmena/tabernacle/internal/index"
 	"github.com/jalmena/tabernacle/internal/library"
@@ -24,7 +26,12 @@ type testServer struct {
 	srv   *Server
 	lib   *library.Library
 	idx   *index.Index
+	acc   *account.Store
 	songs string
+
+	// session is the cookie every request carries once login has happened.
+	// Empty means anonymous, which is what a fresh harness is.
+	session string
 }
 
 func newTestServer(t *testing.T, songs map[string]string) *testServer {
@@ -77,21 +84,85 @@ func newTestServerWithEnv(t *testing.T, songs map[string]string, base string, ex
 	if err != nil {
 		t.Fatal(err)
 	}
-	srv, err := New(lib, cfg, quiet)
+	// A cheap hashing cost: the tests are about the rules, not about how long
+	// PBKDF2 takes. The production figure is asserted in internal/account.
+	acc, err := account.Open(base, cfg.AccountsFile, 2)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return &testServer{h: srv.Handler(), srv: srv, lib: lib, idx: idx, songs: songsDir}
+	t.Cleanup(func() { acc.Close() })
+
+	srv, err := New(lib, acc, cfg, quiet)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// No accounts, so the instance is unclaimed and writing works exactly as it
+	// did before accounts existed. A test that wants a signed-in reader says so.
+	return &testServer{h: srv.Handler(), srv: srv, lib: lib, idx: idx, acc: acc, songs: songsDir}
 }
 
-// get performs a request with a Host the default policy accepts.
+// account creates one and returns it, without signing anybody in.
+func (ts *testServer) account(t *testing.T, name string, role account.Role) account.User {
+	t.Helper()
+	u, err := ts.acc.Create(name, testPassword, role)
+	if err != nil {
+		t.Fatalf("creating %s: %v", name, err)
+	}
+	return u
+}
+
+// login signs in through the real form, so the cookie under test is the one a
+// browser would have been given.
+func (ts *testServer) login(t *testing.T, name string) {
+	t.Helper()
+	w := ts.postAnon(t, "/login", url.Values{"user": {name}, "password": {testPassword}})
+	if w.Code != http.StatusSeeOther {
+		t.Fatalf("logging in as %s = %d\n%s", name, w.Code, w.Body.String())
+	}
+	for _, c := range w.Result().Cookies() {
+		if c.Name == sessionCookie && c.Value != "" {
+			ts.session = c.Name + "=" + c.Value
+			return
+		}
+	}
+	t.Fatalf("logging in as %s set no session cookie", name)
+}
+
+// as creates an account and signs in as it, which is what most tests want.
+func (ts *testServer) as(t *testing.T, name string, role account.Role) account.User {
+	t.Helper()
+	u := ts.account(t, name, role)
+	ts.login(t, name)
+	return u
+}
+
+// logout forgets the cookie without telling the server, which is what closing a
+// browser does.
+func (ts *testServer) logout() { ts.session = "" }
+
+const testPassword = "una contraseña larga"
+
+// get performs a request with a Host the default policy accepts, carrying
+// whatever session the harness holds.
 func (ts *testServer) get(t *testing.T, target string) *httptest.ResponseRecorder {
 	t.Helper()
 	r := httptest.NewRequest(http.MethodGet, target, nil)
 	r.Host = "localhost:8080"
+	if ts.session != "" {
+		r.Header.Set("Cookie", ts.session)
+	}
 	w := httptest.NewRecorder()
 	ts.h.ServeHTTP(w, r)
 	return w
+}
+
+// getAnon is the same request with no session, for asking what a stranger sees.
+func (ts *testServer) getAnon(t *testing.T, target string) *httptest.ResponseRecorder {
+	t.Helper()
+	held := ts.session
+	ts.session = ""
+	defer func() { ts.session = held }()
+	return ts.get(t, target)
 }
 
 const graceSong = `---

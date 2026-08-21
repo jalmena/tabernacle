@@ -19,6 +19,7 @@ import (
 	"log/slog"
 	"mime/multipart"
 	"net/http"
+	"net/http/cookiejar"
 	"net/http/httptest"
 	"net/url"
 	"os"
@@ -41,6 +42,11 @@ type instance struct {
 
 	app *app.App
 	srv *httptest.Server
+
+	// jar is per instance and shared by every request, so a session survives
+	// between them the way a browser's does. A test that wants a second browser
+	// asks for a second jar.
+	jar *cookiejar.Jar
 }
 
 // start boots an instance on a fresh temporary directory.
@@ -57,11 +63,16 @@ func start(t *testing.T, env map[string]string) *instance {
 		full[k] = v
 	}
 
+	jar, err := cookiejar.New(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 	in := &instance{
 		t:     t,
 		env:   full,
 		dir:   dir,
 		songs: filepath.Join(dir, "songs"),
+		jar:   jar,
 	}
 	in.boot()
 	t.Cleanup(in.stop)
@@ -75,6 +86,10 @@ func (in *instance) boot() {
 	if err != nil {
 		in.t.Fatalf("config: %v", err)
 	}
+	// Hashing a password at the production cost takes the better part of a
+	// second, and these tests log in a lot. The production figure is asserted in
+	// internal/account, where lowering it here cannot reach.
+	cfg.PasswordCost = 2
 
 	// Discarded rather than captured: these tests judge what a reader sees, and
 	// a test that passes because of a log line is testing the wrong surface.
@@ -113,11 +128,61 @@ func (in *instance) restart() {
 }
 
 // client refuses to follow redirects, so a test can see the 303 and its
-// destination rather than only the page at the end of the chain.
+// destination rather than only the page at the end of the chain. It carries the
+// instance's cookie jar, so a session outlives the request that created it.
 func (in *instance) client() *http.Client {
 	return &http.Client{
+		Jar:           in.jar,
 		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
 	}
+}
+
+// --- signing in ---
+
+const testPassword = "una contraseña larga"
+
+// admin creates the first administrator by claiming the instance through its own
+// form, which is the route a real first run takes.
+func (in *instance) claim(name string) {
+	in.t.Helper()
+	res := in.post("/settings/claim", url.Values{
+		"user":     {name},
+		"password": {testPassword},
+		"repeat":   {testPassword},
+	})
+	if res.Status != http.StatusSeeOther {
+		in.t.Fatalf("claiming as %s = %d\n%.400s", name, res.Status, res.Body)
+	}
+}
+
+// login signs in through the real form.
+func (in *instance) login(name string) {
+	in.t.Helper()
+	res := in.post("/login", url.Values{"user": {name}, "password": {testPassword}})
+	if res.Status != http.StatusSeeOther {
+		in.t.Fatalf("logging in as %s = %d\n%.400s", name, res.Status, res.Body)
+	}
+}
+
+// logout forgets the session the way pressing the button does.
+func (in *instance) logout() {
+	in.t.Helper()
+	if res := in.post("/logout", nil); res.Status != http.StatusSeeOther {
+		in.t.Fatalf("logging out = %d", res.Status)
+	}
+}
+
+// anon is the same instance seen by a browser that has never logged in, for
+// asking what a stranger can reach.
+func (in *instance) anon() *instance {
+	in.t.Helper()
+	jar, err := cookiejar.New(nil)
+	if err != nil {
+		in.t.Fatal(err)
+	}
+	other := *in
+	other.jar = jar
+	return &other
 }
 
 // response is a finished exchange, with the body already read.

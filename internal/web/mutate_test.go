@@ -15,17 +15,35 @@ import (
 	"testing"
 )
 
-// post submits a form the way a same-origin browser would.
+// post submits a form the way a same-origin browser would, carrying whatever
+// session the harness holds.
 func (ts *testServer) post(t *testing.T, target string, form url.Values) *httptest.ResponseRecorder {
 	t.Helper()
-	r := httptest.NewRequest(http.MethodPost, target, strings.NewReader(form.Encode()))
+	body := ""
+	if form != nil {
+		body = form.Encode()
+	}
+	r := httptest.NewRequest(http.MethodPost, target, strings.NewReader(body))
 	r.Host = "localhost:8080"
 	r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	r.Header.Set("Origin", "http://localhost:8080")
 	r.Header.Set("Sec-Fetch-Site", "same-origin")
+	if ts.session != "" {
+		r.Header.Set("Cookie", ts.session)
+	}
 	w := httptest.NewRecorder()
 	ts.h.ServeHTTP(w, r)
 	return w
+}
+
+// postAnon is the same submission with no session, for asking what a stranger can
+// do.
+func (ts *testServer) postAnon(t *testing.T, target string, form url.Values) *httptest.ResponseRecorder {
+	t.Helper()
+	held := ts.session
+	ts.session = ""
+	defer func() { ts.session = held }()
+	return ts.post(t, target, form)
 }
 
 const pasted = `---

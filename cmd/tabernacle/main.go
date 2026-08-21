@@ -73,6 +73,13 @@ func run() error {
 	defer a.Close()
 	a.Library.StartPeriodicSync(ctx, cfg.ScanInterval)
 
+	if n := a.Accounts.Count(); n == 0 {
+		log.Warn("no accounts yet: anyone who can reach this instance can change the collection. " +
+			"Open Ajustes to claim it")
+	} else {
+		log.Info("accounts", "count", n)
+	}
+
 	srv := &http.Server{
 		Addr:    cfg.Addr,
 		Handler: a.Handler,
