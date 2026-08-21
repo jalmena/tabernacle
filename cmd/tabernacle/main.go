@@ -15,11 +15,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/jalmena/tabernacle/internal/app"
 	"github.com/jalmena/tabernacle/internal/config"
-	"github.com/jalmena/tabernacle/internal/index"
-	"github.com/jalmena/tabernacle/internal/library"
-	"github.com/jalmena/tabernacle/internal/songfs"
-	"github.com/jalmena/tabernacle/internal/web"
 )
 
 // version is set at build time with -ldflags "-X main.version=v1.2.3" and
@@ -56,10 +53,6 @@ func run() error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	if err := ensureDirs(cfg); err != nil {
-		return err
-	}
-
 	log.Info("starting tabernacle",
 		"version", buildVersion(),
 		"addr", cfg.Addr,
@@ -73,38 +66,16 @@ func run() error {
 		log.Warn("read-only mode: every change to the collection will be refused")
 	}
 
-	store, err := songfs.Open(cfg.SongsDir, cfg.TrashDir, cfg.MaxSongBytes)
+	a, err := app.Build(ctx, cfg, log)
 	if err != nil {
 		return err
 	}
-	defer store.Close()
-
-	idx, err := index.Open(ctx, cfg.DBPath)
-	if err != nil {
-		return err
-	}
-	defer idx.Close()
-
-	lib := library.New(store, idx, log)
-
-	// Scan before serving, so the first request sees a warm index rather than an
-	// empty library. On a large first run this costs a second or two, which is
-	// the right trade for a personal tool.
-	if rep, err := lib.SyncIfNeeded(ctx); err != nil {
-		return fmt.Errorf("initial scan: %w", err)
-	} else if rep.Scanned > 0 {
-		log.Info("indexed the collection", "songs", rep.Scanned, "failed", rep.Failed)
-	}
-	lib.StartPeriodicSync(ctx, cfg.ScanInterval)
-
-	srv2, err := web.New(lib, cfg, log)
-	if err != nil {
-		return err
-	}
+	defer a.Close()
+	a.Library.StartPeriodicSync(ctx, cfg.ScanInterval)
 
 	srv := &http.Server{
 		Addr:    cfg.Addr,
-		Handler: srv2.Handler(),
+		Handler: a.Handler,
 		// Without this a single idle connection can hold a request open
 		// indefinitely; it is the one timeout that is always worth setting.
 		ReadHeaderTimeout: 10 * time.Second,
@@ -137,19 +108,6 @@ func run() error {
 		return fmt.Errorf("shutdown: %w", err)
 	}
 	log.Info("stopped")
-	return nil
-}
-
-// ensureDirs creates the directories Tabernacle owns.
-//
-// The songs directory is created rather than required, so that a first run
-// against an empty volume works instead of failing on a missing path.
-func ensureDirs(cfg config.Config) error {
-	for _, dir := range []string{cfg.DataDir, cfg.SongsDir, cfg.TrashDir} {
-		if err := os.MkdirAll(dir, 0o755); err != nil {
-			return fmt.Errorf("create %s: %w", dir, err)
-		}
-	}
 	return nil
 }
 
