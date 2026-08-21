@@ -186,6 +186,15 @@ leading `\#` or ``\` `` when a lyric would otherwise look like a heading or a
 fence. A line in the body that starts with a single `#` is reserved and rejected,
 so that it can be given a meaning later without breaking existing files.
 
+The writer adds those escapes for you, and one more: a lyric line made only of
+spaces is written with a leading backslash, since without it the line would read
+back as blank and be dropped.
+
+**Line endings and encoding**: files are UTF-8, and a leading byte order mark is
+ignored. Any line ending is accepted — a newline, a carriage return and newline,
+or a carriage return on its own — and files are always written back with plain
+newlines, so a collection edited on several machines settles into one form.
+
 ## Transposition
 
 Transposition moves roots and slash basses and leaves the quality suffix

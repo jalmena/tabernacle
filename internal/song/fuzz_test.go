@@ -13,6 +13,11 @@ func FuzzParse(f *testing.F) {
 	f.Add("---\ntitle: \"Yes\"\ngenre: rock\nnotes: |-\n  one\n  two\n---\n")
 	f.Add("---\ntitle: T\n---\n\n## Solo\n```tab\ne|-0-|\n```\n")
 	f.Add("---\ntitle: T\nkey: Bb\ncapo: 3\n---\n[Bb]x\\[y\\\\z\n")
+	// A lyric line that is nothing but an escaped space: it has to survive being
+	// written out, where it would otherwise read back as a blank line.
+	f.Add("---\ntitle: T\n---\n\\ ")
+	// A lone carriage return, which is a line ending and not content.
+	f.Add("---\ntitle: T\n---\nuno\rdos\r")
 	f.Add("---\n")
 	f.Add("")
 

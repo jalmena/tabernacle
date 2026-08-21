@@ -41,6 +41,12 @@ func TestReparseIsStable(t *testing.T) {
 		"---\ntitle: T\nnotes: |-\n  one\n\n  three\n---\n",
 		// A tag list and an unlabelled section.
 		"---\ntitle: T\ngenre: \"b c\"\n---\n\n[G]No heading here\n",
+		// Lyric lines that are only whitespace. Written plainly they would read
+		// back as blank lines, and blank lines at the edge of a section are
+		// dropped, so the line has to carry an escape.
+		"---\ntitle: T\n---\n\n## Verse 1\n\\ \n",
+		"---\ntitle: T\n---\n\n## Verse 1\n\\   \n",
+		"---\ntitle: T\n---\n\n## Verse 1\n[G]uno\n\\ \n[C]dos\n",
 	}
 
 	for _, src := range sources {

@@ -18,7 +18,14 @@ import (
 func Parse(data []byte) (Song, error) {
 	// Editors on Windows and some phone apps prepend a byte order mark.
 	text := strings.TrimPrefix(string(data), "\ufeff")
+
+	// Every line ending becomes a newline: CRLF from Windows, and a lone CR,
+	// which is both classic Mac and what a stray keystroke leaves behind. A
+	// carriage return is a line ending in every case and never content, so
+	// keeping one would put an invisible control character inside a lyric and
+	// then carry it into filenames and pages.
 	text = strings.ReplaceAll(text, "\r\n", "\n")
+	text = strings.ReplaceAll(text, "\r", "\n")
 	lines := strings.Split(text, "\n")
 
 	entries, bodyStart, err := parseFrontMatter(lines)

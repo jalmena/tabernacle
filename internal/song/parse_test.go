@@ -3,6 +3,7 @@ package song
 import (
 	"errors"
 	"os"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -291,13 +292,43 @@ func TestParseMissingTitle(t *testing.T) {
 	}
 }
 
-func TestParseCRLF(t *testing.T) {
-	src := "\ufeff---\r\ntitle: T\r\n---\r\n\r\n## Verse 1\r\n[C]Hello\r\n"
-	s, err := Parse([]byte(src))
+// Every line ending reads the same, so a file written on any machine parses to
+// the same song. A carriage return is never content: kept as text it would sit
+// invisibly inside a lyric and travel from there into filenames and pages.
+func TestLineEndingsAreNormalised(t *testing.T) {
+	const unix = "---\ntitle: T\nartist: A\n---\n\n## Verse 1\n[G]one\n[C]two\n"
+
+	want, err := Parse([]byte(unix))
 	if err != nil {
-		t.Fatalf("Parse: %v", err)
+		t.Fatalf("the unix form does not parse: %v", err)
 	}
-	if len(s.Sections) != 1 || len(s.Sections[0].Lines) != 1 {
-		t.Fatalf("sections = %+v", s.Sections)
+
+	variants := map[string]string{
+		"windows":    strings.ReplaceAll(unix, "\n", "\r\n"),
+		"classicMac": strings.ReplaceAll(unix, "\n", "\r"),
+		// A file edited on two machines ends up with both.
+		"mixed": strings.Replace(strings.ReplaceAll(unix, "\n", "\r\n"), "\r\n", "\n", 3),
+		// A byte order mark in front of it all.
+		"bom": "\ufeff" + unix,
+	}
+	for name, src := range variants {
+		t.Run(name, func(t *testing.T) {
+			got, err := Parse([]byte(src))
+			if err != nil {
+				t.Fatalf("does not parse: %v", err)
+			}
+			if !reflect.DeepEqual(got, want) {
+				t.Errorf("parses differently from the unix form:\n got: %+v\nwant: %+v", got, want)
+			}
+			// And it comes back out in the canonical form, with one kind of
+			// ending, so the file settles the first time it is saved.
+			out, err := Marshal(got)
+			if err != nil {
+				t.Fatalf("Marshal: %v", err)
+			}
+			if strings.Contains(string(out), "\r") {
+				t.Errorf("the written file still carries a carriage return: %q", out)
+			}
+		})
 	}
 }

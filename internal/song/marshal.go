@@ -169,9 +169,15 @@ func formatLine(ln Line) string {
 		}
 	}
 	out := b.String()
-	// A lyric that happens to start like a heading or a fence needs an escape,
-	// or reading the file back would turn it into one.
-	if strings.HasPrefix(out, "#") || strings.HasPrefix(out, "```") {
+	// A lyric that would read back as something other than a lyric needs an
+	// escape on the front. A leading "#" or "```" would become a heading or a
+	// fence; text that is nothing but whitespace would become a blank line, and
+	// the parser drops those at the edges of a section, so the line would vanish
+	// entirely.
+	switch {
+	case strings.HasPrefix(out, "#"), strings.HasPrefix(out, "```"):
+		out = `\` + out
+	case out != "" && strings.TrimSpace(out) == "":
 		out = `\` + out
 	}
 	return out
