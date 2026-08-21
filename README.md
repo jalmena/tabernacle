@@ -26,10 +26,13 @@ Interface in Spanish. Note names switch either way.
 
 ## Screenshots
 
-|     |     |
-| --- | --- |
-| [![The library](docs/screenshots/library.png)](docs/screenshots/library.png) | [![A song sheet](docs/screenshots/song-sheet.png)](docs/screenshots/song-sheet.png) |
-| The library | A sheet transposed up a semitone, with the chord shapes below |
+The library:
+
+![The library](docs/screenshots/library.png)
+
+A sheet transposed up a semitone, with the chord shapes below:
+
+![A song sheet](docs/screenshots/song-sheet.png)
 
 ## Deployment
 
