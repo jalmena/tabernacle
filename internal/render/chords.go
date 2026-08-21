@@ -19,10 +19,13 @@ type VoicingView struct {
 	Fingers   []int
 	Barres    []BarreView
 	StartFret int
-	Fingering string // the shape described in words, for a screen reader
-	Index     int    // 1-based, for "2 de 4"
-	Total     int
-	ID        string
+	// FretsShown is how many frets the diagram draws. It travels with StartFret
+	// because the two are one decision; see Window.
+	FretsShown int
+	Fingering  string // the shape described in words, for a screen reader
+	Index      int    // 1-based, for "2 de 4"
+	Total      int
+	ID         string
 }
 
 // BarreView is a barre, flattened for a template.
@@ -36,12 +39,14 @@ func chordVoicings(c chord.Chord, text string, opts voicing.Options) ([]VoicingV
 	res := voicing.For(c, opts)
 	out := make([]VoicingView, 0, len(res.Voicings))
 	for i, v := range res.Voicings {
+		w := windowFor(v)
 		vv := VoicingView{
-			Name:      shapeName(v),
-			StartFret: windowStart(v),
-			Index:     i + 1,
-			Total:     len(res.Voicings),
-			ID:        v.ID(),
+			Name:       shapeName(v),
+			StartFret:  w.Start,
+			FretsShown: w.Frets,
+			Index:      i + 1,
+			Total:      len(res.Voicings),
+			ID:         v.ID(),
 		}
 		for _, f := range v.Frets {
 			vv.Frets = append(vv.Frets, int(f))
@@ -58,43 +63,105 @@ func chordVoicings(c chord.Chord, text string, opts voicing.Options) ([]VoicingV
 	return out, res.Warning
 }
 
-// windowStart is the fret the diagram's window should begin at.
+// windowFrets is how many frets a diagram draws.
 //
-// An open shape starts at the nut. A shape whose notes all fit within the first
-// few frets is still drawn from the nut, because seeing the nut is how a reader
-// knows where they are; only a shape further up starts higher.
-func windowStart(v voicing.Voicing) int {
-	if v.Position <= 1 {
-		return 1
+// Five. A shape spans at most four, which internal/voicing enforces, so five
+// always holds the whole shape and leaves the grid room to breathe.
+const windowFrets = 5
+
+// firstPositionFrets is how far up the neck first position reaches: a hand at the
+// nut covers four frets.
+//
+// This is a fact about hands, not about drawings, and it is deliberately not
+// windowFrets. How many frets a picture shows is a matter of taste; what counts
+// as open position is not.
+const firstPositionFrets = 4
+
+// placement is the kind of place a shape sits in. It decides both the caption and
+// where the diagram starts, so the words and the picture cannot disagree.
+type placement int
+
+const (
+	// allOpen: nothing is fretted at all.
+	allOpen placement = iota
+	// barred: a finger lies across several strings.
+	barred
+	// firstPosition: open strings, hand at the nut. What a chord book calls an
+	// open chord.
+	firstPosition
+	// closed: no open strings, so the shape is named by where the hand is.
+	closed
+)
+
+// Window is where a diagram of a shape begins and how many frets it shows.
+//
+// The caption comes from the same Window, so a caption can never name a fret the
+// picture does not show.
+type Window struct {
+	Start int
+	Frets int
+	how   placement
+	// names is the fret the caption mentions: the barre's on a barred shape, the
+	// hand's on a closed one. Unused by the two that name no fret.
+	names int
+}
+
+// windowFor decides where a shape sits, and therefore both how it is drawn and
+// what it is called.
+//
+// The window always begins at the lowest fretted note, because that is the note
+// furthest from the reader's eye and the one a cut would lose. What the caption
+// *names* can be a different fret: an A-shape barre is x 3 5 5 5 5, held with the
+// index at the third fret and a barre at the fifth, and a player calls that a
+// barre at the fifth while the picture has to start at the third.
+//
+// The order of the tests matters. A barre is tested before open strings because a
+// barre chord is never an open chord: F sits at the first fret and no chord book
+// calls it open. Needing an open string comes next, because that — and not owning
+// a first-fret note — is what open position means. G is 3 2 0 0 0 3 and is as
+// open as C.
+func windowFor(v voicing.Voicing) Window {
+	switch {
+	case v.Reach() == 0:
+		return Window{Start: 1, Frets: windowFrets, how: allOpen}
+	case v.HasBarre():
+		return Window{Start: v.Position, Frets: windowFrets, how: barred, names: lowestBarre(v)}
+	case v.HasOpenString() && v.Reach() <= firstPositionFrets:
+		return Window{Start: 1, Frets: windowFrets, how: firstPosition}
+	default:
+		// Named by where the index finger sits, which is what "position" means to
+		// a player. A shape with no open strings is closed even at the first
+		// fret.
+		return Window{Start: v.Position, Frets: windowFrets, how: closed, names: v.Position}
 	}
-	hi := 0
-	for _, f := range v.Frets {
-		if int(f) > hi {
-			hi = int(f)
+}
+
+// lowestBarre is the fret of the barre nearest the nut, which is the one a player
+// names the grip after.
+func lowestBarre(v voicing.Voicing) int {
+	lo := int(v.Barres[0].Fret)
+	for _, b := range v.Barres[1:] {
+		if int(b.Fret) < lo {
+			lo = int(b.Fret)
 		}
 	}
-	if hi <= 5 {
-		return 1
-	}
-	return v.Position
+	return lo
 }
 
 // shapeName says where on the neck a shape sits, which is what a player wants to
 // know before looking at the dots.
 func shapeName(v voicing.Voicing) string {
-	if v.Position == 0 {
+	w := windowFor(v)
+	switch w.how {
+	case allOpen:
 		return "Cuerdas al aire"
-	}
-	if v.Position <= 1 && !v.HasBarre() {
+	case barred:
+		return "Cejilla en el traste " + strconv.Itoa(w.names)
+	case firstPosition:
 		return "Posición abierta"
+	default:
+		return "Traste " + strconv.Itoa(w.names)
 	}
-	if v.HasBarre() {
-		return "Cejilla en el traste " + strconv.Itoa(int(v.Barres[0].Fret))
-	}
-	if v.Position == 1 {
-		return "Posición abierta"
-	}
-	return "Traste " + strconv.Itoa(v.Position)
 }
 
 // stringNames are the guitar's strings as a player counts them: the sixth is the

@@ -91,8 +91,33 @@ func (v Voicing) Span() int {
 	return hi - lo + 1
 }
 
+// Reach is the highest fret the hand touches, or 0 when nothing is fretted.
+//
+// Position says where the shape starts and Reach says where it ends; a rule
+// about where a shape sits on the neck usually needs both.
+func (v Voicing) Reach() int {
+	hi := 0
+	for _, f := range v.Frets {
+		if int(f) > hi {
+			hi = int(f)
+		}
+	}
+	return hi
+}
+
 // HasBarre reports whether the shape needs one.
 func (v Voicing) HasBarre() bool { return len(v.Barres) > 0 }
+
+// HasOpenString reports whether any string sounds unfretted. A muted string does
+// not count: it makes no note.
+func (v Voicing) HasOpenString() bool {
+	for _, f := range v.Frets {
+		if f == Open {
+			return true
+		}
+	}
+	return false
+}
 
 // ID is a stable handle for one shape of one chord, for a deep link or a DOM id.
 //

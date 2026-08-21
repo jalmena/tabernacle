@@ -112,6 +112,44 @@ than two properties, both pinned by tests:
 what a chord reference prints. A change there means the cost function moved,
 which may be right but should never be accidental.
 
+## Naming a shape
+
+A caption says where on the neck a shape sits, which is what a player wants to
+know before looking at the dots. There are four:
+
+| Caption | When |
+| --- | --- |
+| `Cuerdas al aire` | nothing is fretted |
+| `Cejilla en el traste N` | a finger lies across several strings, at fret N |
+| `Posición abierta` | some string rings open and the hand stays inside the first four frets |
+| `Traste N` | anything else, named by the fret the hand sits at |
+
+Two of those need saying out loud.
+
+**Open position is about open strings, not about the first fret.** `G` is
+`3 2 0 0 0 3` and owns no first-fret note; it is as open a chord as `C`. So the
+test is whether a string rings open with the hand near the nut, not where the
+lowest dot happens to land. A shape with no open strings is closed wherever it
+sits, including at the first fret, and a barre chord is never open — `F` sits at
+the first fret and no chord book calls it an open chord.
+
+**The fret a caption names is not always the fret a picture starts at.** An
+A-shape barre is `x 3 5 5 5 5`: index at the third fret, barre at the fifth. A
+player calls that a barre at the fifth, and the picture still has to begin at the
+third or it loses a note. So the window opens at the lowest fretted note and the
+caption names the barre.
+
+The caption and the window come out of one function, `windowFor`, for exactly that
+reason: computing them separately is how a picture drawn from the nut ends up
+captioned "Traste 2". `TestCaptionAndWindowAgree` walks every shape the
+collection holds and checks that any fret the words name is a fret the picture
+contains, reading the caption's own text rather than recomputing the rule.
+
+Five frets are drawn. A shape spans at most four, which `internal/voicing`
+enforces, so five always holds the whole shape and leaves the grid room to
+breathe. How many frets a picture shows is a matter of taste; what counts as open
+position is not, and the two numbers are deliberately separate.
+
 ## When there is no shape
 
 A lookup answers with shapes that voice the chord as written, or with nothing.

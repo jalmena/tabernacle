@@ -24,6 +24,7 @@ func chordDiagram(v render.VoicingView, label string) template.HTML {
 		Fingers:   v.Fingers,
 		Barres:    barresFor(v),
 		StartFret: v.StartFret,
+		Window:    v.FretsShown,
 		Label:     label,
 		Title:     v.Fingering,
 	}))
