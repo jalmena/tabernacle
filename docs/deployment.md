@@ -83,6 +83,15 @@ the hole with no configuration, which is why a bare `docker run` is safe on a
 LAN. The moment you put a real domain in front of it, that name has to be
 allowlisted explicitly — hence `TABERNACLE_ALLOWED_HOSTS`.
 
+Two checks, two questions. That allowlist answers "which names does this server
+answer to", and it is deliberately generous, because a home server is reached by
+half a dozen names nobody can list in advance. A separate check answers "which
+pages may submit a change", and that one is exact, port included: a browser does
+not scope an origin by hostname alone, so another service on the same machine is
+somebody else. The practical consequence is that a domain on a non-standard port
+belongs in `TABERNACLE_BASE_URL` **with** its port, or writes from it are
+refused.
+
 ### Sharing the library read-only
 
 ```yaml

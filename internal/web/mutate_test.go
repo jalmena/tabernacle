@@ -316,6 +316,12 @@ func TestWritesRefuseForeignRequests(t *testing.T) {
 		{"cross site", "localhost:8080", "http://localhost:8080", "cross-site", false},
 		{"same site but not same origin", "localhost:8080", "http://localhost:8080", "same-site", false},
 		{"origin matches but host is foreign", "evil.example", "http://evil.example", "same-origin", false},
+		// A browser scopes neither an origin nor a cookie by hostname alone, so
+		// another service on the same name is somebody else.
+		{"same name, another port", "localhost:8080", "http://localhost:9000", "same-origin", false},
+		{"same name, no port", "localhost:8080", "http://localhost", "same-origin", false},
+		{"another address on the LAN", "localhost:8080", "http://192.168.1.50:8080", "same-origin", false},
+		{"unparseable origin", "localhost:8080", "::::", "same-origin", false},
 	}
 	for _, h := range headers {
 		for _, wr := range writes {
@@ -671,5 +677,40 @@ func TestExportWorksInReadOnlyMode(t *testing.T) {
 	// Import is a write, so it is not.
 	if code := ts.upload(t, "x.song", []byte(pasted)).Code; code != http.StatusForbidden {
 		t.Errorf("import in read-only mode = %d, want 403", code)
+	}
+}
+
+// originAllowed is the whole of "may this page submit here", so its two
+// configured escape hatches are checked directly: a reverse proxy's public name,
+// and a name the operator listed on purpose.
+func TestOriginAllowedHonoursConfiguration(t *testing.T) {
+	ts := newTestServerWithEnv(t, basicSongs(), t.TempDir(), map[string]string{
+		"TABERNACLE_BASE_URL":      "https://songs.example.com",
+		"TABERNACLE_ALLOWED_HOSTS": "songs.example.com,nas.local",
+	})
+
+	tests := []struct {
+		name   string
+		origin string
+		host   string
+		want   bool
+	}{
+		// The proxy rewrites Host; the browser's origin is the public name.
+		{"the configured base URL", "https://songs.example.com", "tabernacle:8080", true},
+		{"the exact host we were addressed as", "http://tabernacle:8080", "tabernacle:8080", true},
+		{"an allowlisted name on our port", "http://nas.local:8080", "nas.local:8080", true},
+
+		// The port has to agree even for a name that was listed on purpose.
+		{"an allowlisted name on another port", "http://nas.local:9000", "nas.local:8080", false},
+		{"a name that was never listed", "http://other.local:8080", "nas.local:8080", false},
+		{"the base URL's name on another port", "https://songs.example.com:9000", "tabernacle:8080", false},
+		{"no host at all", "null", "nas.local:8080", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := ts.srv.originAllowed(tt.origin, tt.host); got != tt.want {
+				t.Errorf("originAllowed(%q, %q) = %v, want %v", tt.origin, tt.host, got, tt.want)
+			}
+		})
 	}
 }

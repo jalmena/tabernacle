@@ -18,7 +18,10 @@ import (
 )
 
 type testServer struct {
-	h     http.Handler
+	h http.Handler
+	// srv is the server behind h, for the few tests that check a decision
+	// directly rather than through a request.
+	srv   *Server
 	lib   *library.Library
 	idx   *index.Index
 	songs string
@@ -78,7 +81,7 @@ func newTestServerWithEnv(t *testing.T, songs map[string]string, base string, ex
 	if err != nil {
 		t.Fatal(err)
 	}
-	return &testServer{h: srv.Handler(), lib: lib, idx: idx, songs: songsDir}
+	return &testServer{h: srv.Handler(), srv: srv, lib: lib, idx: idx, songs: songsDir}
 }
 
 // get performs a request with a Host the default policy accepts.

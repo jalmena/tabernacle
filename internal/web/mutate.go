@@ -3,6 +3,7 @@ package web
 import (
 	"errors"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -35,11 +36,11 @@ func flashFor(r *http.Request) string { return flashes[r.URL.Query().Get("msg")]
 // requireSameOrigin refuses a state-changing request that did not come from this
 // site.
 //
-// With no accounts there are no credentials for SameSite cookies to protect, so
-// a cross-origin POST would otherwise simply work: a page on another site could
-// delete a song by submitting a form. This check and the Host allowlist together
-// are the whole defence, so it fails closed — a missing Origin on a mutation is
-// refused rather than waved through.
+// There are no accounts, so there are no credentials for a SameSite cookie to
+// protect and a cross-origin POST would otherwise simply work: a page on another
+// site could delete a song by submitting a form. This check and the Host
+// allowlist together are the whole defence, so it fails closed — a missing
+// Origin on a mutation is refused rather than waved through.
 func (s *Server) requireSameOrigin(r *http.Request) error {
 	switch r.Header.Get("Sec-Fetch-Site") {
 	case "same-origin", "none", "":
@@ -59,14 +60,57 @@ func (s *Server) requireSameOrigin(r *http.Request) error {
 		}
 		return nil
 	}
-	u, err := url.Parse(origin)
-	if err != nil || u.Host == "" {
-		return errors.New("unparseable origin")
-	}
-	if !strings.EqualFold(u.Host, r.Host) && !s.cfg.HostAllowed(u.Host) {
+	if !s.originAllowed(origin, r.Host) {
 		return errors.New("foreign origin")
 	}
 	return nil
+}
+
+// originAllowed reports whether a page served from this origin may submit here.
+//
+// The port is part of the comparison, which is what separates this from
+// HostAllowed. HostAllowed answers "which names does this server respond to",
+// and a permissive policy is right for that: a home server is reached by half a
+// dozen names it cannot enumerate. Answering "which pages may submit to it" that
+// way is wrong, because a browser scopes neither an origin nor a cookie by
+// hostname alone. Another service on the same machine, or on the same LAN name
+// at a different port, is somebody else.
+func (s *Server) originAllowed(origin, host string) bool {
+	u, err := url.Parse(origin)
+	if err != nil || u.Host == "" {
+		return false
+	}
+	if strings.EqualFold(u.Host, host) {
+		return true
+	}
+	// A reverse proxy that rewrites Host: the browser's origin is the public
+	// name, and BaseURL is where that name is recorded.
+	if s.cfg.BaseURL != nil && strings.EqualFold(u.Host, s.cfg.BaseURL.Host) {
+		return true
+	}
+	// An explicitly allowlisted name, on the port we are actually being
+	// addressed on. The list holds bare names, so the port is compared against
+	// the request's rather than folded away.
+	originHost, originPort := splitHostPort(u.Host)
+	_, wantPort := splitHostPort(host)
+	if originPort != wantPort {
+		return false
+	}
+	for _, a := range s.cfg.AllowedHosts {
+		if strings.EqualFold(originHost, a) {
+			return true
+		}
+	}
+	return false
+}
+
+// splitHostPort separates a host from its port, tolerating both an absent port
+// and an IPv6 literal.
+func splitHostPort(hostport string) (host, port string) {
+	if h, p, err := net.SplitHostPort(hostport); err == nil {
+		return h, p
+	}
+	return strings.TrimSuffix(strings.TrimPrefix(hostport, "["), "]"), ""
 }
 
 // mutating wraps a handler that changes something.

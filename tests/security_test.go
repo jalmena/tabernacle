@@ -116,6 +116,10 @@ func TestACrossOriginWriteIsRefused(t *testing.T) {
 		{"foreign origin", "https://evil.example", ""},
 		{"foreign origin, cross-site", "https://evil.example", "cross-site"},
 		{"no origin but cross-site", "", "cross-site"},
+		// A browser scopes neither an origin nor a cookie by hostname alone, so
+		// another service on this very machine is somebody else.
+		{"same host, another port", "http://127.0.0.1:9999", "same-origin"},
+		{"another address on the LAN", "http://192.168.1.50:8080", "same-origin"},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
