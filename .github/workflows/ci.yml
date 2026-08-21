@@ -61,6 +61,35 @@ jobs:
             curl -sf http://127.0.0.1:8080/healthz && break || sleep 0.5
           done
           curl -sf http://127.0.0.1:8080/healthz | tee /dev/stderr | grep -q '"status":"ok"'
-          # The application must not be running as root inside the container.
-          test "$(docker exec tab sh -c 'ps -o user= -p 1 || true')" != "root"
+
+          # The application must not run as root inside the container.
+          #
+          # Read the owner of /proc/1 rather than asking ps: busybox ps has no -p,
+          # so the previous form failed, had its failure swallowed, and compared an
+          # empty string against "root" — a check that passed whatever the
+          # container did. The assertion is positive for the same reason: an empty
+          # answer is not 1000, so a broken command fails the step instead of
+          # sailing through it.
+          uid=$(docker exec tab stat -c '%u' /proc/1)
+          echo "pid 1 runs as uid $uid"
+          test "$uid" = "1000"
           docker rm -f tab
+
+      # PUID/PGID is how a NAS or CasaOS install writes to a host bind mount owned
+      # by root, and the entrypoint calls it the commonest one-click-install
+      # failure. Nothing tested it until now.
+      - name: Honour PUID and PGID
+        run: |
+          mkdir -p ci-data-puid
+          docker run -d --name tabpuid -e PUID=1500 -e PGID=1500 -p 8081:8080 \
+            -v "$PWD/ci-data-puid:/data" tabernacle:ci
+          for i in $(seq 1 40); do
+            curl -sf http://127.0.0.1:8081/healthz && break || sleep 0.5
+          done
+          # Answering at all means it opened its index inside /data, which is the
+          # thing a wrong uid stops it doing.
+          curl -sf http://127.0.0.1:8081/healthz | tee /dev/stderr | grep -q '"status":"ok"'
+          uid=$(docker exec tabpuid stat -c '%u' /proc/1)
+          echo "pid 1 runs as uid $uid"
+          test "$uid" = "1500"
+          docker rm -f tabpuid
