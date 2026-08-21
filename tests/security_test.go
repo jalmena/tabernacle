@@ -120,6 +120,7 @@ func TestACrossOriginWriteIsRefused(t *testing.T) {
 		// another service on this very machine is somebody else.
 		{"same host, another port", "http://127.0.0.1:9999", "same-origin"},
 		{"another address on the LAN", "http://192.168.1.50:8080", "same-origin"},
+		{"a browser declining to say, from elsewhere", "null", "cross-site"},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -395,5 +396,56 @@ func TestAHostileSongFileIsHandled(t *testing.T) {
 	}
 	if in.get("/").Status != http.StatusOK {
 		t.Error("the library does not answer after the hostile imports")
+	}
+}
+
+// A form submitted from one of our own pages has to work, including when the
+// browser will not name the origin it came from.
+//
+// Firefox sends "Origin: null" on a POST whenever the referrer policy is
+// restrictive, and every response here carries no-referrer — so this is what an
+// ordinary form submission looks like, not an edge case. Sec-Fetch-Site is the
+// evidence instead, and page content cannot set it.
+func TestAFormFromOurOwnPageIsAccepted(t *testing.T) {
+	in := start(t, nil)
+	in.seed()
+
+	headers := []struct {
+		name   string
+		origin string
+		fetch  string
+	}{
+		{"the origin named", "same", "same-origin"},
+		{"the origin withheld", "null", "same-origin"},
+		{"a typed address", "null", "none"},
+		{"an older browser", "", ""},
+	}
+	for _, h := range headers {
+		t.Run(h.name, func(t *testing.T) {
+			body := url.Values{"text": {newSong}}.Encode()
+			req, err := http.NewRequest(http.MethodPost, in.url+"/songs", strings.NewReader(body))
+			if err != nil {
+				t.Fatal(err)
+			}
+			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			switch h.origin {
+			case "same":
+				req.Header.Set("Origin", in.url)
+			case "":
+			default:
+				req.Header.Set("Origin", h.origin)
+			}
+			if h.fetch != "" {
+				req.Header.Set("Sec-Fetch-Site", h.fetch)
+			}
+
+			res := in.do(req)
+			if res.Status != http.StatusSeeOther {
+				t.Fatalf("status = %d, want 303\n%.300s", res.Status, res.Body)
+			}
+			// Clean up so the next case can create the same song again.
+			slug := strings.TrimPrefix(strings.SplitN(res.Header.Get("Location"), "?", 2)[0], "/songs/")
+			in.post("/songs/"+slug+"/delete", nil)
+		})
 	}
 }

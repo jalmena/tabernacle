@@ -25,6 +25,11 @@ type songBody struct {
 	ParseMsg string
 	ParseAt  int
 	ReadOnly bool
+	// CanEdit is whether this reader may change the collection: not read-only,
+	// and either signed in or looking at an instance nobody has claimed. The
+	// editing controls are hidden otherwise, because offering a button that
+	// answers 401 is worse than not offering it.
+	CanEdit  bool
 	PrintURL string
 	RawURL   string
 	EditURL  string
@@ -145,6 +150,7 @@ func (s *Server) loadSong(r *http.Request) (songBody, songView, error) {
 		Theme:    printThemeFor(r),
 		Themes:   printThemes(cur),
 		ReadOnly: s.cfg.ReadOnly,
+		CanEdit:  !s.cfg.ReadOnly && viewerOf(r).MayWrite(),
 		PrintURL: cur.printing().URL(),
 		RawURL:   "/songs/" + slug + "/raw",
 		EditURL:  "/songs/" + slug + "/edit",

@@ -87,11 +87,9 @@ allowlisted explicitly — hence `TABERNACLE_ALLOWED_HOSTS`.
 Two checks, two questions. That allowlist answers "which names does this server
 answer to", and it is deliberately generous, because a home server is reached by
 half a dozen names nobody can list in advance. A separate check answers "which
-pages may submit a change", and that one is exact, port included: a browser does
-not scope an origin by hostname alone, so another service on the same machine is
-somebody else. The practical consequence is that a domain on a non-standard port
-belongs in `TABERNACLE_BASE_URL` **with** its port, or writes from it are
-refused.
+pages may submit a change" — see [accounts](accounts.md). The practical
+consequence for a deployment is that a domain on a non-standard port belongs in
+`TABERNACLE_BASE_URL` **with** its port, or writes from it are refused.
 
 ### Sharing the library read-only
 

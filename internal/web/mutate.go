@@ -55,19 +55,38 @@ func flashFor(r *http.Request) string { return flashes[r.URL.Query().Get("msg")]
 // through — because a write that cannot be shown to come from this page is not
 // worth guessing about.
 func (s *Server) requireSameOrigin(r *http.Request) error {
+	origin := r.Header.Get("Origin")
+	// "null" is a browser declining to say. It is not a host, and treating it as
+	// one refuses the request it was trying to describe.
+	told := origin != "" && origin != "null"
+
 	switch r.Header.Get("Sec-Fetch-Site") {
-	case "same-origin", "none", "":
-		// "none" is a user typing the address; "" is a client that does not send
-		// the header, which the Origin check below still covers.
+	case "same-origin", "none":
+		// The browser is telling us where this came from, and page content cannot
+		// set this header: it is a forbidden header name, so neither a form nor
+		// fetch can forge it. That makes it better evidence than Origin, which
+		// Firefox reduces to "null" on a POST whenever the referrer policy is
+		// restrictive — and every response here carries no-referrer.
+		//
+		// "none" is somebody typing an address or following a bookmark.
+		//
+		// A contradictory Origin still loses: if the browser named one, it has to
+		// agree.
+		if told && !s.originAllowed(origin, r.Host) {
+			return errors.New("foreign origin")
+		}
+		return nil
+	case "":
+		// An old browser, or something that is not a browser. Fall through to the
+		// Origin check, which is all the evidence there is.
 	default:
 		return errors.New("cross-site request")
 	}
 
-	origin := r.Header.Get("Origin")
-	if origin == "" {
-		// Browsers always send Origin on a cross-origin POST, so an absent one
-		// means a same-origin form or a non-browser client. Requiring the Host
-		// to be allowlisted is what makes that safe.
+	if !told {
+		// Nothing said where this came from. The Host allowlist is what makes
+		// that safe: a page on a public name cannot make a browser claim to be
+		// talking to a private one.
 		if !s.cfg.HostAllowed(r.Host) {
 			return errors.New("host not allowed")
 		}
@@ -168,7 +187,7 @@ func (s *Server) guarded(g guard, h func(http.ResponseWriter, *http.Request)) ht
 		if err := s.requireSameOrigin(r); err != nil {
 			s.log.Warn("refused a cross-origin write",
 				"path", r.URL.Path, "origin", r.Header.Get("Origin"), "host", r.Host,
-				"reason", err)
+				"fetch_site", r.Header.Get("Sec-Fetch-Site"), "reason", err)
 			s.fail(w, r, http.StatusForbidden, "Petición rechazada",
 				"La petición no parece venir de esta página.")
 			return

@@ -95,11 +95,25 @@ not consulted, because nothing else here trusts a header a hop can invent.
 
 ## What this does and does not defend against
 
-A cross-site write is refused unless the request's `Origin` matches this exact
-host **and port**, or a name in `TABERNACLE_ALLOWED_HOSTS` or
-`TABERNACLE_BASE_URL`. `SameSite=Lax` keeps the cookie off a cross-site POST as
-well. Between them there is no useful gap for a synchroniser token to close, so
-there is not one.
+A write has to prove it came from one of our own pages. The primary evidence is
+`Sec-Fetch-Site`, which the browser sets and page content cannot: it is a
+forbidden header name, so neither a form nor `fetch` can forge it. `same-origin`
+is accepted, anything cross-site is refused.
+
+`Origin` corroborates rather than decides, because a browser will not always name
+one. Firefox reduces it to `null` on a POST whenever the referrer policy is
+restrictive, and every response here carries `Referrer-Policy: no-referrer` — so
+`Origin: null` is what an ordinary form submission looks like, not an oddity. When
+a browser does name an origin it has to match this exact host **and port**, or a
+name in `TABERNACLE_ALLOWED_HOSTS` or `TABERNACLE_BASE_URL`; the port matters
+because a browser scopes neither an origin nor a cookie by hostname alone.
+
+For a client that sends neither header — something that is not a browser — the
+Host allowlist is the whole of it, which is what makes that path safe: a page on a
+public name cannot make a browser claim to be talking to a private one.
+
+`SameSite=Lax` keeps the cookie off a cross-site POST as well. Between them there
+is no useful gap for a synchroniser token to close, so there is not one.
 
 What remains:
 

@@ -2,7 +2,6 @@
 {{template "bodyopen" .}}
 {{template "top" .}}
 <main class="wrap wrap-narrow">
-	{{template "nav" .}}
 	{{with .Body}}
 		<h1>Acceder</h1>
 		{{if .Problem}}<p class="notice" role="alert">{{.Problem}}</p>{{end}}
@@ -19,9 +18,6 @@
 				<a class="btn btn-quiet" href="/">Cancelar</a>
 			</div>
 		</form>
-		<p class="quiet">
-			Leer la colección no necesita cuenta. Se pide para añadir o cambiar canciones.
-		</p>
 	{{end}}
 </main>
 {{template "scripts" .}}

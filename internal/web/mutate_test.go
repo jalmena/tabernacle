@@ -340,6 +340,18 @@ func TestWritesRefuseForeignRequests(t *testing.T) {
 		{"same name, no port", "localhost:8080", "http://localhost", "same-origin", false},
 		{"another address on the LAN", "localhost:8080", "http://192.168.1.50:8080", "same-origin", false},
 		{"unparseable origin", "localhost:8080", "::::", "same-origin", false},
+
+		// A browser that declines to name its origin. Firefox does this on every
+		// POST when the referrer policy is restrictive, and every response here
+		// carries no-referrer — so this is not an edge case, it is what a form
+		// submission from Firefox looks like. Sec-Fetch-Site is the evidence
+		// instead: page content cannot set it.
+		{"null origin, same-origin", "localhost:8080", "null", "same-origin", true},
+		{"null origin, typed address", "localhost:8080", "null", "none", true},
+		{"null origin, cross-site", "localhost:8080", "null", "cross-site", false},
+		// And with no Sec-Fetch-Site either, the allowlisted Host is all there is.
+		{"null origin, nothing else", "localhost:8080", "null", "", true},
+		{"null origin, foreign host", "evil.example", "null", "", false},
 	}
 	for _, h := range headers {
 		for _, wr := range writes {

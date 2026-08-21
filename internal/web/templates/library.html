@@ -51,7 +51,7 @@
 					<p>Pon tus archivos <code>.song</code> en:</p>
 					<p><code>{{.Empty.SongsDir}}/Artista/Título.song</code></p>
 					<p>Aparecerán en cuanto se revise la carpeta.</p>
-					{{if not $.Nav.ReadOnly}}<p><a class="btn" href="/songs/new">Añadir una canción</a></p>{{end}}
+					{{with $.Nav.Add}}<p><a class="btn" href="{{.URL}}">Añadir una canción</a></p>{{end}}
 				{{end}}
 			</div>
 		{{end}}

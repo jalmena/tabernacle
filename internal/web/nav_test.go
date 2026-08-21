@@ -5,6 +5,8 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/jalmena/tabernacle/internal/account"
 )
 
 var (
@@ -27,30 +29,60 @@ func labelsIn(t *testing.T, block *regexp.Regexp, body string) []string {
 	return out
 }
 
-// The navigation is on every page, because navigation that disappears on the
-// editor or import page leaves the reader stranded.
-func TestNavigationIsOnEveryPage(t *testing.T) {
+// The section row names the three ways to walk the collection, so it belongs on
+// every page that is a place in it — including the error page, because a mistyped
+// address should still offer a way back.
+func TestTheSectionRowIsOnEveryPlaceInTheLibrary(t *testing.T) {
 	ts := newTestServer(t, basicSongs())
 	for _, target := range []string{
 		"/",
 		"/artists",
 		"/genres",
-		"/songs/new",
 		"/import",
 		"/songs/traditional-amazing-grace",
-		"/songs/traditional-amazing-grace/edit",
-		"/songs/traditional-amazing-grace/delete",
 		"/nope",
 	} {
-		w := ts.get(t, target)
-		got := labelsIn(t, navBlock, w.Body.String())
+		got := labelsIn(t, navBlock, ts.get(t, target).Body.String())
 		if len(got) == 0 {
-			t.Errorf("%s has no navigation", target)
+			t.Errorf("%s has no section row", target)
 			continue
 		}
-		want := "Canciones|Artistas|Géneros"
-		if strings.Join(got, "|") != want {
-			t.Errorf("%s navigation = %v, want %s", target, got, want)
+		if want := "Canciones|Artistas|Géneros"; strings.Join(got, "|") != want {
+			t.Errorf("%s section row = %v, want %s", target, got, want)
+		}
+	}
+}
+
+// And it stays off the pages that are an action rather than a place. Offering
+// somewhere to go in the middle of writing a song is an invitation to lose it,
+// and the library's vocabulary has no business on a login form.
+//
+// Each of these has its own way out: the editor and the delete confirmation both
+// carry a Cancelar, and every page carries the brand link home.
+func TestTheSectionRowIsAbsentWhereItWouldNotBelong(t *testing.T) {
+	ts := newTestServer(t, basicSongs())
+	ts.as(t, "jose", account.RoleAdmin)
+
+	// /login is asked for signed out, because signed in it redirects home.
+	pages := map[string]bool{
+		"/songs/new":                              true,
+		"/songs/traditional-amazing-grace/edit":   true,
+		"/songs/traditional-amazing-grace/delete": true,
+		"/settings":                               true,
+		"/settings/users":                         true,
+		"/login":                                  false,
+	}
+	for target, signedIn := range pages {
+		body := ts.get(t, target).Body.String()
+		if !signedIn {
+			body = ts.getAnon(t, target).Body.String()
+		}
+		if got := labelsIn(t, navBlock, body); len(got) != 0 {
+			t.Errorf("%s carries the section row: %v", target, got)
+		}
+		// Still not a dead end.
+		if !strings.Contains(body, `class="brand" href="/"`) {
+			t.Errorf("%s has no way back to the library", target)
 		}
 	}
 }

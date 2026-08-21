@@ -11,7 +11,7 @@
 				Este archivo tiene un error de sintaxis{{if .ParseAt}} en la línea <code>{{.ParseAt}}</code>{{end}}:
 				<code>{{.ParseMsg}}</code>.
 				Se muestra la última versión que sí se pudo leer.
-				{{if not .ReadOnly}}<a href="{{.EditURL}}">Corregirlo</a>.{{end}}
+				{{if .CanEdit}}<a href="{{.EditURL}}">Corregirlo</a>.{{end}}
 			</p>
 		{{end}}
 
@@ -20,7 +20,7 @@
 		<footer class="sheet-foot noprint">
 			<div class="filters">
 				<a class="btn btn-quiet" href="{{.RawURL}}">Descargar .song</a>
-				{{if not .ReadOnly}}
+				{{if .CanEdit}}
 					<a class="btn btn-quiet" href="{{.EditURL}}">Editar archivo</a>
 					{{if .Controls.CanReset}}
 						<form method="post" action="/songs/{{.Slug}}/transpose">
