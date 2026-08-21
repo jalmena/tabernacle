@@ -52,18 +52,11 @@ Any of them can take `compose.yaml` directly, or create a container from
 published for `linux/amd64` and `linux/arm64`, so an ARM NAS or a Raspberry Pi
 works the same as an x86 box.
 
-## Behind Caddy
+## Behind a domain
 
-This is the recommended shape. Caddy terminates TLS and Tabernacle never sees a
-certificate.
-
-```caddy
-songs.example.com {
-	reverse_proxy tabernacle:8080
-}
-```
-
-Then tell Tabernacle what it is called, so it accepts requests for that name:
+Put your own reverse proxy in front and terminate TLS there; Tabernacle never
+sees a certificate. It does need telling what it is called, or it will refuse
+requests for that name:
 
 ```yaml
 environment:
