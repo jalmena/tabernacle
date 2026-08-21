@@ -645,3 +645,126 @@ func TestEncodeQueryIsStable(t *testing.T) {
 		t.Errorf("encodeQuery did not escape the value: %q", got)
 	}
 }
+
+const jazzSong = `---
+title: Prueba de jazz
+artist: Prueba
+key: C
+---
+
+## Estrofa 1
+[Cmaj7#11]uno [Am9]dos [D13]tres [Gmaj9]cuatro
+`
+
+// The Simplificar control turns chords the collection has no shape for into ones
+// it can play, without touching the file.
+func TestSimplifyControl(t *testing.T) {
+	ts := newTestServer(t, map[string]string{
+		"Prueba/Jazz.song":               jazzSong,
+		"Traditional/Amazing Grace.song": graceSong,
+	})
+
+	chordsOf := func(target string) string {
+		body := ts.get(t, target).Body.String()
+		var out []string
+		for _, part := range strings.Split(body, `class="chordref"`)[1:] {
+			if i := strings.Index(part, ">"); i >= 0 {
+				if j := strings.Index(part[i+1:], "<"); j >= 0 {
+					out = append(out, part[i+1:][:j])
+				}
+			}
+		}
+		return strings.Join(out, " ")
+	}
+
+	if got := chordsOf("/songs/prueba-jazz"); got != "Cmaj7#11 Am9 D13 Gmaj9" {
+		t.Errorf("chords as written = %q", got)
+	}
+	if got := chordsOf("/songs/prueba-jazz?s=1"); got != "Cmaj7 Am7 D7 Gmaj7" {
+		t.Errorf("simplified chords = %q, want \"Cmaj7 Am7 D7 Gmaj7\"", got)
+	}
+
+	// The control sits between the notation toggle and the print link.
+	body := ts.get(t, "/songs/prueba-jazz").Body.String()
+	nota := strings.Index(body, `data-sheet="notation"`)
+	simp := strings.Index(body, `data-sheet="simplify"`)
+	print := strings.Index(body, "Imprimir")
+	if simp < 0 {
+		t.Fatal("the Simplificar control is missing")
+	}
+	if !(nota < simp && simp < print) {
+		t.Errorf("the control is not between the notation toggle and Imprimir (%d, %d, %d)",
+			nota, simp, print)
+	}
+
+	// It is a plain link, so it works without scripting, and it turns back off.
+	if !strings.Contains(body, `href="/songs/prueba-jazz?s=1"`) {
+		t.Error("the control is not a plain link")
+	}
+	on := ts.get(t, "/songs/prueba-jazz?s=1").Body.String()
+	if !strings.Contains(on, `href="/songs/prueba-jazz"`) {
+		t.Error("with it on, the control does not offer to turn it off")
+	}
+	if !strings.Contains(on, `aria-pressed="true"`) {
+		t.Error("the control does not report that it is on")
+	}
+	if !strings.Contains(on, "simplificados") {
+		t.Error("the page does not say the chords are not what the file says")
+	}
+}
+
+// A song whose chords all have shapes has nothing to simplify, so it is not
+// offered: a button that does nothing when pressed is worse than an absent one.
+func TestSimplifyControlHiddenWhenUseless(t *testing.T) {
+	ts := newTestServer(t, basicSongs())
+	body := ts.get(t, "/songs/traditional-amazing-grace").Body.String()
+	if strings.Contains(body, `data-sheet="simplify"`) {
+		t.Error("a song with nothing to simplify still offers the control")
+	}
+}
+
+// Simplifying is a way of reading, never a change to the collection.
+func TestSimplifyDoesNotTouchTheFile(t *testing.T) {
+	ts := newTestServer(t, map[string]string{"Prueba/Jazz.song": jazzSong})
+	path := filepath.Join(ts.songs, "Prueba", "Jazz.song")
+
+	before, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	stat, _ := os.Stat(path)
+
+	for _, target := range []string{
+		"/songs/prueba-jazz?s=1",
+		"/songs/prueba-jazz?s=1&t=2",
+		"/songs/prueba-jazz/print?s=1",
+	} {
+		if code := ts.get(t, target).Code; code != http.StatusOK {
+			t.Fatalf("GET %s = %d", target, code)
+		}
+	}
+
+	after, _ := os.ReadFile(path)
+	if string(before) != string(after) {
+		t.Error("the file changed while chords were only being simplified for reading")
+	}
+	if statAfter, _ := os.Stat(path); !stat.ModTime().Equal(statAfter.ModTime()) {
+		t.Error("the file's modification time changed")
+	}
+	// And the original chord is still in there.
+	if !strings.Contains(string(after), "Cmaj7#11") {
+		t.Error("the written chord was lost")
+	}
+}
+
+// A printed sheet with simplified chords has to say so on the paper.
+func TestSimplifyShowsOnThePrintedSheet(t *testing.T) {
+	ts := newTestServer(t, map[string]string{"Prueba/Jazz.song": jazzSong})
+	body := ts.get(t, "/songs/prueba-jazz/print?s=1").Body.String()
+	if !strings.Contains(body, "simplificados") {
+		t.Error("the printed sheet does not say the chords were simplified")
+	}
+	if !strings.Contains(body, "Cmaj7<") && !strings.Contains(body, ">Cmaj7") {
+		t.Error("the printed sheet does not carry the simplified chords")
+	}
+}

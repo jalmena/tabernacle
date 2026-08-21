@@ -114,9 +114,6 @@ type TransposeReport struct {
 	TabsTooHigh int
 }
 
-// Clamped reports whether any tablature had to be left behind.
-func (r TransposeReport) Clamped() bool { return r.TabsTooLow > 0 || r.TabsTooHigh > 0 }
-
 // TransposeReport moves the song and says what happened to its tablature.
 func (s Song) TransposeReport(semitones int) (Song, TransposeReport) {
 	var rep TransposeReport
@@ -159,6 +156,26 @@ func (s Song) TransposeReport(semitones int) (Song, TransposeReport) {
 		}
 	}
 	return out, rep
+}
+
+// MapChords returns a copy of the song with every chord replaced by fn.
+//
+// The copy is deep, so the caller's song is never touched. The key field is left
+// alone: it names what key the sheet is in, not a chord in the words, and
+// rewriting it would change what the sheet claims about itself.
+func (s Song) MapChords(fn func(chord.Chord) chord.Chord) Song {
+	out := s.clone()
+	for i := range out.Sections {
+		for j := range out.Sections[i].Lines {
+			toks := out.Sections[i].Lines[j].Tokens
+			for k := range toks {
+				if toks[k].Kind == TokenChord {
+					toks[k].Chord = fn(toks[k].Chord)
+				}
+			}
+		}
+	}
+	return out
 }
 
 // keyChord returns the chord the sheet's spelling should be derived from.

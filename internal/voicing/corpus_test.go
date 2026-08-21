@@ -40,8 +40,8 @@ func TestEveryChordInTheExamplesHasAShape(t *testing.T) {
 				t.Errorf("%s: %s has no shape at all", d.Name(), c)
 				continue
 			}
-			if !res.Voicings[0].Approx.Exact() {
-				t.Errorf("%s: %s only has an approximate shape (%s)", d.Name(), c, res.Warning)
+			if res.Warning != "" {
+				t.Errorf("%s: %s produced a warning: %s", d.Name(), c, res.Warning)
 			}
 		}
 		return nil

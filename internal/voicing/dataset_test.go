@@ -200,7 +200,7 @@ func isBarreFinger(v Voicing, f Finger) bool {
 }
 
 func TestDatasetLoads(t *testing.T) {
-	ds, err := loadForTest()
+	ds, err := load()
 	if err != nil {
 		t.Fatalf("the dataset does not load: %v", err)
 	}
@@ -213,7 +213,7 @@ func TestDatasetLoads(t *testing.T) {
 }
 
 func TestCuratedShapesAreCorrect(t *testing.T) {
-	ds, err := loadForTest()
+	ds, err := load()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -233,7 +233,7 @@ func TestCuratedShapesAreCorrect(t *testing.T) {
 // Whether the collection as a whole covers a root is a separate question, asked
 // by TestCoverage.
 func TestMovableShapesAreCorrectAtEveryRoot(t *testing.T) {
-	ds, err := loadForTest()
+	ds, err := load()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -242,7 +242,7 @@ func TestMovableShapesAreCorrectAtEveryRoot(t *testing.T) {
 		for _, m := range shapes {
 			reached := 0
 			for root := range 12 {
-				slid := m.slide(root, std)
+				slid := m.slideQuality(root, period(q), std)
 				if len(slid) > 0 {
 					reached++
 				}

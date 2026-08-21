@@ -56,6 +56,11 @@ type controlSet struct {
 	CapoURL  string
 	CapoOn   bool
 	Capo     int
+
+	// The simplify control appears only when it would change something.
+	ShowSimplify bool
+	SimplifyURL  string
+	SimplifyOn   bool
 }
 
 // themeChoice is one paper option offered inside the print view.
@@ -116,6 +121,7 @@ func (s *Server) loadSong(r *http.Request) (songBody, songView, error) {
 	notation := s.notationFor(r, view.State.Notation)
 	transpose := transposeFor(r, view.State.Transpose)
 	capo := capoViewFor(r, view.State.CapoView)
+	simplify := simplifyFor(r, view.State.Simplify)
 
 	tuning, _ := voicing.ParseTuning(view.Song.Tuning)
 	sheet := render.Sheet(view.Song, render.Options{
@@ -124,6 +130,7 @@ func (s *Server) loadSong(r *http.Request) (songBody, songView, error) {
 		CapoView:  capo,
 		Diagrams:  true,
 		Tuning:    tuning,
+		Simplify:  simplify,
 	})
 
 	notationName := config.NotationEnglish
@@ -136,6 +143,7 @@ func (s *Server) loadSong(r *http.Request) (songBody, songView, error) {
 		Transpose:       transpose,
 		Notation:        notationName,
 		CapoView:        capo,
+		Simplify:        simplify,
 		DefaultNotation: s.defaultNotation(view.State.Notation),
 	}
 
@@ -167,6 +175,13 @@ func (s *Server) loadSong(r *http.Request) (songBody, songView, error) {
 			Capo:     view.Song.Capo,
 			CapoOn:   capo == render.CapoSounding,
 		},
+	}
+	// Offered when it is already on, so it can be turned off, or when turning it
+	// on would actually rewrite something.
+	body.Controls.ShowSimplify = sheet.Simplified || sheet.CanSimplify
+	body.Controls.SimplifyOn = sheet.Simplified
+	if body.Controls.ShowSimplify {
+		body.Controls.SimplifyURL = cur.withSimplify(!simplify).URL()
 	}
 	if body.Controls.ShowCapo {
 		next := render.CapoSounding

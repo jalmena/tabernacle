@@ -48,7 +48,7 @@ func TestNavigationIsOnEveryPage(t *testing.T) {
 			t.Errorf("%s has no navigation", target)
 			continue
 		}
-		want := "Canciones|Artistas|Géneros|Añadir"
+		want := "Canciones|Artistas|Géneros"
 		if strings.Join(got, "|") != want {
 			t.Errorf("%s navigation = %v, want %s", target, got, want)
 		}
@@ -73,6 +73,36 @@ func TestAddPageOffersOnlyTheFileChooser(t *testing.T) {
 	between = between[:strings.Index(between, "</form>")]
 	if strings.Count(between, "<button") != 1 || !strings.Contains(between, "<noscript>") {
 		t.Errorf("the load row should hold one label and a noscript fallback:\n%s", between)
+	}
+}
+
+// Añadir lives in the header, at the far right beside the search, because it is
+// an action rather than a place. It is on every page too.
+func TestAddSitsInTheHeader(t *testing.T) {
+	ts := newTestServer(t, basicSongs())
+	for _, target := range []string{"/", "/artists", "/genres", "/songs/new", "/import", "/nope"} {
+		body := ts.get(t, target).Body.String()
+
+		header := body[strings.Index(body, `class="top`):]
+		header = header[:strings.Index(header, "</header>")]
+		if !strings.Contains(header, `href="/songs/new"`) {
+			t.Errorf("%s has no Añadir in the header", target)
+			continue
+		}
+		// After the search, so it lands at the right-hand edge.
+		if strings.Index(header, `class="search"`) > strings.Index(header, `class="btn add`) {
+			t.Errorf("%s puts Añadir before the search box", target)
+		}
+		// And nowhere else: one way in, not two.
+		if strings.Count(body, `href="/songs/new"`) != 1 {
+			t.Errorf("%s offers Añadir %d times", target, strings.Count(body, `href="/songs/new"`))
+		}
+	}
+	// It is not one of the sections any more.
+	for _, l := range labelsIn(t, navBlock, ts.get(t, "/").Body.String()) {
+		if l == "Añadir" {
+			t.Error("Añadir is still listed among the sections")
+		}
 	}
 }
 
@@ -144,14 +174,16 @@ func TestAddIsHiddenInReadOnlyMode(t *testing.T) {
 	ts := newTestServerWithEnv(t, basicSongs(), t.TempDir(), map[string]string{
 		"TABERNACLE_READ_ONLY": "true",
 	})
-	got := labelsIn(t, navBlock, ts.get(t, "/").Body.String())
-	for _, l := range got {
-		if l == "Añadir" {
-			t.Error("read-only mode still offers Añadir")
-		}
+	body := ts.get(t, "/").Body.String()
+	if strings.Contains(body, `href="/songs/new"`) {
+		t.Error("read-only mode still offers Añadir")
 	}
-	if len(got) != 3 {
+	if got := labelsIn(t, navBlock, body); len(got) != 3 {
 		t.Errorf("navigation = %v, want the three reading sections", got)
+	}
+	// Reading is untouched.
+	if !strings.Contains(body, "Amazing Grace") {
+		t.Error("read-only mode broke the library listing")
 	}
 }
 

@@ -47,6 +47,9 @@ accounts.
 - Tablature transposes with the chords. When a shift would take a fret below an open string, or
   past the end of the neck, the tab stays as it was and the page says so.
 - A "chords used" panel at the top so you can learn the shapes before you start.
+- A Simplificar control for a chart full of chords nobody has a shape for. It swaps each one for
+  the nearest chord that can actually be played and says so — the campfire version of a jazz
+  sheet, with nothing mislabelled. It only appears when there is something to simplify.
 - Note names in English (`C D E F G A B`) or solfège (`Do Re Mi Fa Sol La Si`), switchable at any
   time. One file serves both; switching never rewrites anything.
 - Capo and tuning are first-class metadata, and chords can be shown as written or as the pitches

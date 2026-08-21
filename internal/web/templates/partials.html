@@ -17,8 +17,12 @@
 	<form class="search" role="search" action="/" method="get">
 		<input type="search" name="q" value="{{.Nav.Query}}" placeholder="Buscar canciones, artistas, letras…"
 		       aria-label="Buscar en la biblioteca" autocomplete="off">
-		<button class="btn" type="submit">Buscar</button>
+		<button class="btn search-go" type="submit">Buscar</button>
 	</form>
+	{{with .Nav.Add}}
+		<a class="btn add{{if .On}} on{{end}}" href="{{.URL}}"
+		   {{if .On}}aria-current="page"{{end}}>{{.Label}}</a>
+	{{end}}
 </header>
 {{if .Nav.Flash}}<p class="flash noprint" role="status">{{.Nav.Flash}}</p>{{end}}
 {{end}}
@@ -61,10 +65,19 @@
 		   rel="nofollow">Suena</a>
 	{{end}}
 
+	{{if .Controls.ShowSimplify}}
+		<a class="btn btn-quiet{{if .Controls.SimplifyOn}} on{{end}}" data-sheet="simplify"
+		   href="{{.Controls.SimplifyURL}}"
+		   aria-pressed="{{if .Controls.SimplifyOn}}true{{else}}false{{end}}"
+		   title="Cambiar los acordes que no tienen posición conocida por otros que se puedan tocar"
+		   rel="nofollow">Simplificar</a>
+	{{end}}
+
 	<a class="btn btn-quiet" href="{{.PrintURL}}">Imprimir</a>
 </div>
 
 <div id="sheet">
+	{{if .Sheet.SimplifyNote}}<p class="quiet">{{.Sheet.SimplifyNote}}</p>{{end}}
 	{{if .Sheet.TabNote}}<p class="quiet">{{.Sheet.TabNote}}</p>{{end}}
 	{{if .Sheet.TuningNote}}<p class="quiet">{{.Sheet.TuningNote}}</p>{{end}}
 
@@ -134,7 +147,7 @@
 					<div class="block">
 						{{range .Lines}}
 							{{if .HasChord}}
-								<p class="line line-chords">{{range .Words}}<span class="word">{{range .Cells}}<span class="cell"><span class="chord">{{.Chord}}</span><span class="lyric">{{if .Annotation}}<span class="annotation">[{{.Annotation}}]</span>{{else}}{{.Text}}{{end}}</span></span>{{end}}</span>{{.Sep}}{{end}}</p>
+								<p class="line line-chords">{{range .Words}}<span class="word">{{range .Cells}}<span class="cell"><span class="chord">{{.Chord}}</span><span>{{if .Annotation}}<span class="annotation">[{{.Annotation}}]</span>{{else}}{{.Text}}{{end}}</span></span>{{end}}</span>{{.Sep}}{{end}}</p>
 							{{else}}
 								<p class="line">{{range .Words}}{{range .Cells}}{{if .Annotation}}<span class="annotation">[{{.Annotation}}]</span>{{else}}{{.Text}}{{end}}{{end}}{{.Sep}}{{end}}</p>
 							{{end}}

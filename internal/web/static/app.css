@@ -611,3 +611,15 @@ body.printing .transposed {
 	a { color: inherit; text-decoration: none; }
 	a[href]::after { content: none !important; }
 }
+
+/* Añadir sits at the far right of the header: the search stretches, so it ends
+ * up hard against the edge without any positioning. */
+.top .add { flex: 0 0 auto; white-space: nowrap; }
+
+@media (max-width: 30rem) {
+	/* On a phone the header holds four things and the search box loses. The
+	 * submit button is the one to drop: the on-screen keyboard already has a
+	 * search key, and the form submits on Enter regardless. */
+	.search-go { display: none; }
+	.brand { font-size: 0.9375rem; }
+}

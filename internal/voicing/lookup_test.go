@@ -1,6 +1,7 @@
 package voicing
 
 import (
+	"strconv"
 	"strings"
 	"testing"
 
@@ -45,10 +46,6 @@ func TestCommonChordsResolveExactly(t *testing.T) {
 			if !res.Found() {
 				t.Fatalf("no shape at all for %s", sym)
 			}
-			if !res.Voicings[0].Approx.Exact() {
-				t.Errorf("%s resolved only approximately (%v: %s)",
-					sym, res.Voicings[0].Approx.Kind, res.Warning)
-			}
 			if res.Warning != "" {
 				t.Errorf("%s produced a warning: %s", sym, res.Warning)
 			}
@@ -68,9 +65,6 @@ func TestCoverage(t *testing.T) {
 			if !res.Found() {
 				t.Errorf("%s has no shape", sym)
 				continue
-			}
-			if !res.Voicings[0].Approx.Exact() {
-				t.Errorf("%s has only an approximate shape", sym)
 			}
 		}
 	}
@@ -120,65 +114,62 @@ func TestSolfegeReachesTheSameShapes(t *testing.T) {
 	}
 }
 
-func TestFallbackChain(t *testing.T) {
-	tests := []struct {
-		sym      string
-		wantKind ApproxKind
-		given    string
-	}{
-		// Decoration this package does not model is dropped, and said so.
-		{"Cmaj7#11", QualitySimplified, "Cmaj7"},
-		{"C13", QualitySimplified, "C7"},
-		{"C7b9", QualitySimplified, "C7"},
-		// A family with no shapes walks toward one that has them.
-		{"Cmaj9", QualitySimplified, "Cmaj7"},
-		{"Cm9", QualitySimplified, "Cm7"},
-		{"C9", QualitySimplified, "C7"},
-		// Cadd9 has a curated shape of its own, so a root that does not is used
-		// here instead.
-		{"Eadd9", QualitySimplified, "E"},
-		// A slash bass is dropped before the quality is touched, because the
-		// bass is usually an inversion somebody else is covering.
-		{"Cmaj7/E", BassOmitted, "Cmaj7"},
-	}
-	for _, tt := range tests {
-		t.Run(tt.sym, func(t *testing.T) {
-			res := lookup(t, tt.sym)
-			if !res.Found() {
-				t.Fatalf("%s produced nothing at all", tt.sym)
-			}
-			a := res.Voicings[0].Approx
-			if a.Kind != tt.wantKind {
-				t.Errorf("%s: kind = %v, want %v", tt.sym, a.Kind, tt.wantKind)
-			}
-			if a.Given != tt.given {
-				t.Errorf("%s: shows %q, want %q", tt.sym, a.Given, tt.given)
+// Nothing is substituted behind the reader's back.
+//
+// Each of these has an obvious simpler relative with a shape, and the lookup used
+// to quietly return it. That put identical dots on the Cmaj7#11 card and the
+// Cmaj7 card, and the only thing distinguishing them was a line of small print.
+// Simplifying is now the sheet-wide control's job, where it is announced.
+func TestNothingIsSubstitutedSilently(t *testing.T) {
+	for _, sym := range []string{
+		// Decoration this package does not model.
+		"Cmaj7#11", "C13", "C7b9",
+		// A family with no shapes of its own.
+		"Cmaj9", "Cm9", "C9",
+		// Cadd9 is curated, so a root that is not is used here instead.
+		"Eadd9",
+		// A slash bass that is not in the dataset.
+		"Cmaj7/E",
+	} {
+		t.Run(sym, func(t *testing.T) {
+			res := lookup(t, sym)
+			if res.Found() {
+				t.Errorf("%s returned %d shapes; it has none of its own",
+					sym, len(res.Voicings))
 			}
 			if res.Warning == "" {
-				t.Error("an approximate result must say so")
-			}
-			if !strings.Contains(res.Warning, tt.given) {
-				t.Errorf("the warning %q does not name what is being shown", res.Warning)
+				t.Error("an empty result must say why")
 			}
 		})
 	}
 }
 
-// "3 de 5" must not mean three real shapes and two invented.
-func TestExactAndApproximateAreNeverMixed(t *testing.T) {
+// Every shape returned must actually sound the chord that was asked for. This is
+// the invariant the old fallback chain broke, so it is checked harmonically
+// rather than by trusting the lookup's own labelling.
+func TestEveryShapePlaysTheChordAsked(t *testing.T) {
 	for _, sym := range []string{
-		"C", "Am7", "Cmaj7#11", "Cm9", "C13", "Cmaj7/E", "D/F#", "Cadd9",
+		"C", "Am7", "Cmaj7", "Cadd9", "Cdim7", "Bb", "F#m7b5",
+		"D/F#", "C/E", "G/B", "Am/G", "C5", "Csus4", "A6",
 	} {
-		res := lookup(t, sym)
-		if len(res.Voicings) == 0 {
-			continue
-		}
-		first := res.Voicings[0].Approx.Kind
-		for i, v := range res.Voicings {
-			if v.Approx.Kind != first {
-				t.Errorf("%s: shape %d is %v but the first is %v", sym, i, v.Approx.Kind, first)
+		t.Run(sym, func(t *testing.T) {
+			c := parse(t, sym)
+			q, red, ok := harmony.Of(c)
+			if !ok || !red.Exact() {
+				t.Fatalf("%s does not classify exactly, so this test cannot judge it", sym)
 			}
-		}
+			bassPC := -1
+			if c.HasBass {
+				bassPC = c.Bass.PitchClass()
+			}
+			res := lookup(t, sym)
+			if !res.Found() {
+				t.Fatalf("%s has no shape", sym)
+			}
+			for i, v := range res.Voicings {
+				checkShape(t, sym+" shape "+strconv.Itoa(i), v, c.Root.PitchClass(), q, bassPC)
+			}
+		})
 	}
 }
 
@@ -466,7 +457,6 @@ func FuzzFor(f *testing.F) {
 		if !res.Found() && res.Warning == "" {
 			t.Fatalf("%q returned nothing and said nothing", sym)
 		}
-		kinds := map[ApproxKind]bool{}
 		for _, v := range res.Voicings {
 			if len(v.Frets) != len(v.Fingers) {
 				t.Fatalf("%q: %d frets but %d fingers", sym, len(v.Frets), len(v.Fingers))
@@ -480,10 +470,6 @@ func FuzzFor(f *testing.F) {
 			if v.ID() == "" {
 				t.Fatalf("%q: a shape has no id", sym)
 			}
-			kinds[v.Approx.Kind] = true
-		}
-		if len(kinds) > 1 {
-			t.Fatalf("%q mixed exact and approximate shapes", sym)
 		}
 	})
 }

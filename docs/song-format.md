@@ -207,6 +207,10 @@ page says so.
 Capo is left alone. It describes what the player does with a piece of metal, not
 what the sheet says.
 
+Simplifying is the other way a sheet can differ from its file: a chord with no
+practical shape is swapped for the nearest one that has, and the page says so.
+Like transposition, it never writes anything.
+
 ## Guarantees
 
 - Reading a canonical file and writing it back returns the same bytes. Saving a

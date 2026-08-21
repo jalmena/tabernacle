@@ -5,10 +5,10 @@
 <nav class="paperbar noprint" aria-label="Papel">
 	<span class="quiet">Papel:</span>
 	{{range .Body.Themes}}
-		<a class="chip{{if .On}} on{{end}}" href="{{.URL}}">{{.Label}}</a>
+		<a class="btn btn-quiet{{if .On}} on{{end}}" href="{{.URL}}">{{.Label}}</a>
 	{{end}}
 	<span class="sep"></span>
-	<a class="chip" href="/songs/{{.Body.Slug}}">Volver</a>
+	<a class="btn btn-quiet" href="/songs/{{.Body.Slug}}">Volver</a>
 </nav>
 <main class="wrap">
 	{{with .Body}}
@@ -31,6 +31,7 @@
 					{{end}}
 				</p>
 			{{end}}
+			{{if .Sheet.SimplifyNote}}<p class="transposed">{{.Sheet.SimplifyNote}}</p>{{end}}
 			{{if .Sheet.TabNote}}<p class="transposed">{{.Sheet.TabNote}}</p>{{end}}
 		</div>
 

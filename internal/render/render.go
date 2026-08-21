@@ -45,6 +45,11 @@ type Options struct {
 	// unrecognised tuning yields no diagrams and an honest explanation rather
 	// than shapes that are quietly wrong.
 	Tuning voicing.Tuning
+
+	// Simplify rewrites chords the collection has no shape for into ones it can
+	// play. It needs Diagrams, since "playable" is a question about the shapes
+	// we hold.
+	Simplify bool
 }
 
 // MaxTranspose bounds the transposition controls. Beyond eleven semitones in
@@ -90,6 +95,15 @@ type SheetView struct {
 	// fret cannot go below an open string and the neck runs out. Plainly stated,
 	// with no alarm: it is information, not a problem the reader caused.
 	TabNote string
+
+	// Simplified is true when chords were rewritten into playable ones, and
+	// SimplifyNote says so on the page — a sheet whose chords are not what the
+	// file says must never keep that to itself.
+	Simplified   bool
+	SimplifyNote string
+	// CanSimplify is true when offering to simplify would actually change
+	// something. Most songs have nothing to simplify, so the control is hidden.
+	CanSimplify bool
 
 	// Shifted is true when the displayed chords are not what the file says,
 	// which the page has to state plainly so nobody prints a sheet in the wrong
@@ -218,10 +232,29 @@ func Sheet(s song.Song, o Options) SheetView {
 		}
 	}
 
+	vo := voicing.Options{Tuning: o.Tuning}
+	if o.Diagrams {
+		if o.Simplify {
+			var moved int
+			if shown, moved = simplify(shown, vo); moved > 0 {
+				v.Simplified = true
+				v.SimplifyNote = "Acordes simplificados a posiciones que se pueden tocar."
+			}
+		} else {
+			v.CanSimplify = wouldSimplify(shown, vo)
+		}
+	}
+
 	for _, c := range shown.Chords() {
 		ref := ChordRef{Text: c.Format(o.Notation), ID: ChordID(c)}
 		if o.Diagrams {
-			ref.Voicings, ref.Warning = chordVoicings(c, ref.Text, voicing.Options{Tuning: o.Tuning})
+			ref.Voicings, ref.Warning = chordVoicings(c, ref.Text, vo)
+			// A card with no shape is a dead end unless it says where to go. The
+			// sheet-wide control is the way out, so name it here rather than
+			// leaving the reader to guess that the button at the top is related.
+			if len(ref.Voicings) == 0 && v.CanSimplify {
+				ref.Warning += " Simplificar propone una que se pueda tocar."
+			}
 		}
 		v.Chords = append(v.Chords, ref)
 	}

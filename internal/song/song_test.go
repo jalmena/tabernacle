@@ -143,7 +143,7 @@ func TestTransposeMovesTablature(t *testing.T) {
 	if rep.TabsShifted != 1 {
 		t.Errorf("report = %+v, want one tab shifted", rep)
 	}
-	if rep.Clamped() {
+	if rep.TabsTooLow != 0 || rep.TabsTooHigh != 0 {
 		t.Errorf("report = %+v, want no clamping", rep)
 	}
 
@@ -177,8 +177,8 @@ func TestTransposeClampsTablatureAtTheOpenString(t *testing.T) {
 	if rep.TabsTooLow != 1 {
 		t.Errorf("report = %+v, want one tab refused for being too low", rep)
 	}
-	if !rep.Clamped() {
-		t.Error("Clamped() is false even though a tab was left behind")
+	if rep.TabsShifted != 0 {
+		t.Errorf("report = %+v; nothing should have moved", rep)
 	}
 	if got := out.Sections[0].Lines[0].Text; got != original {
 		t.Errorf("the tab was altered despite being refused:\n%s", got)
@@ -212,7 +212,7 @@ func TestTransposeLeavesNonTabBlocksAlone(t *testing.T) {
 		t.Fatal(err)
 	}
 	out, rep := s.TransposeReport(3)
-	if rep.TabsShifted != 0 || rep.Clamped() {
+	if rep.TabsShifted != 0 || rep.TabsTooLow != 0 || rep.TabsTooHigh != 0 {
 		t.Errorf("report = %+v, want nothing done to a prose block", rep)
 	}
 	if !strings.Contains(out.Sections[0].Lines[0].Text, "Play the intro twice.") {

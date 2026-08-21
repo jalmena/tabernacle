@@ -277,14 +277,12 @@ func period(q harmony.Quality) int {
 	return 12
 }
 
-// slide places a movable template so that its root sounds the wanted pitch
-// class, returning one voicing per position that fits.
-func (m movableShape) slide(rootPC int, tuning Tuning) []Voicing {
-	return m.slideQuality(rootPC, 12, tuning)
-}
-
-// slideQuality is slide with the family's repetition period, so that a symmetric
-// chord is offered everywhere its grip actually works.
+// slideQuality places a movable template so that its root sounds the wanted
+// pitch class, returning one voicing per position that fits.
+//
+// step is the family's repetition period, so that a symmetric chord is offered
+// everywhere its grip actually works. Twelve means "only once per octave", which
+// is every family but the diminished seventh and the augmented triad.
 func (m movableShape) slideQuality(rootPC, step int, tuning Tuning) []Voicing {
 	if len(m.frets) != tuning.Strings() {
 		return nil
@@ -361,22 +359,17 @@ func lowestFret(frets []Fret) int {
 	return lo
 }
 
-// attempt is one step of the degradation chain.
-type attempt struct {
-	key   key
-	kind  ApproxKind
-	given string
-}
-
 // For returns the shapes that play a chord.
 //
-// The chain of attempts is built up front so that falling back is a loop rather
-// than nested special cases. A slash bass is dropped before the quality is
-// touched, because the bass is usually an inversion somebody else is covering
-// whereas the quality is the chord's identity.
+// Only shapes that voice the chord as written are returned. When the collection
+// holds none, the honest answer is that it holds none: putting Cmaj7's grip
+// under the heading Cmaj7#11 shows the reader a picture of a chord they did not
+// ask for, and the two cards then carry the same dots under different names.
 //
-// Exact shapes are never mixed with approximate ones: "3 de 5" must not mean
-// three real shapes and two invented.
+// Simplifying is a real and useful operation, but it belongs to the whole sheet
+// at once, where it can be announced and undone — see render.simplify. Doing it
+// here, silently, per chord, made the deliberate version redundant and the
+// silent version unanswerable.
 func For(c chord.Chord, opts Options) Result {
 	tuning := opts.Tuning
 	if tuning.IsZero() {
@@ -386,7 +379,7 @@ func For(c chord.Chord, opts Options) Result {
 		opts.Max = DefaultMax
 	}
 
-	res := Result{Symbol: c.String()}
+	var res Result
 
 	ds, err := load()
 	if err != nil {
@@ -394,86 +387,38 @@ func For(c chord.Chord, opts Options) Result {
 		return res
 	}
 
+	// Decoration this package does not model counts as a difference, not as a
+	// detail to round off: the b9 is the whole point of C7b9, and a reader given
+	// C7's shape would play the chord that was not written.
 	q, red, ok := harmony.Of(c)
-	if !ok {
-		res.Warning = "No hay una posición conocida para este acorde."
+	if !ok || !red.Exact() {
+		res.Warning = warningForNothing(tuning)
 		return res
 	}
 	res.Quality = q
 
-	rootPC := c.Root.PitchClass()
-	bassPC := -1
+	k := key{root: c.Root.PitchClass(), quality: q, bass: -1}
 	if c.HasBass {
-		bassPC = c.Bass.PitchClass()
+		k.bass = c.Bass.PitchClass()
 	}
 
-	var attempts []attempt
-	add := func(k key, kind ApproxKind, given string) {
-		attempts = append(attempts, attempt{key: k, kind: kind, given: given})
-	}
-
-	// What was asked for, allowing for decoration this package does not model.
-	firstKind := Exact
-	firstGiven := c.String()
-	if !red.Exact() {
-		firstKind = QualitySimplified
-		simple := c
-		simple.Suffix = q.Symbol()
-		firstGiven = simple.String()
-	}
-	add(key{rootPC, q, bassPC}, firstKind, firstGiven)
-
-	if bassPC >= 0 {
-		noBass := c
-		noBass.HasBass = false
-		noBass.Suffix = q.Symbol()
-		add(key{rootPC, q, -1}, BassOmitted, noBass.String())
-	}
-
-	// Then walk the simplification chain, with and without the bass.
-	cur := q
-	for {
-		parent, has := cur.Parent()
-		if !has {
-			break
-		}
-		simple := c
-		simple.Suffix = parent.Symbol()
-		if bassPC >= 0 {
-			add(key{rootPC, parent, bassPC}, QualitySimplified, simple.String())
-			noBass := simple
-			noBass.HasBass = false
-			add(key{rootPC, parent, -1}, QualitySimplified, noBass.String())
-		} else {
-			add(key{rootPC, parent, -1}, QualitySimplified, simple.String())
-		}
-		cur = parent
-	}
-
-	for _, at := range attempts {
-		found := gather(ds, at, tuning, opts)
-		if len(found) == 0 {
-			continue
-		}
-		found = dedupe(found)
-		sort.SliceStable(found, func(i, j int) bool {
-			if found[i].Cost != found[j].Cost {
-				return found[i].Cost < found[j].Cost
-			}
-			return found[i].Position < found[j].Position
-		})
-		found = thin(found, opts.Max)
-		res.Voicings = found
-		res.Warning = warningFor(found, tuning)
+	found := dedupe(gather(ds, k, tuning))
+	if len(found) == 0 {
+		res.Warning = warningForNothing(tuning)
 		return res
 	}
-
-	res.Warning = warningForNothing(tuning)
+	sort.SliceStable(found, func(i, j int) bool {
+		if found[i].Cost != found[j].Cost {
+			return found[i].Cost < found[j].Cost
+		}
+		return found[i].Position < found[j].Position
+	})
+	res.Voicings = thin(found, opts.Max)
 	return res
 }
 
-// gather collects every candidate for one attempt.
-func gather(ds *dataset, at attempt, tuning Tuning, opts Options) []Voicing {
+// gather collects every candidate shape for one chord.
+func gather(ds *dataset, k key, tuning Tuning) []Voicing {
 	var out []Voicing
 	std := Standard()
 
@@ -485,23 +430,19 @@ func gather(ds *dataset, at attempt, tuning Tuning, opts Options) []Voicing {
 			return
 		}
 		v.Tuning = tuning
-		v.Approx = Approximation{Kind: at.kind, Asked: at.key.quality.Symbol(), Given: at.given}
-		if at.kind == Exact && !from.Equal(tuning) {
-			v.Approx.Kind = ForeignTuning
-		}
 		out = append(out, v)
 	}
 
-	for _, v := range ds.curated[at.key] {
+	for _, v := range ds.curated[k] {
 		appendIf(v, v.Tuning)
 	}
 	// Movable templates only voice a chord with no slash bass: sliding a shape
 	// does not give it a specified lowest note.
-	if at.key.bass < 0 {
-		for _, m := range ds.movable[at.key.quality] {
+	if k.bass < 0 {
+		for _, m := range ds.movable[k.quality] {
 			// Templates are written for standard tuning; compatibility is checked
 			// per shape, which is what makes Drop D nearly free.
-			for _, v := range m.slideQuality(at.key.root, period(at.key.quality), std) {
+			for _, v := range m.slideQuality(k.root, period(k.quality), std) {
 				appendIf(v, std)
 			}
 		}
@@ -640,34 +581,9 @@ func mutedInside(frets []Fret) int {
 	return n
 }
 
-// warningFor explains an approximate result, in Spanish and ready to display.
-func warningFor(vs []Voicing, tuning Tuning) string {
-	if len(vs) == 0 {
-		return warningForNothing(tuning)
-	}
-	a := vs[0].Approx
-	switch a.Kind {
-	case Exact:
-		return ""
-	case BassOmitted:
-		return "Se muestra " + a.Given + ", sin el bajo indicado."
-	case ForeignTuning:
-		// Not a compromise on the chord itself, just where the shape came from.
-		// In a song with a non-standard tuning this applies to most chords, so
-		// it is said once for the whole sheet rather than on every card.
-		return ""
-	default:
-		return "No hay posición exacta: se muestra " + a.Given + "."
-	}
-}
-
 func warningForNothing(tuning Tuning) string {
 	if !tuning.Equal(Standard()) {
 		return "No hay posiciones para la afinación " + tuning.Name + "."
 	}
 	return "No hay una posición conocida para este acorde."
 }
-
-// Dataset exposes the compiled dataset for the validator test. It is not part of
-// the package's working interface.
-func loadForTest() (*dataset, error) { return load() }

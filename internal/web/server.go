@@ -182,7 +182,12 @@ type navState struct {
 	ReadOnly bool
 	Flash    string
 	Section  string    // which of the sections is current
-	Sections []navLink // Canciones, Artistas, Géneros, Añadir
+	Sections []navLink // Canciones, Artistas, Géneros
+
+	// Add is the primary action and lives in the header rather than among the
+	// sections, because it is something you do, not somewhere you go. Nil when
+	// the collection is read-only and there is nothing to add.
+	Add *navLink
 }
 
 // navLink is one entry in the header.
@@ -217,7 +222,7 @@ func (s *Server) page(r *http.Request, title string, body any) page {
 		section = "genres"
 	}
 
-	// Four sections and nothing else. Anything more and two labels start to look
+	// Three sections and nothing else. Anything more and two labels start to look
 	// like each other, which is how "Artista" the order came to sit next to
 	// "Artistas" the section.
 	nav := navState{
@@ -230,8 +235,7 @@ func (s *Server) page(r *http.Request, title string, body any) page {
 		},
 	}
 	if !s.cfg.ReadOnly {
-		nav.Sections = append(nav.Sections,
-			navLink{Label: "Añadir", URL: "/songs/new", On: section == "add"})
+		nav.Add = &navLink{Label: "Añadir", URL: "/songs/new", On: section == "add"}
 	}
 	return page{Title: title, Nav: nav, Body: body}
 }
@@ -375,6 +379,21 @@ func transposeFor(r *http.Request, stored int) int {
 		return 0
 	}
 	return render.NormalizeTranspose(n)
+}
+
+// simplifyFor reads whether the reader asked for chords they can play.
+//
+// A saved preference is honoured when the query says nothing, the same way the
+// capo view and the notation are. An explicit "0" turns it off, so the control
+// can be switched back with a plain link.
+func simplifyFor(r *http.Request, stored bool) bool {
+	switch r.URL.Query().Get("s") {
+	case "1":
+		return true
+	case "0":
+		return false
+	}
+	return stored
 }
 
 func capoViewFor(r *http.Request, stored string) render.CapoView {

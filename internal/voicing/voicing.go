@@ -64,8 +64,7 @@ type Voicing struct {
 	Barres   []Barre
 	Position int    // lowest fretted fret; 0 for a shape with none
 	Shape    string // "open", "e-shape", "a-shape", "d-shape"
-	Approx   Approximation
-	Cost     int // playability score, and the sort key
+	Cost     int    // playability score, and the sort key
 }
 
 // Strings is the number of strings the shape covers. It is a method rather than
@@ -106,34 +105,6 @@ func (v Voicing) ID() string {
 	return v.Shape + "-" + strconv.Itoa(v.Position)
 }
 
-// ApproxKind says how a shape departs from the chord that was asked for.
-type ApproxKind int
-
-const (
-	// Exact means the shape voices the chord as written.
-	Exact ApproxKind = iota
-	// BassOmitted means a slash bass was dropped. A slash bass is usually an
-	// inversion somebody else is covering, so dropping it is more faithful than
-	// changing the chord's quality.
-	BassOmitted
-	// QualitySimplified means the family was reduced to one that has shapes.
-	QualitySimplified
-	// ForeignTuning means a standard-tuning shape that happens to be valid in
-	// this tuning because it does not touch the strings that differ.
-	ForeignTuning
-)
-
-// Approximation records a departure as data rather than as a sentence, because
-// both the diagram's title and the page need it and both will want translating.
-type Approximation struct {
-	Kind  ApproxKind
-	Asked string // the chord as written
-	Given string // the chord actually shown
-}
-
-// Exact reports whether nothing was given up.
-func (a Approximation) Exact() bool { return a.Kind == Exact }
-
 // Options tunes a lookup for one song.
 type Options struct {
 	Tuning Tuning // zero value means standard
@@ -147,10 +118,9 @@ const DefaultMax = 4
 
 // Result is everything a view needs for one chord.
 type Result struct {
-	Symbol   string // the chord as displayed
 	Quality  harmony.Quality
 	Voicings []Voicing
-	// Warning explains an empty or approximate result in Spanish, ready to show.
+	// Warning explains an empty result in Spanish, ready to show.
 	Warning string
 }
 
