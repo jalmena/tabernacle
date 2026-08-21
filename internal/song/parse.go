@@ -85,16 +85,6 @@ func (e entry) stringValue() (string, error) {
 	return e.scalar, nil
 }
 
-func (e entry) listValue() ([]string, error) {
-	if !e.isList {
-		if strings.TrimSpace(e.scalar) == "" {
-			return nil, nil
-		}
-		return nil, fmt.Errorf("field %q takes a list, for example [one, two]", e.key)
-	}
-	return e.list, nil
-}
-
 func (e entry) intValue() (int, error) {
 	if e.isList {
 		return 0, fmt.Errorf("field %q takes a number, not a list", e.key)

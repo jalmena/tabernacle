@@ -150,9 +150,6 @@ func (l *Library) Artists(ctx context.Context) ([]index.ArtistCount, error) {
 	return l.idx.Artists(ctx)
 }
 
-// Broken lists the files that will not parse.
-func (l *Library) Broken(ctx context.Context) ([]index.Record, error) { return l.idx.Broken(ctx) }
-
 // Stats summarises the collection.
 func (l *Library) Stats(ctx context.Context) (index.Stats, error) { return l.idx.Stats(ctx) }
 
@@ -165,18 +162,6 @@ func (l *Library) Notation(ctx context.Context) (string, error) {
 // SetNotation stores the default note names.
 func (l *Library) SetNotation(ctx context.Context, value string) error {
 	return l.idx.SetSetting(ctx, SettingNotation, value)
-}
-
-// SyncIfNeeded runs a scan when the index has just been rebuilt and holds
-// nothing, which is what happens on a first run or after the derived schema
-// changed.
-func (l *Library) SyncIfNeeded(ctx context.Context) (SyncReport, error) {
-	if !l.idx.NeedsFullScan() {
-		if s, err := l.idx.Stats(ctx); err == nil && s.Songs > 0 {
-			return SyncReport{}, nil
-		}
-	}
-	return l.Sync(ctx)
 }
 
 // StartPeriodicSync rescans on an interval until the context is cancelled.

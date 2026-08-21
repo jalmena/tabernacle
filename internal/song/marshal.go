@@ -92,14 +92,6 @@ func writeNotes(b *strings.Builder, notes string) {
 	}
 }
 
-func flowList(items []string) string {
-	quoted := make([]string, len(items))
-	for i, it := range items {
-		quoted[i] = quoteIfNeeded(it)
-	}
-	return "[" + strings.Join(quoted, ", ") + "]"
-}
-
 // yamlKeywords are the plain words a YAML parser would read as something other
 // than a string. Quoting them keeps a band called Yes a band called Yes.
 var yamlKeywords = map[string]bool{
@@ -254,18 +246,6 @@ func validateCapo(capo int) error {
 		return fmt.Errorf("capo %d is out of range 0..%d", capo, maxCapoFret)
 	}
 	return nil
-}
-
-func allDigits(s string) bool {
-	if s == "" {
-		return false
-	}
-	for i := 0; i < len(s); i++ {
-		if s[i] < '0' || s[i] > '9' {
-			return false
-		}
-	}
-	return true
 }
 
 // validateGenre keeps a genre to one short label of plain text. It names a kind

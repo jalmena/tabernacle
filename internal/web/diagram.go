@@ -2,7 +2,6 @@ package web
 
 import (
 	"html/template"
-	"strings"
 
 	"github.com/jalmena/tabernacle/internal/diagram"
 	"github.com/jalmena/tabernacle/internal/render"
@@ -19,8 +18,7 @@ import (
 //
 // TestOnlyDiagramProducesMarkup keeps the exception to this function.
 func chordDiagram(v render.VoicingView, label string) template.HTML {
-	var b strings.Builder
-	_ = diagram.Inline(&b, diagram.Input{
+	return template.HTML(diagram.String(diagram.Input{
 		Strings:   len(v.Frets),
 		Frets:     v.Frets,
 		Fingers:   v.Fingers,
@@ -28,8 +26,7 @@ func chordDiagram(v render.VoicingView, label string) template.HTML {
 		StartFret: v.StartFret,
 		Label:     label,
 		Title:     v.Fingering,
-	})
-	return template.HTML(b.String())
+	}))
 }
 
 func barresFor(v render.VoicingView) []diagram.Barre {

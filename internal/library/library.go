@@ -197,7 +197,6 @@ func (l *Library) Sync(ctx context.Context) (SyncReport, error) {
 		rep.Removed++
 	}
 
-	l.idx.FullScanDone()
 	rep.Duration = l.now().Sub(started)
 
 	l.lastMu.Lock()

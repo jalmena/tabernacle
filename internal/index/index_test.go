@@ -42,9 +42,6 @@ func TestOpenAppliesSchemaAndReportsFirstRun(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Open: %v", err)
 	}
-	if !x.NeedsFullScan() {
-		t.Error("a brand new index should ask for a full scan")
-	}
 	if err := x.SetSetting(ctx, "notation", "solfege"); err != nil {
 		t.Fatal(err)
 	}
@@ -56,9 +53,6 @@ func TestOpenAppliesSchemaAndReportsFirstRun(t *testing.T) {
 		t.Fatalf("reopen: %v", err)
 	}
 	defer x2.Close()
-	if x2.NeedsFullScan() {
-		t.Error("reopening an up-to-date index asked for a full scan")
-	}
 	if v, _ := x2.Setting(ctx, "notation"); v != "solfege" {
 		t.Errorf("setting did not survive a reopen: %q", v)
 	}
@@ -247,9 +241,9 @@ func TestBrokenFilesStayVisible(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	broken, err := x.Broken(ctx)
+	broken, _, err := x.List(ctx, Query{Broken: true, Sort: SortTitle})
 	if err != nil {
-		t.Fatalf("Broken: %v", err)
+		t.Fatalf("listing broken songs: %v", err)
 	}
 	if len(broken) != 1 || broken[0].RelPath != "A/Bad.song" {
 		t.Fatalf("Broken = %v, want just the bad file", broken)
@@ -345,9 +339,6 @@ func TestDerivedRebuildKeepsDurableState(t *testing.T) {
 	}
 	defer x2.Close()
 
-	if !x2.NeedsFullScan() {
-		t.Error("a changed derived schema should ask for a full scan")
-	}
 	// Derived data is gone, as intended: it comes back from the files.
 	if s, _ := x2.Stats(ctx); s.Songs != 0 {
 		t.Errorf("derived tables were not rebuilt: %d songs remain", s.Songs)

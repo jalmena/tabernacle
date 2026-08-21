@@ -64,10 +64,12 @@ type Frag struct {
 }
 
 // Hit is one search result.
+//
+// There is no score field: the ordering is done by SQL, and carrying bm25 back
+// into Go only to discard it was a number nobody read.
 type Hit struct {
 	Record
-	Frags []Frag  // excerpt from the lyrics, empty when the query was not free text
-	Score float64 // bm25; lower is better
+	Frags []Frag // excerpt from the lyrics, empty when the query was not free text
 }
 
 // ParseQuery turns what the user typed into a Query, lifting out field-scoped
@@ -286,7 +288,9 @@ func (x *Index) List(ctx context.Context, q Query) ([]Hit, int, error) {
 		r.ModTime = timeFromNanos(mtime)
 		r.FirstSeen = timeFromNanos(first)
 		r.IndexedAt = timeFromNanos(indexed)
-		hits = append(hits, Hit{Record: r, Score: score, Frags: splitFrags(frag)})
+		// score is selected because ORDER BY refers to it; it is not kept.
+		_ = score
+		hits = append(hits, Hit{Record: r, Frags: splitFrags(frag)})
 	}
 	if err := rows.Err(); err != nil {
 		return nil, 0, err

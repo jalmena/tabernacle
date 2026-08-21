@@ -395,39 +395,6 @@ func TestWriteRawLeavesNoTemporaryFiles(t *testing.T) {
 	}
 }
 
-func TestMovePrunesEmptyDirectories(t *testing.T) {
-	s, songs, _ := newStore(t)
-	rel, err := s.Create("Old Artist", "Song", songBytes("Song", "Old Artist"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := s.Move(rel, "New Artist/Song.song"); err != nil {
-		t.Fatalf("Move: %v", err)
-	}
-	if ok, _ := s.Exists("New Artist/Song.song"); !ok {
-		t.Error("the song is not at its new path")
-	}
-	if ok, _ := s.Exists(rel); ok {
-		t.Error("the song is still at its old path")
-	}
-	if _, err := os.Stat(filepath.Join(songs, "Old Artist")); !os.IsNotExist(err) {
-		t.Error("the now-empty artist directory was left behind")
-	}
-}
-
-func TestMoveRefusesToOverwrite(t *testing.T) {
-	s, _, _ := newStore(t)
-	a, _ := s.Create("A", "Song", songBytes("Song A", "A"))
-	b, _ := s.Create("B", "Song", songBytes("Song B", "B"))
-	if err := s.Move(a, b); !errors.Is(err, ErrExists) {
-		t.Fatalf("Move error = %v, want ErrExists", err)
-	}
-	data, _, _ := s.ReadRaw(b)
-	if !strings.Contains(string(data), "Song B") {
-		t.Error("Move overwrote the destination")
-	}
-}
-
 func TestTrashKeepsTheFile(t *testing.T) {
 	s, songs, trash := newStore(t)
 	rel, err := s.Create("Artist", "Song", songBytes("Song", "Artist"))
@@ -438,7 +405,7 @@ func TestTrashKeepsTheFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Trash: %v", err)
 	}
-	if ok, _ := s.Exists(rel); ok {
+	if _, err := os.Stat(filepath.Join(songs, filepath.FromSlash(rel))); !os.IsNotExist(err) {
 		t.Error("the song is still in the collection")
 	}
 	kept, err := os.ReadFile(filepath.Join(trash, dest))
@@ -498,12 +465,6 @@ func TestStoreRefusesHostilePaths(t *testing.T) {
 			}
 			if _, err := s.WriteRaw(rel, songBytes("Evil", ""), ""); err == nil {
 				t.Errorf("WriteRaw(%q) succeeded", rel)
-			}
-			if _, err := s.Exists(rel); err == nil {
-				t.Errorf("Exists(%q) succeeded", rel)
-			}
-			if err := s.Move("nope.song", rel); err == nil {
-				t.Errorf("Move to %q succeeded", rel)
 			}
 			if _, err := s.Trash(rel); err == nil {
 				t.Errorf("Trash(%q) succeeded", rel)

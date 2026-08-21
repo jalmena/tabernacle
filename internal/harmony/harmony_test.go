@@ -194,9 +194,6 @@ func TestEveryQualityHasCompleteMetadata(t *testing.T) {
 		if !q.Known() {
 			t.Errorf("%v is in All but reports Known() false", q)
 		}
-		if q.Name() == "" {
-			t.Errorf("%v has no name for a caption", q)
-		}
 		if len(q.Intervals()) < 2 {
 			t.Errorf("%v has too few intervals to be a chord", q)
 		}

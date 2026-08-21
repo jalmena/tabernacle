@@ -272,26 +272,6 @@ func (x *Index) ByHash(ctx context.Context, hash string) (Record, bool, error) {
 	return r, true, nil
 }
 
-// Broken lists the files that will not parse, so the interface can offer to fix
-// them rather than leaving them invisible.
-func (x *Index) Broken(ctx context.Context) ([]Record, error) {
-	rows, err := x.db.QueryContext(ctx,
-		`SELECT`+selectColumns+` FROM songs s WHERE s.parse_error <> '' ORDER BY s.rel_path`)
-	if err != nil {
-		return nil, fmt.Errorf("index: list broken songs: %w", err)
-	}
-	defer rows.Close()
-	var out []Record
-	for rows.Next() {
-		r, err := scanRecord(rows)
-		if err != nil {
-			return nil, err
-		}
-		out = append(out, r)
-	}
-	return out, rows.Err()
-}
-
 // loadDetails fills in the chords of already-scanned records with one query
 // rather than one per song.
 func (x *Index) loadDetails(ctx context.Context, recs []*Record) error {

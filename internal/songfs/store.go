@@ -281,22 +281,6 @@ func (s *Store) readRaw(rel string) ([]byte, string, os.FileInfo, error) {
 	return data, hashOf(data), info, nil
 }
 
-// Exists reports whether a song file is present.
-func (s *Store) Exists(rel string) (bool, error) {
-	if err := CheckRel(rel); err != nil {
-		return false, err
-	}
-	_, err := s.songs.Lstat(rel)
-	switch {
-	case err == nil:
-		return true, nil
-	case errors.Is(err, fs.ErrNotExist):
-		return false, nil
-	default:
-		return false, err
-	}
-}
-
 // WriteRaw replaces a song's bytes.
 //
 // expectHash implements optimistic concurrency: pass the hash the caller last
@@ -370,34 +354,6 @@ func (s *Store) Create(artist, title string, data []byte) (string, error) {
 			return "", err
 		}
 	}
-}
-
-// Move renames a song within the collection.
-func (s *Store) Move(oldRel, newRel string) error {
-	if err := CheckRel(oldRel); err != nil {
-		return err
-	}
-	if err := CheckRel(newRel); err != nil {
-		return err
-	}
-	if oldRel == newRel {
-		return nil
-	}
-	if ok, err := s.Exists(newRel); err != nil {
-		return err
-	} else if ok {
-		return fmt.Errorf("%w: %s", ErrExists, newRel)
-	}
-	if dir := path.Dir(newRel); dir != "." {
-		if err := s.songs.MkdirAll(dir, 0o755); err != nil {
-			return err
-		}
-	}
-	if err := s.songs.Rename(oldRel, newRel); err != nil {
-		return err
-	}
-	s.pruneEmptyDirs(path.Dir(oldRel))
-	return nil
 }
 
 // Trash moves a song out of the collection instead of deleting it.

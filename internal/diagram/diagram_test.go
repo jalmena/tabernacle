@@ -82,19 +82,15 @@ func TestNoColoursAreEmitted(t *testing.T) {
 	}
 }
 
-func TestInlineOmitsNamespaceAndStandaloneIncludesIt(t *testing.T) {
-	var inline, standalone strings.Builder
+func TestInlineOmitsTheNamespace(t *testing.T) {
+	var inline strings.Builder
 	if err := Inline(&inline, cMajor); err != nil {
 		t.Fatal(err)
 	}
-	if err := Standalone(&standalone, cMajor); err != nil {
-		t.Fatal(err)
-	}
+	// Inside HTML the SVG namespace is implied, so declaring it is noise repeated
+	// once per diagram.
 	if strings.Contains(inline.String(), "xmlns") {
-		t.Error("the inline form carries an xmlns attribute, which is noise inside HTML")
-	}
-	if !strings.Contains(standalone.String(), `xmlns="http://www.w3.org/2000/svg"`) {
-		t.Error("the standalone form has no namespace, so it is not a valid .svg file")
+		t.Error("the output carries an xmlns attribute")
 	}
 }
 

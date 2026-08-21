@@ -61,11 +61,9 @@ const (
 // Inline writes a diagram for embedding in an HTML document.
 //
 // No xmlns attribute: inside HTML the SVG namespace is implied, and including it
-// is merely noise repeated once per diagram.
-func Inline(w io.Writer, in Input) error { return write(w, in, false) }
-
-// Standalone writes a diagram as a complete SVG document.
-func Standalone(w io.Writer, in Input) error { return write(w, in, true) }
+// is merely noise repeated once per diagram. Nothing here writes a standalone
+// .svg file, because nothing asks for one.
+func Inline(w io.Writer, in Input) error { return write(w, in) }
 
 // String renders a diagram to a string, for a template that needs one value.
 func String(in Input) string {
@@ -74,7 +72,7 @@ func String(in Input) string {
 	return b.String()
 }
 
-func write(w io.Writer, in Input, standalone bool) error {
+func write(w io.Writer, in Input) error {
 	in = normalize(in)
 
 	gridW := float64(in.Strings-1) * stringGap
@@ -87,11 +85,7 @@ func write(w io.Writer, in Input, standalone bool) error {
 	num(&b, totalW)
 	b.WriteByte(' ')
 	num(&b, totalH)
-	b.WriteString(`" class="chorddiagram" role="img"`)
-	if standalone {
-		b.WriteString(` xmlns="http://www.w3.org/2000/svg"`)
-	}
-	b.WriteString(` fill="currentColor" stroke="currentColor">`)
+	b.WriteString(`" class="chorddiagram" role="img" fill="currentColor" stroke="currentColor">`)
 
 	title := in.Title
 	if title == "" {

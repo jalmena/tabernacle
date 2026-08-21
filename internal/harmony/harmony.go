@@ -48,7 +48,6 @@ const (
 // qualityInfo is everything known about one family.
 type qualityInfo struct {
 	symbol    string // canonical display suffix
-	name      string // Spanish name, for a diagram caption
 	intervals []int  // semitones above the root
 	parent    Quality
 }
@@ -63,33 +62,30 @@ type qualityInfo struct {
 // can walk the whole enum and prove every family reaches Major or Minor without
 // a cycle. A new family with a missing parent then fails the build.
 var table = map[Quality]qualityInfo{
-	Major:          {"", "mayor", []int{0, 4, 7}, Unknown},
-	Minor:          {"m", "menor", []int{0, 3, 7}, Unknown},
-	Dominant7:      {"7", "séptima", []int{0, 4, 7, 10}, Major},
-	Major7:         {"maj7", "séptima mayor", []int{0, 4, 7, 11}, Major},
-	Minor7:         {"m7", "menor séptima", []int{0, 3, 7, 10}, Minor},
-	MinorMajor7:    {"m(maj7)", "menor con séptima mayor", []int{0, 3, 7, 11}, Minor},
-	Diminished:     {"dim", "disminuido", []int{0, 3, 6}, Minor},
-	Diminished7:    {"dim7", "disminuido séptima", []int{0, 3, 6, 9}, Diminished},
-	HalfDiminished: {"m7b5", "semidisminuido", []int{0, 3, 6, 10}, Minor7},
-	Augmented:      {"aug", "aumentado", []int{0, 4, 8}, Major},
-	Sus2:           {"sus2", "suspendido segunda", []int{0, 2, 7}, Major},
-	Sus4:           {"sus4", "suspendido cuarta", []int{0, 5, 7}, Major},
-	Dominant7Sus4:  {"7sus4", "séptima suspendida", []int{0, 5, 7, 10}, Dominant7},
-	Major6:         {"6", "sexta", []int{0, 4, 7, 9}, Major},
-	Minor6:         {"m6", "menor sexta", []int{0, 3, 7, 9}, Minor},
-	Add9:           {"add9", "con novena añadida", []int{0, 4, 7, 14}, Major},
-	Dominant9:      {"9", "novena", []int{0, 4, 7, 10, 14}, Dominant7},
-	Major9:         {"maj9", "novena mayor", []int{0, 4, 7, 11, 14}, Major7},
-	Minor9:         {"m9", "menor novena", []int{0, 3, 7, 10, 14}, Minor7},
-	Power:          {"5", "quinta", []int{0, 7}, Major},
+	Major:          {"", []int{0, 4, 7}, Unknown},
+	Minor:          {"m", []int{0, 3, 7}, Unknown},
+	Dominant7:      {"7", []int{0, 4, 7, 10}, Major},
+	Major7:         {"maj7", []int{0, 4, 7, 11}, Major},
+	Minor7:         {"m7", []int{0, 3, 7, 10}, Minor},
+	MinorMajor7:    {"m(maj7)", []int{0, 3, 7, 11}, Minor},
+	Diminished:     {"dim", []int{0, 3, 6}, Minor},
+	Diminished7:    {"dim7", []int{0, 3, 6, 9}, Diminished},
+	HalfDiminished: {"m7b5", []int{0, 3, 6, 10}, Minor7},
+	Augmented:      {"aug", []int{0, 4, 8}, Major},
+	Sus2:           {"sus2", []int{0, 2, 7}, Major},
+	Sus4:           {"sus4", []int{0, 5, 7}, Major},
+	Dominant7Sus4:  {"7sus4", []int{0, 5, 7, 10}, Dominant7},
+	Major6:         {"6", []int{0, 4, 7, 9}, Major},
+	Minor6:         {"m6", []int{0, 3, 7, 9}, Minor},
+	Add9:           {"add9", []int{0, 4, 7, 14}, Major},
+	Dominant9:      {"9", []int{0, 4, 7, 10, 14}, Dominant7},
+	Major9:         {"maj9", []int{0, 4, 7, 11, 14}, Major7},
+	Minor9:         {"m9", []int{0, 3, 7, 10, 14}, Minor7},
+	Power:          {"5", []int{0, 7}, Major},
 }
 
 // Symbol returns the canonical way to write this quality.
 func (q Quality) Symbol() string { return table[q].symbol }
-
-// Name returns the quality's name in Spanish, for a caption.
-func (q Quality) Name() string { return table[q].name }
 
 // Intervals returns the semitones above the root that the quality contains.
 func (q Quality) Intervals() []int {

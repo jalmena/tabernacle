@@ -374,12 +374,13 @@ func TestNeverParsedFileIsStillIndexed(t *testing.T) {
 	if rep.Failed != 1 || rep.Added != 1 {
 		t.Errorf("sync = %+v, want the file added and reported as failed", rep)
 	}
-	broken, err := h.lib.Broken(ctx)
+	res, err := h.lib.Browse(ctx, index.Query{Broken: true})
 	if err != nil {
 		t.Fatal(err)
 	}
+	broken := res.Hits
 	if len(broken) != 1 {
-		t.Fatalf("Broken() = %v, want the file listed", broken)
+		t.Fatalf("listing broken songs gave %v, want the one file", broken)
 	}
 	// Falling back to the filename and folder means it is recognisable.
 	if broken[0].Title != "Broken Song" {
@@ -482,26 +483,28 @@ func TestSyncHonoursCancellation(t *testing.T) {
 	}
 }
 
-func TestSyncIfNeeded(t *testing.T) {
+// Starting up rescans even when the index already holds songs, because that is
+// exactly when the collection may have changed unobserved.
+func TestSyncPicksUpAFileAddedWhileStopped(t *testing.T) {
 	ctx := context.Background()
 	h := newHarness(t)
-	h.writeSong(t, "A/Song.song", "Song", "A", "")
+	h.writeSong(t, "A/First.song", "First", "A", "")
+	if _, err := h.lib.Sync(ctx); err != nil {
+		t.Fatal(err)
+	}
 
-	// A fresh index asks for a scan.
-	rep, err := h.lib.SyncIfNeeded(ctx)
+	// A file appears with nobody watching.
+	h.writeSong(t, "B/Second.song", "Second", "B", "")
+
+	rep, err := h.lib.Sync(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if rep.Added != 1 {
-		t.Errorf("first SyncIfNeeded = %+v, want the song indexed", rep)
+		t.Errorf("sync = %+v, want the new file found", rep)
 	}
-	// A populated one does not rescan.
-	rep, err = h.lib.SyncIfNeeded(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if rep.Scanned != 0 {
-		t.Errorf("second SyncIfNeeded = %+v, want no scan", rep)
+	if s, _ := h.lib.Stats(ctx); s.Songs != 2 {
+		t.Errorf("collection holds %d songs, want 2", s.Songs)
 	}
 }
 
