@@ -114,17 +114,34 @@ which may be right but should never be accidental.
 
 ## When there is no shape
 
-Nothing is ever silently substituted. The chain is: the chord as written, then
-without its slash bass, then simplifying the family — and whatever is shown, the
-card says which chord it actually is. A slash bass is dropped before the quality
-is touched, because the bass is usually an inversion somebody else is covering
-whereas the quality is the chord's identity.
+A lookup answers with shapes that voice the chord as written, or with nothing.
+There is no substitution: a card headed `Cmaj7#11` never carries `Cmaj7`'s dots,
+because the reader has no way to tell the difference between a picture of their
+chord and a picture of a nearby one. Decoration the model does not cover counts
+as a difference and not as a detail to round off — the b9 is the whole point of
+`C7b9`.
 
-Exact and approximate shapes are never mixed in one result: "3 de 5" must not
-mean three real shapes and two invented.
+So a chord the collection cannot play gets no diagram and says so, and the card
+points at the control that can do something about it. No diagram is better than a
+wrong one.
 
-A chord with nothing recognisable at all gets no diagram and says so. No diagram
-is better than a wrong one.
+Simplifying is worth doing, but it belongs to the whole sheet at once, where it
+can be announced and turned off again — see [Simplifying a sheet](#simplifying-a-sheet).
+
+## Simplifying a sheet
+
+`Simplificar` rewrites the chords of one sheet into ones the collection can play,
+for as long as it is switched on. It appears only when it would change something,
+it says on the page and on the printed sheet that the chords are not the file's,
+and it never touches the file.
+
+Each chord is tried in order, most faithful first: the chord itself, then without
+its slash bass, then each simpler family with and without the bass. The first
+form with a real shape wins, so `Cmaj7#11` becomes `Cmaj7` rather than a bare
+`C` — enough to be playable, and still the chord that was written. The bass goes
+before the quality because on a guitar sheet an inversion is usually somebody
+else's note, while the quality is what the chord is. A chord that reaches the end
+of that list without finding a shape is left exactly as written.
 
 ## Symmetry
 

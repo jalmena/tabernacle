@@ -119,7 +119,8 @@ func TestSanitizeSegment(t *testing.T) {
 		{"aux.txt", "_aux.txt"},
 		{"COM1", "_COM1"},
 		{"lpt9", "_lpt9"},
-		{"console", "console"}, // not reserved, must not be mangled
+		{"console", "console"},    // not reserved, must not be mangled
+		{"con.song", "_con.song"}, // the extension is ignored when comparing
 
 		// Never empty.
 		{"", "untitled"},
@@ -129,6 +130,37 @@ func TestSanitizeSegment(t *testing.T) {
 	for _, tt := range tests {
 		if got := SanitizeSegment(tt.in); got != tt.want {
 			t.Errorf("SanitizeSegment(%q) = %q, want %q", tt.in, got, tt.want)
+		}
+	}
+}
+
+// The length cap and the device-name guard both act on the same segment, so a
+// name that is at the limit and reserved has to satisfy both at once.
+func TestSanitizeSegmentIsWithinTheLimitEvenWhenDefused(t *testing.T) {
+	tests := []string{
+		// Exactly at the limit, and reserved once the extension is set aside.
+		"con." + strings.Repeat("x", 96),
+		// Over the limit, and reserved only after being shortened to it.
+		"con." + strings.Repeat("x", 300),
+		// The same, with multi-byte runes either side of the cut.
+		"nul." + strings.Repeat("é", 300),
+		"aux." + strings.Repeat("x", 95) + "é",
+	}
+	for _, in := range tests {
+		got := SanitizeSegment(in)
+		if len(got) > maxSegmentBytes {
+			t.Errorf("SanitizeSegment(%.12q…) = %d bytes, want at most %d",
+				in, len(got), maxSegmentBytes)
+		}
+		if !utf8.ValidString(got) {
+			t.Errorf("SanitizeSegment(%.12q…) = %q, which is not valid UTF-8", in, got)
+		}
+		base := strings.ToLower(strings.TrimSuffix(got, path.Ext(got)))
+		if windowsReserved[base] {
+			t.Errorf("SanitizeSegment(%.12q…) = %q, still a device name", in, got)
+		}
+		if err := CheckRel(got + Ext); err != nil {
+			t.Errorf("CheckRel(%q) = %v", got+Ext, err)
 		}
 	}
 }
@@ -191,6 +223,7 @@ func FuzzSanitizeSegment(f *testing.F) {
 	for _, s := range []string{
 		"", "..", "../../etc/passwd", "NUL", ".hidden", "AC/DC", "Sigur Rós",
 		"a\x00b", strings.Repeat("é", 200), "\xff\xfe", "con.song", "   ",
+		"con." + strings.Repeat("x", 96), "nul." + strings.Repeat("é", 300),
 	} {
 		f.Add(s)
 	}

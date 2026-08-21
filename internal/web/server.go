@@ -222,9 +222,9 @@ func (s *Server) page(r *http.Request, title string, body any) page {
 		section = "genres"
 	}
 
-	// Three sections and nothing else. Anything more and two labels start to look
-	// like each other, which is how "Artista" the order came to sit next to
-	// "Artistas" the section.
+	// Three sections and nothing else: these are the three ways to walk the
+	// collection. Anything more and two labels start to look like each other,
+	// which is how a reader ends up clicking the wrong one.
 	nav := navState{
 		Query:   qs.Get("q"),
 		Section: section,

@@ -116,10 +116,10 @@ func TestSolfegeReachesTheSameShapes(t *testing.T) {
 
 // Nothing is substituted behind the reader's back.
 //
-// Each of these has an obvious simpler relative with a shape, and the lookup used
-// to quietly return it. That put identical dots on the Cmaj7#11 card and the
-// Cmaj7 card, and the only thing distinguishing them was a line of small print.
-// Simplifying is now the sheet-wide control's job, where it is announced.
+// Each of these has an obvious simpler relative that does have a shape, and
+// returning it here would put identical dots on the Cmaj7#11 card and the Cmaj7
+// card with nothing but a line of small print between them. Simplifying belongs
+// to the sheet-wide control, where it is announced.
 func TestNothingIsSubstitutedSilently(t *testing.T) {
 	for _, sym := range []string{
 		// Decoration this package does not model.
@@ -144,9 +144,10 @@ func TestNothingIsSubstitutedSilently(t *testing.T) {
 	}
 }
 
-// Every shape returned must actually sound the chord that was asked for. This is
-// the invariant the old fallback chain broke, so it is checked harmonically
-// rather than by trusting the lookup's own labelling.
+// Every shape returned must actually sound the chord that was asked for.
+//
+// Checked harmonically, against the intervals the quality requires, rather than
+// by trusting the lookup to label its own answers correctly.
 func TestEveryShapePlaysTheChordAsked(t *testing.T) {
 	for _, sym := range []string{
 		"C", "Am7", "Cmaj7", "Cadd9", "Cdim7", "Bb", "F#m7b5",

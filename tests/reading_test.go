@@ -50,8 +50,8 @@ func TestEveryRouteAnswers(t *testing.T) {
 	}
 }
 
-// A mistyped address gets Tabernacle's own page, with the navigation on it. A
-// bare line of text with no way back is the thing this replaced.
+// A mistyped address gets Tabernacle's own page, with the navigation on it,
+// rather than a bare line of text that leaves the reader with no way back.
 func TestTheNotFoundPageIsUsable(t *testing.T) {
 	in := start(t, nil)
 	in.seed()

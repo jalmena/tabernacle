@@ -145,27 +145,35 @@ func SanitizeSegment(s string) string {
 		}
 	}
 
-	out := collapse(b.String())
-	out = strings.Trim(out, " .-")
-
-	// Truncate on a rune boundary, then trim again in case the cut exposed a
-	// trailing separator.
-	if len(out) > maxSegmentBytes {
-		cut := maxSegmentBytes
-		for cut > 0 && !utf8.RuneStart(out[cut]) {
-			cut--
-		}
-		out = strings.Trim(out[:cut], " .-")
-	}
-
+	out := fit(strings.Trim(collapse(b.String()), " .-"))
 	if out == "" {
 		return "untitled"
 	}
-	// Compare the part before any extension, since "nul.txt" is reserved too.
-	if name := out; windowsReserved[strings.ToLower(strings.TrimSuffix(name, path.Ext(name)))] {
-		return "_" + out
+
+	// Defusing a device name comes after the length has been settled, because
+	// shortening can produce one: "con." followed by two hundred characters is
+	// not a device name, and its first hundred bytes are. Prefixing then puts the
+	// segment one byte over, so it is fitted a second time — which cannot loop,
+	// since a name beginning with an underscore is never reserved.
+	//
+	// The comparison ignores any extension, since "nul.txt" is reserved too.
+	if windowsReserved[strings.ToLower(strings.TrimSuffix(out, path.Ext(out)))] {
+		out = fit("_" + out)
 	}
 	return out
+}
+
+// fit caps a segment at maxSegmentBytes, cutting on a rune boundary and trimming
+// the separators a cut can leave exposed at the end.
+func fit(s string) string {
+	if len(s) <= maxSegmentBytes {
+		return s
+	}
+	cut := maxSegmentBytes
+	for cut > 0 && !utf8.RuneStart(s[cut]) {
+		cut--
+	}
+	return strings.Trim(s[:cut], " .-")
 }
 
 // collapse squeezes runs of spaces and runs of hyphens down to one each.

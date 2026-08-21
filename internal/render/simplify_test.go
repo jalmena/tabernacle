@@ -152,10 +152,10 @@ func TestSimplifyDoesNotMutateTheSource(t *testing.T) {
 
 // The sheet must not show a simplified shape until the reader asks for one.
 //
-// This is the bug that made the control pointless: the appendix already showed
-// Cmaj7's dots on the Cmaj7#11 card, so pressing Simplificar changed only the
-// heading. Worse, a sheet containing both chords printed the same picture twice
-// under two different names.
+// A shape offered before it is asked for would make the control pointless: the
+// card would already hold Cmaj7's dots under the Cmaj7#11 heading, and pressing
+// Simplificar would change only the wording. On a sheet holding both chords the
+// same picture would appear twice under two different names.
 func TestUnplayableChordsShowNoShapeUntilAsked(t *testing.T) {
 	// A fixture of its own: jazzy deliberately holds each awkward chord and its
 	// playable counterpart, so it cannot answer this question.
@@ -199,9 +199,9 @@ func TestDifferentChordsNeverShareADiagram(t *testing.T) {
 
 // The bass is the last thing given up, and only on request.
 //
-// voicing.For used to drop a slash bass on its own. Now the chord keeps it until
-// the reader presses the control, and then loses the bass before the quality,
-// because on a guitar sheet an inversion is usually somebody else's note.
+// A chord keeps its slash bass until the reader presses the control, and then
+// loses the bass before the quality, because on a guitar sheet an inversion is
+// usually somebody else's note while the quality is what the chord is.
 func TestSimplifyDropsTheBassBeforeTheQuality(t *testing.T) {
 	src := "---\ntitle: T\nkey: C\n---\n\n## Verse 1\n[Cmaj7/E]uno\n"
 

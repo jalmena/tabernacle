@@ -366,10 +366,10 @@ func lowestFret(frets []Fret) int {
 // under the heading Cmaj7#11 shows the reader a picture of a chord they did not
 // ask for, and the two cards then carry the same dots under different names.
 //
-// Simplifying is a real and useful operation, but it belongs to the whole sheet
-// at once, where it can be announced and undone — see render.simplify. Doing it
-// here, silently, per chord, made the deliberate version redundant and the
-// silent version unanswerable.
+// Simplifying is a real and useful operation, and it belongs to the whole sheet
+// at once, where it can be announced and undone — see render.simplify. A
+// substitution made here, one chord at a time, would arrive with no way for the
+// reader to know of it or refuse it.
 func For(c chord.Chord, opts Options) Result {
 	tuning := opts.Tuning
 	if tuning.IsZero() {

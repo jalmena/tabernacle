@@ -78,8 +78,9 @@ func TestARestartChangesNothing(t *testing.T) {
 // A song copied into the volume while the application was down must be there
 // when it comes back, without anybody asking for a scan.
 //
-// It was not, once: startup skipped the scan when the index already had rows, so
-// a file copied in during downtime waited for the next timer tick.
+// Startup is exactly when the directory may have changed with nobody watching —
+// a file copied in, a restore from a backup — so the scan cannot be conditional
+// on the index looking populated.
 func TestASongAddedWhileStoppedIsFoundAtStartup(t *testing.T) {
 	in := start(t, nil)
 	in.seed()

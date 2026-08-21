@@ -112,8 +112,9 @@ func TestCreateEditDeleteJourney(t *testing.T) {
 	}
 }
 
-// The delete confirmation has to say what will be deleted and offer a way out.
-// It answered nothing visible once, which is why this is pinned.
+// The delete confirmation has to name the song it is about to remove and offer a
+// way out. A confirmation that shows neither is worse than none: it asks the
+// reader to approve something they cannot see.
 func TestTheDeleteFormNamesTheSong(t *testing.T) {
 	in := start(t, nil)
 	in.seed()
