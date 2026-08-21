@@ -266,10 +266,10 @@ func within(dir, path string) bool {
 
 // HostAllowed reports whether a request's Host header may be served.
 //
-// This is the defence against DNS rebinding, which is the real attack on an
-// unauthenticated service on a home network: a page on attacker.com whose
-// hostname resolves to 192.168.1.50 reaches this app as a same-origin request
-// from the attacker's own origin, so checking Origin alone proves nothing.
+// This is the defence against DNS rebinding, which is the real attack on a home
+// server whose collection is readable without an account: a page on attacker.com
+// whose hostname resolves to 192.168.1.50 reaches this app as a same-origin
+// request from the attacker's own origin, so checking Origin alone proves nothing.
 //
 // With no explicit allowlist the policy accepts what a home server legitimately
 // answers to — loopback and private IP literals, and names that cannot be

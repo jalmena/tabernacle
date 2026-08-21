@@ -55,7 +55,7 @@ services:
       # TABERNACLE_SCAN_INTERVAL: "60s"
       #
       # Refuse every change to the collection. Useful when sharing the library
-      # with guests, since Tabernacle has no accounts of its own.
+      # with guests without giving them an account.
       # TABERNACLE_READ_ONLY: "false"
       #
       # Serving a real domain through a reverse proxy? Set both of these. Out of
@@ -65,6 +65,14 @@ services:
       # TABERNACLE_ALLOWED_HOSTS: "songs.example.com"
       #
       # TABERNACLE_LOG_LEVEL: "info"
+
+      # The first administrator. Set both on the first run, then remove them:
+      # they are read at startup only, and setting them again resets that
+      # account's password, which is the documented way back in after a
+      # forgotten one. You can also just press Acceder and claim the instance
+      # from the browser instead.
+      # TABERNACLE_ADMIN_USER: "you"
+      # TABERNACLE_ADMIN_PASSWORD: "a long password"
 
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]

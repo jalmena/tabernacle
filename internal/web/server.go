@@ -153,6 +153,11 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /import", s.handleImportForm)
 	mux.HandleFunc("GET /export", s.handleExport)
 
+	// Choosing and printing many songs at once. Reading, so public; linked from
+	// the settings page because that is where somebody will look for it.
+	mux.HandleFunc("GET /songbook", s.handleSongbook)
+	mux.HandleFunc("GET /songbook/print", s.handleSongbookPrint)
+
 	// Everything that changes the collection goes through s.mutating, which
 	// applies the read-only guard, the same-origin check and the body limit in
 	// one place, so a new write route cannot be added without them.
@@ -281,7 +286,7 @@ func (s *Server) page(r *http.Request, title string, body any) page {
 		section = "artists"
 	case path == "/genres":
 		section = "genres"
-	case strings.HasPrefix(path, "/settings"):
+	case strings.HasPrefix(path, "/settings"), strings.HasPrefix(path, "/songbook"):
 		section = "settings"
 	}
 

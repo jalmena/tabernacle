@@ -48,11 +48,12 @@ func flashFor(r *http.Request) string { return flashes[r.URL.Query().Get("msg")]
 // requireSameOrigin refuses a state-changing request that did not come from this
 // site.
 //
-// There are no accounts, so there are no credentials for a SameSite cookie to
-// protect and a cross-origin POST would otherwise simply work: a page on another
-// site could delete a song by submitting a form. This check and the Host
-// allowlist together are the whole defence, so it fails closed — a missing
-// Origin on a mutation is refused rather than waved through.
+// A session cookie is SameSite=Lax, which keeps it off a cross-site POST, and
+// this check is what covers everything else: an unclaimed instance has no
+// credential to protect at all, and Lax still allows a top-level cross-site GET.
+// It fails closed — a missing Origin on a mutation is refused rather than waved
+// through — because a write that cannot be shown to come from this page is not
+// worth guessing about.
 func (s *Server) requireSameOrigin(r *http.Request) error {
 	switch r.Header.Get("Sec-Fetch-Site") {
 	case "same-origin", "none", "":

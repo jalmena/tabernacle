@@ -1,4 +1,4 @@
-// Package songfs is the only part of Tabernacle that touches the filesystem.
+// Package songfs is the only part of Tabernacle that touches the collection.
 //
 // It owns the collection: a directory of .song files that is the sole source of
 // truth for song content. Everything else in the application treats that

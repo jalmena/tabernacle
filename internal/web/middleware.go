@@ -9,9 +9,9 @@ import (
 // requireAllowedHost rejects requests addressed to a hostname this deployment
 // does not answer to.
 //
-// This is the defence against DNS rebinding, which is the real attack on an
-// unauthenticated service on a home network. A page on attacker.com whose
-// hostname resolves to 192.168.1.50 reaches this application as a same-origin
+// This is the defence against DNS rebinding, which is the real attack on a home
+// server whose collection is readable without an account. A page on attacker.com
+// whose hostname resolves to 192.168.1.50 reaches this application as a same-origin
 // request from the attacker's own origin, so checking Origin proves nothing:
 // the attacker's origin is exactly what the browser sends. Checking the Host
 // header is what closes it, because the attacker cannot make the browser claim

@@ -1,0 +1,56 @@
+{{template "head" .}}
+{{/* One document, many songs. The same "sections" partial the screen and the
+     single-song print use, so the three cannot drift apart. */}}
+<body class="printing paper-{{.Body.Theme}}">
+<nav class="paperbar noprint" aria-label="Papel">
+	<span class="quiet">Papel:</span>
+	{{range .Body.Papers}}
+		<a class="btn btn-quiet{{if .On}} on{{end}}" href="{{.URL}}">{{.Label}}</a>
+	{{end}}
+	<span class="sep"></span>
+	<a class="btn btn-quiet" href="{{.Body.BackTo}}">Volver</a>
+</nav>
+<main class="wrap">
+	{{with .Body}}
+		{{if .Skipped}}
+			<p class="transposed">
+				{{.Skipped}} {{plural .Skipped "canción" "canciones"}} ya no está en la
+				colección y no se ha impreso.
+			</p>
+		{{end}}
+
+		{{if .Index}}
+			<div class="songbook-index">
+				<h1>Cancionero</h1>
+				<ol>
+					{{range .Songs}}
+						<li>{{.Sheet.Title}}{{if .Sheet.Artist}} · <span class="quiet">{{.Sheet.Artist}}</span>{{end}}</li>
+					{{end}}
+				</ol>
+			</div>
+		{{end}}
+
+		{{range .Songs}}
+			<section class="songbook-song">
+				<div class="songhead">
+					<h1>{{.Sheet.Title}}</h1>
+					{{if .Sheet.Artist}}<p class="by">{{.Sheet.Artist}}</p>{{end}}
+					<ul class="facts">
+						{{if .Sheet.Key}}<li>Tono <b>{{.Sheet.Key}}</b></li>{{end}}
+						{{if .Sheet.Capo}}<li>Cejilla <b>{{.Sheet.Capo}}</b></li>{{end}}
+						{{if .Sheet.Tuning}}<li>Afinación <b>{{.Sheet.Tuning}}</b></li>{{end}}
+					</ul>
+					{{if .Sheet.Shifted}}
+						<p class="transposed">
+							{{.Step}}{{if .OrigKey}} · original en {{.OrigKey}}{{end}}
+						</p>
+					{{end}}
+					{{if .Sheet.TabNote}}<p class="transposed">{{.Sheet.TabNote}}</p>{{end}}
+				</div>
+				{{template "sections" .Sheet}}
+			</section>
+		{{end}}
+	{{end}}
+</main>
+</body>
+</html>

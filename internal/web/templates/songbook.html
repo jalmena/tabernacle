@@ -1,0 +1,81 @@
+{{template "head" .}}
+{{template "bodyopen" .}}
+{{template "top" .}}
+<main class="wrap">
+	{{with .Body}}
+		<h1>Generar cancionero</h1>
+		<p class="quiet">
+			Marca las canciones y elige el papel. Sale una sola página imprimible con
+			todas, cada una en el tono que tengas recordado. La dirección resultante
+			se puede guardar y volver a imprimir.
+		</p>
+
+		<form class="searchagain" role="search" action="/songbook" method="get">
+			<input type="search" name="q" value="{{.Raw}}"
+			       placeholder="Filtrar por título, artista o letra…"
+			       aria-label="Filtrar la lista" autocomplete="off">
+			<button class="btn btn-quiet" type="submit">Filtrar</button>
+		</form>
+
+		<form action="/songbook/print" method="get" id="songbookform">
+			<div class="row bookopts">
+				<span class="quiet">Papel:</span>
+				{{range .Papers}}
+					<label class="choice">
+						<input type="radio" name="theme" value="{{.ID}}" {{if .On}}checked{{end}}>
+						{{.Label}}
+					</label>
+				{{end}}
+			</div>
+			<div class="row bookopts">
+				<label class="choice">
+					<input type="checkbox" name="n" value="solfege" {{if .Solfege}}checked{{end}}>
+					Do Re Mi
+				</label>
+				<label class="choice">
+					<input type="checkbox" name="index" value="1" checked>
+					Con índice
+				</label>
+			</div>
+
+			<div class="row bookopts" id="bookpick">
+				<button class="btn" type="submit">Imprimir las marcadas</button>
+				<button class="btn btn-quiet" type="button" data-pick="all">Marcar todo</button>
+				<button class="btn btn-quiet" type="button" data-pick="none">Ninguna</button>
+				<span class="quiet">{{.Total}} {{plural .Total "canción" "canciones"}}</span>
+			</div>
+
+			{{if .Rows}}
+				<ul class="booklist">
+					{{range .Rows}}
+						<li>
+							<label class="bookrow">
+								<input type="checkbox" name="s" value="{{.Slug}}">
+								<span class="booktitle">{{.Title}}</span>
+								{{if .Artist}}<span class="quiet">{{.Artist}}</span>{{end}}
+								{{if .Key}}<span class="quiet">{{.Key}}</span>{{end}}
+							</label>
+						</li>
+					{{end}}
+				</ul>
+			{{else}}
+				<p class="quiet">No hay canciones que encajen con ese filtro.</p>
+			{{end}}
+		</form>
+
+		{{if .Filtered}}
+			<form action="/songbook/print" method="get" class="row bookopts">
+				<input type="hidden" name="q" value="{{.Raw}}">
+				<input type="hidden" name="all" value="1">
+				<input type="hidden" name="index" value="1">
+				<button class="btn btn-quiet" type="submit">
+					Imprimir todas las de esta búsqueda
+				</button>
+				<span class="quiet">hasta 200, sin marcarlas una a una</span>
+			</form>
+		{{end}}
+	{{end}}
+</main>
+{{template "scripts" .}}
+</body>
+</html>

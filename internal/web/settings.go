@@ -76,6 +76,8 @@ func (s *Server) settingsTabs(r *http.Request, current string) []navLink {
 	if !s.cfg.ReadOnly {
 		tabs = append(tabs, navLink{Label: "Importar y exportar", URL: "/import"})
 	}
+	tabs = append(tabs, navLink{Label: "Generar cancionero", URL: "/songbook",
+		On: current == "songbook"})
 	return tabs
 }
 

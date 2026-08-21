@@ -304,14 +304,54 @@
 	var pop = document.getElementById("loginpop");
 	if (!pop || typeof pop.showPopover !== "function") return;
 
+	var opener = null;
+	var narrow = window.matchMedia("(max-width: 34rem)");
+
+	/* Under the button and aligned with its right edge, which is where the eye
+	 * already is. On a phone the stylesheet turns the box into a sheet at the
+	 * bottom, so leave it alone there. */
+	function place() {
+		if (!opener || narrow.matches) return;
+		var box = opener.getBoundingClientRect();
+		var width = pop.offsetWidth;
+		var left = Math.min(box.right - width, window.innerWidth - width - 8);
+		pop.style.left = Math.max(8, left) + "px";
+		pop.style.top = box.bottom + 6 + "px";
+	}
+
 	document.addEventListener("click", function (e) {
 		if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
 		var link = e.target.closest("a[data-login]");
 		if (!link || link.getAttribute("data-login") !== "loginpop") return;
 
 		e.preventDefault();
+		opener = link;
 		pop.showPopover();
+		place();
 		var first = pop.querySelector("input[name=user]");
 		if (first) first.focus();
+	});
+
+	window.addEventListener("resize", function () {
+		if (pop.matches(":popover-open")) place();
+	});
+})();
+
+/* Marking every song in the songbook, or none.
+ *
+ * Ticking boxes by hand works without this; it only saves the sixtieth click. */
+(function () {
+	"use strict";
+
+	var form = document.getElementById("songbookform");
+	if (!form) return;
+
+	document.addEventListener("click", function (e) {
+		var button = e.target.closest("[data-pick]");
+		if (!button || !form.contains(button)) return;
+
+		var want = button.getAttribute("data-pick") === "all";
+		var boxes = form.querySelectorAll('input[type="checkbox"][name="s"]');
+		for (var i = 0; i < boxes.length; i++) boxes[i].checked = want;
 	});
 })();

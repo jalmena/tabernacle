@@ -66,10 +66,11 @@ environment:
 
 ### Why that second variable matters
 
-Tabernacle has no accounts. Anything that can reach it can change the
+Reading a Tabernacle needs no account, so anything that can reach it can read the
 collection. That is fine on a trusted network and unacceptable on the open
 internet, so put it behind a VPN — WireGuard or Tailscale — or behind an
-authenticating proxy.
+authenticating proxy. Changing anything needs an account once the instance has
+been claimed; see [accounts](accounts.md).
 
 There is one attack that a firewall does not stop, and it is the reason for the
 host allowlist. A website you visit can point its own hostname at your NAS's
@@ -103,6 +104,25 @@ Every change is refused and the editing controls disappear. Reading, searching,
 transposing, printing and exporting all keep working. Useful for a second
 instance pointed at the same directory, or for handing the address to someone at
 a rehearsal.
+
+## Accounts
+
+A fresh instance has none, and says so on every page: until it is claimed, anybody
+who can reach it can change the collection. Close that either from the browser —
+**Acceder**, then **Ajustes** — or before the first start:
+
+```yaml
+environment:
+  TABERNACLE_ADMIN_USER: "you"
+  TABERNACLE_ADMIN_PASSWORD: "a long password"
+```
+
+Both or neither; one alone is a configuration error. They are read at startup
+only, so remove them afterwards. Setting them again resets that account's password
+and restores its administrator role, which is the way back in after a forgotten
+one.
+
+Full detail in [accounts](accounts.md), including the other two recovery routes.
 
 ## Running without Docker
 
@@ -149,20 +169,21 @@ unreachable, which is the one condition the application cannot serve around.
 
 ## Backup
 
-Copy the songs directory:
+Two things need backing up, and they are both in the data directory:
+
+- `songs/` — the collection. This is the whole point.
+- `accounts.json` — the accounts and the key that signs sessions. It is the one
+  file here that cannot be regenerated.
+
+`index.db` needs no backup: it is derived from the songs and rebuilds itself on
+the next start, with the same addresses as before. Copying it anyway is harmless.
 
 ```sh
-tar czf tabernacle-$(date +%F).tar.gz /srv/tabernacle/songs
+tar czf tabernacle-$(date +%F).tar.gz -C /path/to/data songs accounts.json
 ```
 
-Or use **Importar / Exportar** in the interface, which downloads the same thing
-as a zip.
-
-`index.db` needs no backup. Delete it and Tabernacle rebuilds it on the next
-start, with the same URLs as before — slugs are derived from file paths precisely
-so that a rebuild cannot break your bookmarks. What is lost is the small
-conveniences: which songs you opened recently, and any key you asked it to
-remember. Favourites survive, because they are a tag in the song file.
+Restoring is putting them back. Nothing else has to happen: the next start
+notices the songs and indexes them.
 
 ## Upgrading
 

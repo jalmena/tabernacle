@@ -164,6 +164,15 @@ func (in *instance) login(name string) {
 	}
 }
 
+// login2 signs in with a password other than the harness default.
+func (in *instance) login2(name, password string) {
+	in.t.Helper()
+	res := in.post("/login", url.Values{"user": {name}, "password": {password}})
+	if res.Status != http.StatusSeeOther {
+		in.t.Fatalf("logging in as %s = %d\n%.400s", name, res.Status, res.Body)
+	}
+}
+
 // logout forgets the session the way pressing the button does.
 func (in *instance) logout() {
 	in.t.Helper()
