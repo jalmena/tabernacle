@@ -36,7 +36,7 @@
 			</ul>
 
 			{{if or .PrevURL .NextURL}}
-				<div class="filters" style="margin-top:1rem">
+				<div class="filters filters-spaced">
 					{{if .PrevURL}}<a class="btn" href="{{.PrevURL}}">← Anteriores</a>{{end}}
 					{{if .NextURL}}<a class="btn" href="{{.NextURL}}">Siguientes →</a>{{end}}
 				</div>

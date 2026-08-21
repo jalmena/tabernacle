@@ -623,3 +623,7 @@ body.printing .transposed {
 	.search-go { display: none; }
 	.brand { font-size: 0.9375rem; }
 }
+
+/* A second row of filters under the first. An inline style would be dead here:
+ * the content security policy has no 'unsafe-inline' for styles. */
+.filters-spaced { margin-top: 1rem; }
