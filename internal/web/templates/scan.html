@@ -1,0 +1,33 @@
+{{template "head" .}}
+<body>
+{{template "top" .}}
+<main class="wrap">
+	{{template "nav" .}}
+	{{with .Body}}
+		<h1>Revisión de la carpeta</h1>
+		{{if .Changed}}
+			<ul class="facts facts-block">
+				{{if .Report.Added}}<li>Añadidas <b>{{.Report.Added}}</b></li>{{end}}
+				{{if .Report.Updated}}<li>Actualizadas <b>{{.Report.Updated}}</b></li>{{end}}
+				{{if .Report.Renamed}}<li>Movidas <b>{{.Report.Renamed}}</b></li>{{end}}
+				{{if .Report.Removed}}<li>Quitadas <b>{{.Report.Removed}}</b></li>{{end}}
+				{{if .Report.Failed}}<li>Con errores <b>{{.Report.Failed}}</b></li>{{end}}
+			</ul>
+		{{else}}
+			<p class="count">
+				Nada ha cambiado. Se han revisado
+				<b>{{.Report.Scanned}}</b> {{plural .Report.Scanned "archivo" "archivos"}} y todos
+				estaban ya al día.
+			</p>
+		{{end}}
+		{{if .Report.Failed}}
+			<p class="notice">
+				Hay {{.Report.Failed}} {{plural .Report.Failed "archivo" "archivos"}} que no se
+				pueden leer. <a href="/?broken=1">Verlos</a>.
+			</p>
+		{{end}}
+		<p><a class="btn" href="/">Ir a las canciones</a></p>
+	{{end}}
+</main>
+</body>
+</html>

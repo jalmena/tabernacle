@@ -7,22 +7,31 @@
 // testable on their own.
 package song
 
-import "github.com/jalmena/tabernacle/internal/chord"
+import (
+	"github.com/jalmena/tabernacle/internal/chord"
+	"github.com/jalmena/tabernacle/internal/tab"
+)
 
-// Format is the .song format version this package reads and writes.
-const Format = 1
+// retiredFields are metadata fields the format used to carry and no longer
+// does. They are accepted and ignored rather than rejected, so a collection
+// written before they were dropped still reads without complaint.
+//
+// "format" carried a schema version. It went because a version nobody bumps is
+// a field everybody types; if versioning is ever needed again, its absence can
+// simply mean the first version. "tempo" and "meter" went because neither
+// changes anything a guitarist reads off the page. "tags" went because a free
+// list of labels is a filing system nobody maintains; one genre is the part
+// people actually use.
+var retiredFields = map[string]bool{"format": true, "tempo": true, "meter": true, "tags": true}
 
 // Song is one song sheet.
 type Song struct {
-	Format   int
 	Title    string
 	Artist   string
 	Key      string // chord symbol, for example "G" or "F#m"
 	Capo     int    // fret the capo sits on, 0 for none
 	Tuning   string // free text, for example "EADGBE" or "Drop D"
-	Tempo    int    // beats per minute, 0 when unknown
-	Meter    string // time signature, for example "4/4"
-	Tags     []string
+	Genre    string // one label, for example "rock" or "bolero"
 	Notes    string
 	Sections []Section
 }
@@ -89,13 +98,35 @@ type Token struct {
 // Capo is deliberately left alone: it describes what the player does with a
 // piece of metal, not what the sheet says.
 func (s Song) Transpose(semitones int) Song {
+	out, _ := s.TransposeReport(semitones)
+	return out
+}
+
+// TransposeReport is what a transposition could and could not do.
+//
+// It exists because tablature has a floor and a ceiling that chord symbols do
+// not: there is nothing below an open string, and the neck runs out. A block that
+// cannot move is left exactly as it was, and the caller is told, so a sheet never
+// shows a solo that silently disagrees with the chords above it.
+type TransposeReport struct {
+	TabsShifted int
+	TabsTooLow  int
+	TabsTooHigh int
+}
+
+// Clamped reports whether any tablature had to be left behind.
+func (r TransposeReport) Clamped() bool { return r.TabsTooLow > 0 || r.TabsTooHigh > 0 }
+
+// TransposeReport moves the song and says what happened to its tablature.
+func (s Song) TransposeReport(semitones int) (Song, TransposeReport) {
+	var rep TransposeReport
 	out := s.clone()
 	if semitones%12 == 0 {
-		return out
+		return out, rep
 	}
 	key, ok := s.keyChord()
 	if !ok {
-		return out
+		return out, rep
 	}
 	newKey, spelling := chord.TransposeKey(key, semitones)
 	if s.Key != "" {
@@ -103,15 +134,31 @@ func (s Song) Transpose(semitones int) Song {
 	}
 	for i := range out.Sections {
 		for j := range out.Sections[i].Lines {
-			toks := out.Sections[i].Lines[j].Tokens
-			for k := range toks {
-				if toks[k].Kind == TokenChord {
-					toks[k].Chord = toks[k].Chord.Transpose(semitones, spelling)
+			ln := &out.Sections[i].Lines[j]
+			switch ln.Kind {
+			case LineVerbatim:
+				// Tablature moves with the chords, or the solo ends up in a
+				// different key from the song around it.
+				shifted, res := tab.Shift(ln.Info, ln.Text, semitones)
+				switch {
+				case res.Shifted:
+					ln.Text = shifted
+					rep.TabsShifted++
+				case res.TooLow:
+					rep.TabsTooLow++
+				case res.TooHigh:
+					rep.TabsTooHigh++
+				}
+			default:
+				for k := range ln.Tokens {
+					if ln.Tokens[k].Kind == TokenChord {
+						ln.Tokens[k].Chord = ln.Tokens[k].Chord.Transpose(semitones, spelling)
+					}
 				}
 			}
 		}
 	}
-	return out
+	return out, rep
 }
 
 // keyChord returns the chord the sheet's spelling should be derived from.
@@ -136,7 +183,6 @@ func (s Song) keyChord() (chord.Chord, bool) {
 // clone returns a deep copy so that Transpose cannot alias the caller's song.
 func (s Song) clone() Song {
 	out := s
-	out.Tags = append([]string(nil), s.Tags...)
 	out.Sections = make([]Section, len(s.Sections))
 	for i, sec := range s.Sections {
 		out.Sections[i] = sec

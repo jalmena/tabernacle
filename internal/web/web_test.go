@@ -92,12 +92,11 @@ func (ts *testServer) get(t *testing.T, target string) *httptest.ResponseRecorde
 }
 
 const graceSong = `---
-format: 1
 title: Amazing Grace
 artist: Traditional
 key: G
 capo: 2
-tags: [hymn, favorite]
+genre: hymn
 notes: Public domain.
 ---
 
@@ -129,13 +128,14 @@ func TestRoutes(t *testing.T) {
 		{"/songs/traditional-amazing-grace/print", http.StatusOK},
 		{"/songs/traditional-amazing-grace/raw", http.StatusOK},
 		{"/songs/traditional-amazing-grace?t=2&n=solfege&capo=sounding", http.StatusOK},
-		{"/tags", http.StatusOK},
+
 		{"/healthz", http.StatusOK},
 		{"/robots.txt", http.StatusOK},
 		{"/?q=grace", http.StatusOK},
-		{"/?tag=hymn", http.StatusOK},
+		{"/?genre=hymn", http.StatusOK},
 		{"/?chord=G", http.StatusOK},
-		{"/?fav=1", http.StatusOK},
+		{"/artists", http.StatusOK},
+		{"/genres", http.StatusOK},
 		{"/?sort=artist", http.StatusOK},
 		{"/?page=99", http.StatusOK},
 		{"/songs/does-not-exist", http.StatusNotFound},
@@ -153,7 +153,7 @@ func TestRoutes(t *testing.T) {
 
 func TestMethodNotAllowed(t *testing.T) {
 	ts := newTestServer(t, basicSongs())
-	for _, target := range []string{"/tags", "/songs/traditional-amazing-grace/raw", "/healthz"} {
+	for _, target := range []string{"/artists", "/songs/traditional-amazing-grace/raw", "/healthz"} {
 		r := httptest.NewRequest(http.MethodPost, target, nil)
 		r.Host = "localhost"
 		w := httptest.NewRecorder()
@@ -169,12 +169,11 @@ func TestNoScriptEscapesFromASong(t *testing.T) {
 	// Every value here has to be markup and still be a legal .song file, or the
 	// test would only be exercising the broken-file page.
 	hostile := `---
-format: 1
 title: <script>alert('title')</script>
 artist: x"><img src=x onerror=alert('artist')>
 key: G
 tuning: <svg onload=alert('tuning')>
-tags: ["<script>alert('tag')</script>", "javascript:alert(1)"]
+genre: hymn
 notes: |-
   <script>alert('notes')</script>
   second line
@@ -194,7 +193,7 @@ Text with [<b>x2</b>] an annotation
 	for _, target := range []string{
 		"/",
 		"/?q=alert",
-		"/tags",
+		"/genres",
 		"/songs/evil-song",
 		"/songs/evil-song/sheet",
 		"/songs/evil-song/print",
@@ -245,7 +244,7 @@ Text with [<b>x2</b>] an annotation
 
 // A lyric containing markup must survive a search excerpt as text.
 func TestSearchExcerptEscapesMarkup(t *testing.T) {
-	hostile := "---\nformat: 1\ntitle: Sneaky\n---\n\n## Verse 1\n" +
+	hostile := "---\ntitle: Sneaky\n---\n\n## Verse 1\n" +
 		"a line with <script>alert(1)</script> and the word wretch in it\n"
 	ts := newTestServer(t, map[string]string{"A/Sneaky.song": hostile})
 
@@ -444,8 +443,15 @@ func TestPrintViewOmitsInteractiveParts(t *testing.T) {
 			t.Errorf("the print view contains %q", unwanted)
 		}
 	}
-	// But everything a player needs is there.
-	for _, want := range []string{"Amazing Grace", "Traditional", "chordref", "Cejilla", "class=\"tab\""} {
+	// But everything a player needs is there. The chord summary and the genre are
+	// deliberately absent: on paper they are a row of ink nobody reads while
+	// playing.
+	for _, unwanted := range []string{"chordref", "usedchords", "chordbook"} {
+		if strings.Contains(body, unwanted) {
+			t.Errorf("the print view still carries %q", unwanted)
+		}
+	}
+	for _, want := range []string{"Amazing Grace", "Traditional", "Cejilla", "class=\"tab\""} {
 		if !strings.Contains(body, want) {
 			t.Errorf("the print view is missing %q", want)
 		}
@@ -507,7 +513,7 @@ func TestBrokenSongShowsTheLineToFix(t *testing.T) {
 	ts := newTestServer(t, basicSongs())
 	if err := os.WriteFile(
 		filepath.Join(ts.songs, "Traditional", "Amazing Grace.song"),
-		[]byte("---\nformat: 1\ntitel: typo\n---\n"), 0o644); err != nil {
+		[]byte("---\ntitel: typo\n---\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := ts.lib.Sync(context.Background()); err != nil {

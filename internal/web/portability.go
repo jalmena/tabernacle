@@ -16,7 +16,7 @@ import (
 const maxUploadMemory = 8 << 20
 
 func (s *Server) handleImportForm(w http.ResponseWriter, r *http.Request) {
-	s.render(w, r, http.StatusOK, "import.html", page_("Importar", "", importBody{
+	s.render(w, r, http.StatusOK, "import.html", s.page(r, "Importar", importBody{
 		MaxBytes: s.cfg.MaxUploadBytes,
 	}))
 }
@@ -38,7 +38,7 @@ func (s *Server) handleImport(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, s.cfg.MaxUploadBytes)
 	if err := r.ParseMultipartForm(maxUploadMemory); err != nil {
 		s.render(w, r, http.StatusRequestEntityTooLarge, "import.html",
-			page_("Importar", "", importBody{
+			s.page(r, "Importar", importBody{
 				MaxBytes: s.cfg.MaxUploadBytes,
 				Problem: "El envío es demasiado grande o no se ha podido leer. " +
 					"Prueba con menos archivos o con un zip más pequeño.",
@@ -54,7 +54,7 @@ func (s *Server) handleImport(w http.ResponseWriter, r *http.Request) {
 	var combined library.ImportReport
 	files := r.MultipartForm.File["files"]
 	if len(files) == 0 {
-		s.render(w, r, http.StatusBadRequest, "import.html", page_("Importar", "", importBody{
+		s.render(w, r, http.StatusBadRequest, "import.html", s.page(r, "Importar", importBody{
 			MaxBytes: s.cfg.MaxUploadBytes,
 			Problem:  "No se ha seleccionado ningún archivo.",
 		}))
@@ -90,7 +90,7 @@ func (s *Server) handleImport(w http.ResponseWriter, r *http.Request) {
 		merge(&combined, s.lib.ImportSong(r.Context(), name, data))
 	}
 
-	s.render(w, r, http.StatusOK, "import.html", page_("Importar", "", importBody{
+	s.render(w, r, http.StatusOK, "import.html", s.page(r, "Importar", importBody{
 		MaxBytes: s.cfg.MaxUploadBytes,
 		Report:   &combined,
 	}))
@@ -139,14 +139,11 @@ func safeName(name string) string {
 // archive holds the .song files exactly as they are on disk.
 func (s *Server) handleExport(w http.ResponseWriter, r *http.Request) {
 	q := index.ParseQuery(r.URL.Query().Get("q"))
-	if v := r.URL.Query().Get("tag"); v != "" {
-		q.Tag = v
+	if v := r.URL.Query().Get("genre"); v != "" {
+		q.Genre = v
 	}
 	if v := r.URL.Query().Get("artist"); v != "" {
 		q.Artist = v
-	}
-	if r.URL.Query().Get("fav") == "1" {
-		q.Favorite = true
 	}
 
 	w.Header().Set("Content-Type", "application/zip")

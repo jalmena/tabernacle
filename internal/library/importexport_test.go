@@ -14,7 +14,7 @@ import (
 )
 
 func songText(title, artist string) string {
-	s := "---\nformat: 1\ntitle: " + title + "\n"
+	s := "---\ntitle: " + title + "\n"
 	if artist != "" {
 		s += "artist: " + artist + "\n"
 	}
@@ -81,7 +81,7 @@ func TestImportZip(t *testing.T) {
 		{name: "Bill Withers/Ain't No Sunshine.song", body: songText("Ain't No Sunshine", "Bill Withers")},
 		{name: "loose.song", body: songText("Loose", "")},
 		{name: "notes.txt", body: "not a song"},
-		{name: "broken.song", body: "---\nformat: 1\ntitel: typo\n---\n"},
+		{name: "broken.song", body: "---\ntitel: typo\n---\n"},
 	})
 
 	rep, err := h.lib.ImportZip(ctx, bytes.NewReader(data), int64(len(data)))
@@ -175,7 +175,7 @@ func TestImportZipRefusesABomb(t *testing.T) {
 	h := newHarness(t)
 
 	// Highly compressible content, far larger than one song may be.
-	body := "---\nformat: 1\ntitle: Big\n---\n\n## V\n" + strings.Repeat("[G]la ", 400000)
+	body := "---\ntitle: Big\n---\n\n## V\n" + strings.Repeat("[G]la ", 400000)
 	data := buildZip(t, []zipEntry{{name: "big.song", body: body}})
 	t.Logf("archive is %d bytes and holds %d", len(data), len(body))
 
@@ -205,7 +205,7 @@ func TestImportZipDoesNotTrustTheDeclaredSize(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	big := "---\nformat: 1\ntitle: Liar\n---\n\n## V\n" + strings.Repeat("x", maxImportSongBytes+1000)
+	big := "---\ntitle: Liar\n---\n\n## V\n" + strings.Repeat("x", maxImportSongBytes+1000)
 	if _, err := w.Write([]byte(big)); err != nil {
 		t.Fatal(err)
 	}

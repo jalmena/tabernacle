@@ -9,14 +9,6 @@ import (
 	"time"
 )
 
-// FavoriteTag is the tag that marks a song as a favourite.
-//
-// Favourites live in the song file rather than in this database, so they survive
-// the index being deleted, travel with a copy of the collection and show up in a
-// git diff as a single line. It costs one file write per toggle, which is an
-// explicit user action anyway.
-const FavoriteTag = "favorite"
-
 // Record is one indexed song.
 //
 // The same type is used for writing and reading. A caller building a record from
@@ -32,10 +24,8 @@ type Record struct {
 	Key    string
 	Capo   int
 	Tuning string
-	Tempo  int
-	Meter  string
 	Notes  string
-	Tags   []string
+	Genre  string
 	Chords []string // canonical English spelling, in order of first appearance
 
 	// Lyrics is the song's text with chord brackets removed, used only to feed
@@ -54,16 +44,6 @@ type Record struct {
 
 	FirstSeen time.Time
 	IndexedAt time.Time
-}
-
-// Favorite reports whether the song carries the favourite tag.
-func (r Record) Favorite() bool {
-	for _, t := range r.Tags {
-		if strings.EqualFold(t, FavoriteTag) {
-			return true
-		}
-	}
-	return false
 }
 
 // Broken reports whether the file failed to parse.
@@ -106,7 +86,7 @@ func (x *Index) Stamps(ctx context.Context) (map[string]Stamp, error) {
 }
 
 // Upsert writes one song and everything derived from it in a single
-// transaction, so the index never holds a song whose tags or search rows are
+// transaction, so the index never holds a song whose chords or search rows are
 // half updated.
 func (x *Index) Upsert(ctx context.Context, r Record) (int64, error) {
 	if r.RelPath == "" || r.Slug == "" {
@@ -124,7 +104,7 @@ func (x *Index) Upsert(ctx context.Context, r Record) (int64, error) {
 	err := x.inTx(ctx, func(tx *sql.Tx) error {
 		err := tx.QueryRowContext(ctx,
 			`INSERT INTO songs (
-			     rel_path, slug, title, artist, song_key, capo, tuning, tempo, meter, notes,
+			     rel_path, slug, title, artist, song_key, capo, tuning, genre, genre_fold, notes,
 			     sort_title, sort_artist, section_count, line_count,
 			     size_bytes, mtime_unix_ns, content_hash,
 			     parse_error, parse_error_line, first_seen_at, indexed_at)
@@ -136,8 +116,8 @@ func (x *Index) Upsert(ctx context.Context, r Record) (int64, error) {
 			     song_key         = excluded.song_key,
 			     capo             = excluded.capo,
 			     tuning           = excluded.tuning,
-			     tempo            = excluded.tempo,
-			     meter            = excluded.meter,
+			     genre            = excluded.genre,
+			     genre_fold       = excluded.genre_fold,
 			     notes            = excluded.notes,
 			     sort_title       = excluded.sort_title,
 			     sort_artist      = excluded.sort_artist,
@@ -150,7 +130,7 @@ func (x *Index) Upsert(ctx context.Context, r Record) (int64, error) {
 			     parse_error_line = excluded.parse_error_line,
 			     indexed_at       = excluded.indexed_at
 			 RETURNING id`,
-			r.RelPath, r.Slug, r.Title, r.Artist, r.Key, r.Capo, r.Tuning, r.Tempo, r.Meter, r.Notes,
+			r.RelPath, r.Slug, r.Title, r.Artist, r.Key, r.Capo, r.Tuning, r.Genre, Slugify(r.Genre), r.Notes,
 			sortKey(r.Title), sortKey(r.Artist), r.Sections, r.Lines,
 			r.Size, r.ModTime.UnixNano(), r.Hash,
 			r.ParseError, r.ParseErrorLine, r.FirstSeen.UnixNano(), r.IndexedAt.UnixNano(),
@@ -159,9 +139,6 @@ func (x *Index) Upsert(ctx context.Context, r Record) (int64, error) {
 			return fmt.Errorf("index: upsert %s: %w", r.RelPath, err)
 		}
 
-		if err := replaceTags(ctx, tx, id, r.Tags); err != nil {
-			return err
-		}
 		if err := replaceChords(ctx, tx, id, r.Chords); err != nil {
 			return err
 		}
@@ -176,38 +153,6 @@ func (x *Index) Upsert(ctx context.Context, r Record) (int64, error) {
 		return 0, err
 	}
 	return id, nil
-}
-
-func replaceTags(ctx context.Context, tx *sql.Tx, songID int64, tags []string) error {
-	if _, err := tx.ExecContext(ctx, `DELETE FROM song_tags WHERE song_id = ?`, songID); err != nil {
-		return err
-	}
-	seen := make(map[string]bool, len(tags))
-	for _, name := range tags {
-		name = strings.TrimSpace(name)
-		if name == "" {
-			continue
-		}
-		fold := Slugify(name)
-		if fold == "" || seen[fold] {
-			continue
-		}
-		seen[fold] = true
-
-		var tagID int64
-		err := tx.QueryRowContext(ctx,
-			`INSERT INTO tags(name, fold) VALUES(?, ?)
-			 ON CONFLICT(name) DO UPDATE SET fold = excluded.fold
-			 RETURNING id`, name, fold).Scan(&tagID)
-		if err != nil {
-			return fmt.Errorf("index: upsert tag %q: %w", name, err)
-		}
-		if _, err := tx.ExecContext(ctx,
-			`INSERT OR IGNORE INTO song_tags(song_id, tag_id) VALUES(?, ?)`, songID, tagID); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 func replaceChords(ctx context.Context, tx *sql.Tx, songID int64, chords []string) error {
@@ -234,9 +179,9 @@ func replaceFTS(ctx context.Context, tx *sql.Tx, songID int64, r Record) error {
 		return err
 	}
 	_, err := tx.ExecContext(ctx,
-		`INSERT INTO song_fts(rowid, title, artist, tags, lyrics, notes, chords)
+		`INSERT INTO song_fts(rowid, title, artist, genre, lyrics, notes, chords)
 		 VALUES(?, ?, ?, ?, ?, ?, ?)`,
-		songID, r.Title, r.Artist, strings.Join(r.Tags, " "), r.Lyrics, r.Notes,
+		songID, r.Title, r.Artist, r.Genre, r.Lyrics, r.Notes,
 		strings.Join(r.Chords, " "))
 	return err
 }
@@ -274,8 +219,8 @@ func (x *Index) UpdatePath(ctx context.Context, id int64, relPath, slug string) 
 }
 
 const selectColumns = `
-	s.id, s.rel_path, s.slug, s.title, s.artist, s.song_key, s.capo, s.tuning,
-	s.tempo, s.meter, s.notes, s.section_count, s.line_count, s.size_bytes,
+	s.id, s.rel_path, s.slug, s.title, s.artist, s.song_key, s.capo, s.tuning, s.genre,
+	s.notes, s.section_count, s.line_count, s.size_bytes,
 	s.mtime_unix_ns, s.content_hash, s.parse_error, s.parse_error_line,
 	s.first_seen_at, s.indexed_at`
 
@@ -285,7 +230,7 @@ func scanRecord(rows interface{ Scan(...any) error }) (Record, error) {
 		mtime, first, indexed int64
 	)
 	err := rows.Scan(&r.ID, &r.RelPath, &r.Slug, &r.Title, &r.Artist, &r.Key, &r.Capo, &r.Tuning,
-		&r.Tempo, &r.Meter, &r.Notes, &r.Sections, &r.Lines, &r.Size,
+		&r.Genre, &r.Notes, &r.Sections, &r.Lines, &r.Size,
 		&mtime, &r.Hash, &r.ParseError, &r.ParseErrorLine, &first, &indexed)
 	if err != nil {
 		return Record{}, err
@@ -347,8 +292,8 @@ func (x *Index) Broken(ctx context.Context) ([]Record, error) {
 	return out, rows.Err()
 }
 
-// loadDetails fills in the tags and chords of already-scanned records with two
-// queries rather than two per song.
+// loadDetails fills in the chords of already-scanned records with one query
+// rather than one per song.
 func (x *Index) loadDetails(ctx context.Context, recs []*Record) error {
 	if len(recs) == 0 {
 		return nil
@@ -360,27 +305,6 @@ func (x *Index) loadDetails(ctx context.Context, recs []*Record) error {
 		ids = append(ids, r.ID)
 	}
 	placeholders := strings.TrimSuffix(strings.Repeat("?,", len(ids)), ",")
-
-	tagRows, err := x.db.QueryContext(ctx,
-		`SELECT st.song_id, t.name FROM song_tags st JOIN tags t ON t.id = st.tag_id
-		 WHERE st.song_id IN (`+placeholders+`) ORDER BY t.fold`, ids...)
-	if err != nil {
-		return fmt.Errorf("index: load tags: %w", err)
-	}
-	defer tagRows.Close()
-	for tagRows.Next() {
-		var id int64
-		var name string
-		if err := tagRows.Scan(&id, &name); err != nil {
-			return err
-		}
-		if r := byID[id]; r != nil {
-			r.Tags = append(r.Tags, name)
-		}
-	}
-	if err := tagRows.Err(); err != nil {
-		return err
-	}
 
 	chordRows, err := x.db.QueryContext(ctx,
 		`SELECT song_id, symbol FROM song_chords
@@ -406,7 +330,7 @@ func (x *Index) loadDetails(ctx context.Context, recs []*Record) error {
 type Stats struct {
 	Songs   int
 	Artists int
-	Tags    int
+	Genres  int
 	Broken  int
 }
 
@@ -417,9 +341,9 @@ func (x *Index) Stats(ctx context.Context) (Stats, error) {
 		`SELECT
 		   (SELECT COUNT(*) FROM songs),
 		   (SELECT COUNT(DISTINCT artist) FROM songs WHERE artist <> ''),
-		   (SELECT COUNT(*) FROM tags),
+		   (SELECT COUNT(DISTINCT genre_fold) FROM songs WHERE genre <> ''),
 		   (SELECT COUNT(*) FROM songs WHERE parse_error <> '')`,
-	).Scan(&s.Songs, &s.Artists, &s.Tags, &s.Broken)
+	).Scan(&s.Songs, &s.Artists, &s.Genres, &s.Broken)
 	if err != nil {
 		return Stats{}, fmt.Errorf("index: read stats: %w", err)
 	}
@@ -439,7 +363,7 @@ func timeFromNanos(n int64) time.Time {
 // last successfully read from it.
 //
 // Only the file's identity and the error are touched, so the title, artist,
-// tags and search rows from the last good version stay in place. That is what
+// genre and search rows from the last good version stay in place. That is what
 // lets a song with a typo in it remain findable, and lets the interface say
 // which line to fix, instead of the song appearing to have been lost.
 //

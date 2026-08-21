@@ -140,8 +140,10 @@ func (l *Library) SaveState(ctx context.Context, slug string, s index.SongState)
 	return l.idx.SetState(ctx, slug, s)
 }
 
-// Tags lists the tags in use.
-func (l *Library) Tags(ctx context.Context) ([]index.TagCount, error) { return l.idx.Tags(ctx) }
+// Genres lists the genres in use.
+func (l *Library) Genres(ctx context.Context) ([]index.GenreCount, error) {
+	return l.idx.Genres(ctx)
+}
 
 // Artists lists the artists in the collection.
 func (l *Library) Artists(ctx context.Context) ([]index.ArtistCount, error) {

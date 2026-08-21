@@ -74,10 +74,8 @@ type SheetView struct {
 	Key     string // in the reader's notation, after transposition
 	OrigKey string
 	Tuning  string
-	Meter   string
-	Tempo   int
 	Capo    int
-	Tags    []string
+	Genre   string
 	Notes   []string // one entry per line, so the template emits a paragraph each
 
 	Transpose int
@@ -87,6 +85,11 @@ type SheetView struct {
 	// TuningNote explains an unrecognised tuning, so a reader is told why there
 	// are no diagrams instead of assuming the feature is broken.
 	TuningNote string
+
+	// TabNote explains tablature that could not follow the chords, because a
+	// fret cannot go below an open string and the neck runs out. Plainly stated,
+	// with no alarm: it is information, not a problem the reader caused.
+	TabNote string
 
 	// Shifted is true when the displayed chords are not what the file says,
 	// which the page has to state plainly so nobody prints a sheet in the wrong
@@ -175,8 +178,9 @@ func Sheet(s song.Song, o Options) SheetView {
 		shift += s.Capo
 	}
 	shown := s
+	var moved song.TransposeReport
 	if shift != 0 {
-		shown = s.Transpose(shift)
+		shown, moved = s.TransposeReport(shift)
 	}
 
 	v := SheetView{
@@ -185,10 +189,8 @@ func Sheet(s song.Song, o Options) SheetView {
 		OrigKey:   formatSymbol(s.Key, o.Notation),
 		Key:       formatSymbol(shown.Key, o.Notation),
 		Tuning:    s.Tuning,
-		Meter:     s.Meter,
-		Tempo:     s.Tempo,
 		Capo:      s.Capo,
-		Tags:      s.Tags,
+		Genre:     s.Genre,
 		Transpose: o.Transpose,
 		Notation:  notationName(o.Notation),
 		CapoView:  o.CapoView,
@@ -196,6 +198,12 @@ func Sheet(s song.Song, o Options) SheetView {
 	}
 	if s.Notes != "" {
 		v.Notes = strings.Split(s.Notes, "\n")
+	}
+	switch {
+	case moved.TabsTooLow > 0:
+		v.TabNote = "La tablatura se queda como estaba: bajarla más pasaría de la cuerda al aire."
+	case moved.TabsTooHigh > 0:
+		v.TabNote = "La tablatura se queda como estaba: subirla más se saldría del mástil."
 	}
 	if o.Diagrams && s.Tuning != "" {
 		switch t, ok := voicing.ParseTuning(s.Tuning); {
@@ -287,7 +295,7 @@ func lineOf(ln song.Line, no chord.Notation) LineView {
 		// indentation or spacing that was in the file, and keeping it makes the
 		// rendering an exact reconstruction of the original line.
 		if len(cells) > 0 || sep != "" {
-			out.Words = append(out.Words, WordView{Cells: cells, Sep: sep})
+			out.Words = append(out.Words, WordView{Cells: alignToVowels(cells), Sep: sep})
 			cells = nil
 		}
 	}
@@ -317,6 +325,81 @@ func lineOf(ln song.Line, no chord.Notation) LineView {
 	closeWord("")
 	return out
 }
+
+// maxConsonantsMoved bounds how far a chord may slide within a word. Three
+// covers the longest cluster that starts a syllable in Spanish or English
+// ("str", "chr"), and stops a pathological run of letters from dragging a chord
+// halfway across a word.
+const maxConsonantsMoved = 3
+
+// alignToVowels slides each chord onto the vowel of its syllable.
+//
+// A chord written as "A[G]mazing" lands the G on "mazing", so it prints above
+// the "m". But the beat falls on the vowel — that is where a singer lands and
+// where a player changes — so the G belongs above the "a". Moving the leading
+// consonants back into the previous cell puts it there, and costs nothing: the
+// text is unchanged, only the boundary between two cells moves.
+//
+// Nothing moves across a word boundary, so a chord already at the start of a
+// word stays where it is.
+func alignToVowels(cells []CellView) []CellView {
+	for i := 1; i < len(cells); i++ {
+		if cells[i].Chord == "" || cells[i].Annotation != "" || cells[i].Text == "" {
+			continue
+		}
+		if cells[i-1].Annotation != "" {
+			continue
+		}
+		lead := leadingConsonants(cells[i].Text)
+		if lead == "" || lead == cells[i].Text {
+			continue // already on a vowel, or nothing but consonants
+		}
+		cells[i-1].Text += lead
+		cells[i].Text = cells[i].Text[len(lead):]
+	}
+	return cells
+}
+
+// leadingConsonants returns the run of letters before the syllable's vowel, or
+// "" when the text already starts on one.
+func leadingConsonants(text string) string {
+	n, count := 0, 0
+	for _, r := range text {
+		if isVowel(r) {
+			break
+		}
+		if !isLetter(r) {
+			// Punctuation or a digit is not a consonant cluster; leave it be.
+			return ""
+		}
+		count++
+		if count > maxConsonantsMoved {
+			return ""
+		}
+		n += len(string(r))
+	}
+	if n == len(text) {
+		return "" // no vowel at all
+	}
+	return text[:n]
+}
+
+// isVowel covers the vowels a Spanish or English lyric actually uses, accents
+// included. "y" is left out: at the start of a syllable it behaves as a
+// consonant, which is exactly the position this is asking about.
+func isVowel(r rune) bool {
+	switch unicode.ToLower(r) {
+	case 'a', 'e', 'i', 'o', 'u',
+		'á', 'é', 'í', 'ó', 'ú', 'ü',
+		'à', 'è', 'ì', 'ò', 'ù',
+		'â', 'ê', 'î', 'ô', 'û',
+		'ä', 'ë', 'ï', 'ö':
+		return true
+	}
+	return false
+}
+
+func isLetter(r rune) bool { return unicode.IsLetter(r) }
 
 // splitKeepingSpaces breaks text into alternating runs of whitespace and
 // non-whitespace, keeping both.

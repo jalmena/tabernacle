@@ -72,7 +72,7 @@ func (h *harness) writeSong(t *testing.T, rel, title, artist, body string) {
 	if body == "" {
 		body = "## Verse 1\n[G]Hello [C]world\n"
 	}
-	content := fmt.Sprintf("---\nformat: 1\ntitle: %s\n", title)
+	content := fmt.Sprintf("---\ntitle: %s\n", title)
 	if artist != "" {
 		content += fmt.Sprintf("artist: %s\n", artist)
 	}
@@ -307,7 +307,7 @@ func TestBrokenFileStaysFindableAndKeepsLastGoodContent(t *testing.T) {
 
 	// Break it, as a mistyped edit would.
 	if err := os.WriteFile(filepath.Join(h.songs, "A", "Song.song"),
-		[]byte("---\nformat: 1\ntitel: oops\n---\n"), 0o644); err != nil {
+		[]byte("---\ntitel: oops\n---\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	rep, err := h.lib.Sync(ctx)

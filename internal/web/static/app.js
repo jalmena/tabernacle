@@ -229,3 +229,66 @@
 		if (pop.matches(":popover-open") && opener) place(opener);
 	});
 })();
+
+// Loading a file into the editor without a round trip.
+//
+// The form behind this posts the file and the server sends the editor back with
+// the text in it, which is what happens with scripting off. When scripting is
+// available there is no reason to make the file travel: it is already on this
+// machine, so it is read here and dropped straight into the box.
+//
+// Nothing is saved either way. The reader still has to press Guardar, which is
+// the point — a file whose contents you never saw before it landed is how a
+// collection fills up with things nobody meant to add.
+(function () {
+	"use strict";
+
+	var input = document.getElementById("loadfile");
+	var box = document.getElementById("songtext");
+	if (!input || !box || typeof FileReader === "undefined") return;
+
+	var bar = input.closest("form");
+	if (!bar) return;
+
+	function note(text) {
+		var el = bar.querySelector(".quiet");
+		if (!el) {
+			el = document.createElement("span");
+			el.className = "quiet";
+			var sep = bar.querySelector(".sep");
+			bar.insertBefore(el, sep || null);
+		}
+		el.textContent = text;
+	}
+
+	input.addEventListener("change", function () {
+		var file = input.files && input.files[0];
+		if (!file) return;
+
+		// Well past any real song, and small enough that reading it cannot
+		// become the problem.
+		if (file.size > 4 * 1024 * 1024) {
+			note("Ese archivo es demasiado grande.");
+			return;
+		}
+
+		var reader = new FileReader();
+		reader.onload = function () {
+			var text = String(reader.result || "").replace(/\r\n?/g, "\n");
+			if (box.value.trim() !== "" && !window.confirm(
+				"Ya hay texto en el editor. ¿Reemplazarlo con el archivo?")) {
+				return;
+			}
+			box.value = text;
+			note("Cargado: " + file.name);
+			box.focus();
+			box.setSelectionRange(0, 0);
+			box.scrollTop = 0;
+		};
+		reader.onerror = function () {
+			// Fall back to the form, which does the same thing server-side.
+			bar.submit();
+		};
+		reader.readAsText(file, "utf-8");
+	});
+})();

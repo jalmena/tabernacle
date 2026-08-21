@@ -17,7 +17,7 @@ const testMax = 1 << 20
 
 // songBytes builds a minimal valid .song file.
 func songBytes(title, artist string) []byte {
-	return []byte(fmt.Sprintf("---\nformat: 1\ntitle: %s\nartist: %s\n---\n\n## Verse 1\n[G]Hello [C]world\n",
+	return []byte(fmt.Sprintf("---\ntitle: %s\nartist: %s\n---\n\n## Verse 1\n[G]Hello [C]world\n",
 		title, artist))
 }
 
@@ -189,7 +189,7 @@ func TestScanSkipsNonRegularFiles(t *testing.T) {
 func TestScanReportsBrokenFiles(t *testing.T) {
 	s, songs, _ := newStore(t)
 	write(t, songs, "Good.song", songBytes("Good", ""))
-	write(t, songs, "Broken.song", []byte("---\nformat: 1\ntitel: typo\n---\n"))
+	write(t, songs, "Broken.song", []byte("---\ntitel: typo\n---\n"))
 
 	got := scanAll(t, s)
 	if len(got) != 2 {

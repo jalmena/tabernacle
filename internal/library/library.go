@@ -52,6 +52,20 @@ type Library struct {
 	syncing sync.Mutex
 
 	now func() time.Time
+
+	// lastScan is what the most recent scan did, so the interface can say
+	// something more useful than "done". A button that reports nothing is
+	// indistinguishable from a button that does nothing.
+	lastMu   sync.Mutex
+	lastScan SyncReport
+	lastAt   time.Time
+}
+
+// LastScan returns the most recent scan's result and when it happened.
+func (l *Library) LastScan() (SyncReport, time.Time) {
+	l.lastMu.Lock()
+	defer l.lastMu.Unlock()
+	return l.lastScan, l.lastAt
 }
 
 // New assembles the library. now is injectable so tests do not depend on the
@@ -185,6 +199,11 @@ func (l *Library) Sync(ctx context.Context) (SyncReport, error) {
 
 	l.idx.FullScanDone()
 	rep.Duration = l.now().Sub(started)
+
+	l.lastMu.Lock()
+	l.lastScan, l.lastAt = rep, l.now()
+	l.lastMu.Unlock()
+
 	l.log.Info("scanned the collection",
 		"scanned", rep.Scanned, "added", rep.Added, "updated", rep.Updated,
 		"renamed", rep.Renamed, "removed", rep.Removed, "unchanged", rep.Unchanged,
@@ -282,10 +301,8 @@ func recordFor(e songfs.Entry, slug string) index.Record {
 		Key:      e.Song.Key,
 		Capo:     e.Song.Capo,
 		Tuning:   e.Song.Tuning,
-		Tempo:    e.Song.Tempo,
-		Meter:    e.Song.Meter,
 		Notes:    e.Song.Notes,
-		Tags:     e.Song.Tags,
+		Genre:    e.Song.Genre,
 		Chords:   symbols,
 		Lyrics:   e.Song.PlainText(),
 		Sections: len(e.Song.Sections),

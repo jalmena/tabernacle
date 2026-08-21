@@ -2,8 +2,24 @@
 <body>
 {{template "top" .}}
 <main class="wrap">
+	{{template "nav" .}}
 	{{with .Body}}
 		<h1>{{.Title}}</h1>
+
+		{{if not .Editing}}
+			{{/* Loading a file lands its text in the box below rather than saving
+			     it. Nothing reaches the collection until Guardar, so a file with
+			     a mistake in it can be seen and fixed first. */}}
+			<form class="loadbar" method="post" action="/songs/new" enctype="multipart/form-data">
+				<label class="btn btn-quiet" for="loadfile">Cargar archivo…</label>
+				<input id="loadfile" type="file" name="file" accept=".song,.txt,text/plain">
+				{{/* Choosing a file is enough: the script reads it here and drops
+				     the text in the box below. With scripting off there is nothing
+				     to trigger that, so the button appears only in that case. */}}
+				<noscript><button class="btn btn-quiet" type="submit">Cargar</button></noscript>
+				{{if .Loaded}}<span class="quiet">Cargado: {{.Loaded}}</span>{{end}}
+			</form>
+		{{end}}
 
 		{{if .ErrMessage}}
 			<p class="notice">
@@ -13,17 +29,17 @@
 
 		{{if not .Editing}}
 			<p class="count">
-				Pega una canción en formato <code>.song</code>. Los acordes van entre corchetes,
-				donde caen: <code>A[G]mazing grace</code>. Las secciones empiezan con
-				<code>## Estrofa 1</code>.
+				Pega una canción en formato <code>.song</code>, o carga un archivo. Los acordes
+				van entre corchetes, donde caen: <code>A[G]mazing grace</code>. Las secciones
+				empiezan con <code>## Estrofa 1</code>. De la cabecera solo hace falta el título.
 			</p>
 		{{end}}
 
 		<form method="post" action="{{.Action}}" class="editor">
 			{{if .Hash}}<input type="hidden" name="hash" value="{{.Hash}}">{{end}}
-			<textarea name="text" rows="24" spellcheck="false" autocapitalize="off"
+			<textarea id="songtext" name="text" rows="26" spellcheck="false" autocapitalize="off"
 			          autocomplete="off" aria-label="Contenido del archivo .song"
-			          placeholder="---&#10;format: 1&#10;title: Mi canción&#10;artist: Alguien&#10;key: G&#10;---&#10;&#10;## Estrofa 1&#10;A[G]quí van las letras">{{.Text}}</textarea>
+			          placeholder="{{.Placeholder}}">{{.Text}}</textarea>
 			<div class="filters">
 				<button class="btn" type="submit">Guardar</button>
 				<a class="btn btn-quiet" href="{{.CancelURL}}">Cancelar</a>
@@ -31,5 +47,6 @@
 		</form>
 	{{end}}
 </main>
+{{template "scripts" .}}
 </body>
 </html>

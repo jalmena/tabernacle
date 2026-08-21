@@ -25,7 +25,7 @@ func Parse(data []byte) (Song, error) {
 	if err != nil {
 		return Song{}, err
 	}
-	s := Song{Format: Format}
+	var s Song
 	if err := decodeFrontMatter(entries, &s); err != nil {
 		return Song{}, err
 	}
@@ -42,14 +42,6 @@ func decodeFrontMatter(entries []entry, s *Song) error {
 	for _, e := range entries {
 		var err error
 		switch e.key {
-		case "format":
-			var n int
-			if n, err = e.intValue(); err == nil {
-				if n != Format {
-					err = fmt.Errorf("unsupported format version %d: this build reads format %d", n, Format)
-				}
-				s.Format = n
-			}
 		case "title":
 			s.Title, err = e.stringValue()
 		case "artist":
@@ -64,22 +56,20 @@ func decodeFrontMatter(entries []entry, s *Song) error {
 			}
 		case "tuning":
 			s.Tuning, err = e.stringValue()
-		case "tempo":
-			if s.Tempo, err = e.intValue(); err == nil {
-				err = validateTempo(s.Tempo)
-			}
-		case "meter":
-			if s.Meter, err = e.stringValue(); err == nil {
-				err = validateMeter(s.Meter)
-			}
-		case "tags":
-			if s.Tags, err = e.listValue(); err == nil {
-				err = validateTags(s.Tags)
+		case "genre":
+			if s.Genre, err = e.stringValue(); err == nil {
+				err = validateGenre(s.Genre)
 			}
 		case "notes":
 			s.Notes, err = e.stringValue()
 		default:
-			err = fmt.Errorf("unknown field %q", e.key)
+			if !retiredFields[e.key] {
+				err = fmt.Errorf("unknown field %q", e.key)
+			}
+			// A retired field is read and discarded. Rejecting it would make a
+			// collection written before it was dropped unreadable, and the
+			// point of an unknown-field error is to catch a typo, not to punish
+			// somebody for having older files.
 		}
 		if err != nil {
 			return lineErr(e.line, err.Error())

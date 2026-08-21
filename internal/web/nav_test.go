@@ -1,0 +1,223 @@
+package web
+
+import (
+	"net/http"
+	"regexp"
+	"strings"
+	"testing"
+)
+
+var (
+	navBlock   = regexp.MustCompile(`(?s)<div class="filters noprint">(.*?)</div>`)
+	buttonText = regexp.MustCompile(`btn-quiet[^"]*"[^>]*>([^<]+)<`)
+)
+
+func labelsIn(t *testing.T, block *regexp.Regexp, body string) []string {
+	t.Helper()
+	m := block.FindStringSubmatch(body)
+	if m == nil {
+		return nil
+	}
+	var out []string
+	for _, b := range buttonText.FindAllStringSubmatch(m[1], -1) {
+		if s := strings.TrimSpace(b[1]); s != "" {
+			out = append(out, s)
+		}
+	}
+	return out
+}
+
+// The navigation is on every page, because navigation that disappears on the
+// editor or import page leaves the reader stranded.
+func TestNavigationIsOnEveryPage(t *testing.T) {
+	ts := newTestServer(t, basicSongs())
+	for _, target := range []string{
+		"/",
+		"/artists",
+		"/genres",
+		"/songs/new",
+		"/import",
+		"/songs/traditional-amazing-grace",
+		"/songs/traditional-amazing-grace/edit",
+		"/songs/traditional-amazing-grace/delete",
+		"/nope",
+	} {
+		w := ts.get(t, target)
+		got := labelsIn(t, navBlock, w.Body.String())
+		if len(got) == 0 {
+			t.Errorf("%s has no navigation", target)
+			continue
+		}
+		want := "Canciones|Artistas|Géneros|Añadir"
+		if strings.Join(got, "|") != want {
+			t.Errorf("%s navigation = %v, want %s", target, got, want)
+		}
+	}
+}
+
+// The add page offers exactly one control: choosing a file. Anything else there
+// is a second way to do the same thing.
+func TestAddPageOffersOnlyTheFileChooser(t *testing.T) {
+	ts := newTestServer(t, nil)
+	body := ts.get(t, "/songs/new").Body.String()
+
+	if !strings.Contains(body, "Cargar archivo") {
+		t.Error("the file chooser is missing")
+	}
+	if strings.Contains(body, "Varias a la vez") {
+		t.Error("the bulk import link is still on the add page")
+	}
+	// The fallback button exists only for a reader with scripting off, so it is
+	// inside noscript and not a second button in the row.
+	between := body[strings.Index(body, `class="loadbar"`):]
+	between = between[:strings.Index(between, "</form>")]
+	if strings.Count(between, "<button") != 1 || !strings.Contains(between, "<noscript>") {
+		t.Errorf("the load row should hold one label and a noscript fallback:\n%s", between)
+	}
+}
+
+// Revisar is gone from the navigation until it belongs to an administrator.
+func TestReviewIsNotOfferedInTheNavigation(t *testing.T) {
+	ts := newTestServer(t, basicSongs())
+	for _, target := range []string{"/", "/artists", "/songs/new"} {
+		body := ts.get(t, target).Body.String()
+		if strings.Contains(body, ">Revisar<") {
+			t.Errorf("%s still offers Revisar in the navigation", target)
+		}
+	}
+	// Importing lives inside Añadir now, not in the navigation.
+	for _, label := range labelsIn(t, navBlock, ts.get(t, "/").Body.String()) {
+		if label == "Importar" {
+			t.Error("Importar is still a section")
+		}
+	}
+}
+
+// The chrome must not offer two labels a reader could mistake for each other.
+// "Artista" sitting next to "Artistas" read as the same thing twice and left
+// nobody sure which was which, which is why there is one vocabulary now.
+func TestSectionLabelsAreDistinct(t *testing.T) {
+	ts := newTestServer(t, basicSongs())
+	sections := labelsIn(t, navBlock, ts.get(t, "/").Body.String())
+	if len(sections) < 3 {
+		t.Fatalf("sections = %v", sections)
+	}
+	for i, a := range sections {
+		for j, b := range sections {
+			if i >= j {
+				continue
+			}
+			la, lb := strings.ToLower(a), strings.ToLower(b)
+			if la == lb {
+				t.Errorf("%q appears twice", a)
+			}
+			if strings.HasPrefix(la, lb) || strings.HasPrefix(lb, la) {
+				t.Errorf("%q and %q are too close to sit in the same row", a, b)
+			}
+		}
+	}
+}
+
+// There is no ordering row: one vocabulary in the chrome, and the collection is
+// alphabetical by default.
+func TestNoOrderingRow(t *testing.T) {
+	ts := newTestServer(t, basicSongs())
+	for _, target := range []string{"/", "/artists", "/genres", "/songs/new"} {
+		body := ts.get(t, target).Body.String()
+		if strings.Contains(body, "orderlabel") || strings.Contains(body, "filters noprint order") {
+			t.Errorf("%s still shows an ordering row", target)
+		}
+		for _, label := range []string{">A–Z<", ">Recientes<", ">Nuevas<"} {
+			if strings.Contains(body, label) {
+				t.Errorf("%s still offers the ordering %s", target, label)
+			}
+		}
+	}
+	// The parameter still works for a link, it simply has no button.
+	if ts.get(t, "/?sort=recent").Code != http.StatusOK {
+		t.Error("?sort= stopped working")
+	}
+}
+
+// Read-only mode has nothing to add, so it does not offer to.
+func TestAddIsHiddenInReadOnlyMode(t *testing.T) {
+	ts := newTestServerWithEnv(t, basicSongs(), t.TempDir(), map[string]string{
+		"TABERNACLE_READ_ONLY": "true",
+	})
+	got := labelsIn(t, navBlock, ts.get(t, "/").Body.String())
+	for _, l := range got {
+		if l == "Añadir" {
+			t.Error("read-only mode still offers Añadir")
+		}
+	}
+	if len(got) != 3 {
+		t.Errorf("navigation = %v, want the three reading sections", got)
+	}
+}
+
+// Loading a file puts its text in the editor and saves nothing. A file whose
+// contents you never saw before it landed is how a collection fills with things
+// nobody meant to add.
+func TestLoadingAFileFillsTheEditorWithoutSaving(t *testing.T) {
+	ts := newTestServer(t, nil)
+
+	w := ts.uploadField(t, "file", "/songs/new", "cualquiera.song", []byte(pasted))
+	if w.Code != http.StatusOK {
+		t.Fatalf("loading = %d\n%s", w.Code, w.Body.String())
+	}
+	body := w.Body.String()
+	if !strings.Contains(body, "title: Nueva Canción") {
+		t.Errorf("the file's text is not in the editor:\n%s", body)
+	}
+	if !strings.Contains(body, "Cargado: cualquiera.song") {
+		t.Error("the page does not say which file arrived")
+	}
+	// Nothing was written.
+	if stats, err := ts.lib.Stats(contextTODO()); err != nil || stats.Songs != 0 {
+		t.Errorf("loading a file added %d songs to the collection", stats.Songs)
+	}
+}
+
+func TestLoadingABrokenFileShowsTheLine(t *testing.T) {
+	ts := newTestServer(t, nil)
+	broken := []byte("---\ntitle: Roto\ntitel: mal\n---\n")
+
+	w := ts.uploadField(t, "file", "/songs/new", "roto.song", broken)
+	if w.Code != http.StatusOK {
+		t.Fatalf("loading = %d", w.Code)
+	}
+	body := w.Body.String()
+	if !strings.Contains(body, "Línea") || !strings.Contains(body, "titel") {
+		t.Errorf("the problem is not reported with its line:\n%s", body)
+	}
+	// The text is still there to be fixed, and nothing was saved.
+	if !strings.Contains(body, "titel: mal") {
+		t.Error("the loaded text was thrown away")
+	}
+	if stats, _ := ts.lib.Stats(contextTODO()); stats.Songs != 0 {
+		t.Error("a broken file was saved")
+	}
+}
+
+func TestLoadingRefusesRubbish(t *testing.T) {
+	ts := newTestServer(t, nil)
+
+	// Not text at all.
+	w := ts.uploadField(t, "file", "/songs/new", "x.song", []byte{0xff, 0xfe, 0x00, 0x01})
+	if w.Code != http.StatusUnprocessableEntity {
+		t.Errorf("a binary file = %d, want 422", w.Code)
+	}
+	if !strings.Contains(w.Body.String(), "texto") {
+		t.Error("the refusal does not explain itself")
+	}
+
+	// Nothing chosen.
+	if w := ts.uploadField(t, "file", "/songs/new", "", nil); w.Code != http.StatusBadRequest {
+		t.Errorf("an empty upload = %d, want 400", w.Code)
+	}
+
+	// From somewhere else.
+	if w := ts.uploadForeign(t, "/songs/new", "x.song", []byte(pasted)); w.Code != http.StatusForbidden {
+		t.Errorf("a cross-origin load = %d, want 403", w.Code)
+	}
+}

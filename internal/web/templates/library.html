@@ -2,38 +2,29 @@
 <body>
 {{template "top" .}}
 <main class="wrap wrap-wide">
+	{{template "nav" .}}
 	{{with .Body}}
-		{{if or .Filters .Result.Total}}
+		{{if .Filters}}
 			<div class="filters">
 				{{range .Filters}}<a class="pill" href="{{.ClearURL}}" title="Quitar este filtro">{{.Label}} ✕</a>{{end}}
-				{{range .SortURLs}}<a class="btn btn-quiet{{if .On}} on{{end}}" href="{{.URL}}">{{.Label}}</a>{{end}}
-				<a class="btn btn-quiet" href="/tags">Etiquetas</a>
-				<a class="btn btn-quiet" href="/import">Importar</a>
-				{{if not $.Nav.ReadOnly}}
-					<a class="btn" href="/songs/new">Añadir</a>
-					<form method="post" action="/reindex">
-						<button class="btn btn-quiet" type="submit"
-						        title="Buscar cambios hechos fuera de la aplicación">Revisar</button>
-					</form>
-				{{end}}
 			</div>
 		{{end}}
 
-		{{if .Result.Total}}
-			<p class="count">{{.Result.Total}} {{plural .Result.Total "canción" "canciones"}}</p>
+		{{if .Total}}
+			<p class="count">{{.Total}} {{plural .Total "canción" "canciones"}}</p>
 		{{end}}
 
-		{{if .Result.Hits}}
+		{{if .Hits}}
 			<ul class="songlist">
-				{{range .Result.Hits}}
+				{{range .Hits}}
 					<li>
 						<a href="{{.URL}}">
-							<div class="t">{{if .Favorite}}★ {{end}}{{.Title}}</div>
+							<div class="t">{{.Title}}</div>
 							{{if .Artist}}<div class="a">{{.Artist}}</div>{{end}}
 							<div class="meta">
 								{{if .Key}}<span>{{.Key}}</span>{{end}}
 								{{if .Capo}}<span>cejilla {{.Capo}}</span>{{end}}
-								{{range .Tags}}<span class="pill">{{.}}</span>{{end}}
+								{{if .Genre}}<span class="pill">{{.Genre}}</span>{{end}}
 								{{if .Broken}}<span class="pill pill-warn">error de sintaxis</span>{{end}}
 							</div>
 							{{if .Frags}}
@@ -59,7 +50,7 @@
 					<p><b>Tu tabernáculo está vacío.</b></p>
 					<p>Pon tus archivos <code>.song</code> en:</p>
 					<p><code>{{.Empty.SongsDir}}/Artista/Título.song</code></p>
-					<p>Aparecerán aquí en cuanto se revise la carpeta.</p>
+					<p>Aparecerán en cuanto se revise la carpeta.</p>
 					{{if not $.Nav.ReadOnly}}<p><a class="btn" href="/songs/new">Añadir una canción</a></p>{{end}}
 				{{end}}
 			</div>

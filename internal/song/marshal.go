@@ -26,7 +26,6 @@ func Marshal(s Song) ([]byte, error) {
 
 	var b strings.Builder
 	b.WriteString(frontMatterDelim + "\n")
-	writeField(&b, "format", strconv.Itoa(Format))
 	writeField(&b, "title", quoteIfNeeded(s.Title))
 	if s.Artist != "" {
 		writeField(&b, "artist", quoteIfNeeded(s.Artist))
@@ -40,14 +39,8 @@ func Marshal(s Song) ([]byte, error) {
 	if s.Tuning != "" {
 		writeField(&b, "tuning", quoteIfNeeded(s.Tuning))
 	}
-	if s.Tempo != 0 {
-		writeField(&b, "tempo", strconv.Itoa(s.Tempo))
-	}
-	if s.Meter != "" {
-		writeField(&b, "meter", quoteIfNeeded(s.Meter))
-	}
-	if len(s.Tags) > 0 {
-		writeField(&b, "tags", flowList(s.Tags))
+	if s.Genre != "" {
+		writeField(&b, "genre", quoteIfNeeded(s.Genre))
 	}
 	if s.Notes != "" {
 		writeNotes(&b, s.Notes)
@@ -215,13 +208,7 @@ func Validate(s Song) error {
 	if err := validateCapo(s.Capo); err != nil {
 		return err
 	}
-	if err := validateTempo(s.Tempo); err != nil {
-		return err
-	}
-	if err := validateMeter(s.Meter); err != nil {
-		return err
-	}
-	if err := validateTags(s.Tags); err != nil {
+	if err := validateGenre(s.Genre); err != nil {
 		return err
 	}
 	for _, sec := range s.Sections {
@@ -269,24 +256,6 @@ func validateCapo(capo int) error {
 	return nil
 }
 
-func validateTempo(tempo int) error {
-	if tempo < 0 || tempo > 400 {
-		return fmt.Errorf("tempo %d is out of range 1..400", tempo)
-	}
-	return nil
-}
-
-func validateMeter(meter string) error {
-	if meter == "" {
-		return nil
-	}
-	beats, unit, ok := strings.Cut(meter, "/")
-	if !ok || !allDigits(beats) || !allDigits(unit) {
-		return fmt.Errorf("meter %q is not a time signature such as 4/4 or 6/8", meter)
-	}
-	return nil
-}
-
 func allDigits(s string) bool {
 	if s == "" {
 		return false
@@ -299,14 +268,17 @@ func allDigits(s string) bool {
 	return true
 }
 
-func validateTags(tags []string) error {
-	for _, t := range tags {
-		if strings.TrimSpace(t) == "" {
-			return errors.New("tags cannot be empty")
-		}
-		if strings.ContainsAny(t, "\n,") {
-			return fmt.Errorf("tag %q cannot contain a comma or a newline", t)
-		}
+// validateGenre keeps a genre to one short label of plain text. It names a kind
+// of music; it is not somewhere to put a paragraph.
+func validateGenre(genre string) error {
+	if genre == "" {
+		return nil
+	}
+	if strings.ContainsAny(genre, "\n,") {
+		return fmt.Errorf("genre %q must be a single label with no commas", genre)
+	}
+	if len(genre) > 60 {
+		return fmt.Errorf("genre %q is longer than a label should be", genre)
 	}
 	return nil
 }

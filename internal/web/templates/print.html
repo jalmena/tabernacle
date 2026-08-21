@@ -1,44 +1,40 @@
 {{template "head" .}}
-<body class="printing">
+{{/* The print view is always on light paper. A dark sheet costs a cartridge and
+     reads worse than the white one, so the only choice offered is how light. */}}
+<body class="printing paper-{{.Body.Theme}}">
+<nav class="paperbar noprint" aria-label="Papel">
+	<span class="quiet">Papel:</span>
+	{{range .Body.Themes}}
+		<a class="chip{{if .On}} on{{end}}" href="{{.URL}}">{{.Label}}</a>
+	{{end}}
+	<span class="sep"></span>
+	<a class="chip" href="/songs/{{.Body.Slug}}">Volver</a>
+</nav>
 <main class="wrap">
 	{{with .Body}}
-		{{template "songfacts" .}}
-		{{if .Sheet.Shifted}}
-			<p class="facts">
-				{{if .Controls.CapoOn}}Acordes que suenan con cejilla en {{.Controls.Capo}}.
-				{{else}}Transportada {{.Controls.StepLabel}}{{if .Controls.OrigKey}} desde {{.Controls.OrigKey}}{{end}}.{{end}}
-			</p>
-		{{end}}
-
-		{{if .Sheet.Chords}}
-			<nav class="usedchords" aria-label="Acordes utilizados">
-				<h2>Acordes</h2>
-				<ul>{{range .Sheet.Chords}}<li><span class="chordref">{{.Text}}</span></li>{{end}}</ul>
-			</nav>
-		{{end}}
-
-		<div class="sheet">
-			{{range .Sheet.Sections}}
-				<section class="section section-{{.Kind}}">
-					{{if .Label}}<h2>{{.Label}}</h2>{{end}}
-					{{range .Blocks}}
-						{{if .Verbatim}}
-							<pre class="tab">{{.Text}}</pre>
-						{{else}}
-							<div class="block">
-								{{range .Lines}}
-									{{if .HasChord}}
-										<p class="line line-chords">{{range .Words}}<span class="word">{{range .Cells}}<span class="cell"><span class="chord">{{.Chord}}</span><span class="lyric">{{if .Annotation}}<span class="annotation">[{{.Annotation}}]</span>{{else}}{{.Text}}{{end}}</span></span>{{end}}</span>{{.Sep}}{{end}}</p>
-									{{else}}
-										<p class="line">{{range .Words}}{{range .Cells}}{{if .Annotation}}<span class="annotation">[{{.Annotation}}]</span>{{else}}{{.Text}}{{end}}{{end}}{{.Sep}}{{end}}</p>
-									{{end}}
-								{{end}}
-							</div>
-						{{end}}
+		<div class="songhead">
+			<h1>{{.Sheet.Title}}</h1>
+			{{if .Sheet.Artist}}<p class="by">{{.Sheet.Artist}}</p>{{end}}
+			<ul class="facts">
+				{{if .Sheet.Key}}<li>Tono <b>{{.Sheet.Key}}</b></li>{{end}}
+				{{if .Sheet.Capo}}<li>Cejilla <b>{{.Sheet.Capo}}</b></li>{{end}}
+				{{if .Sheet.Tuning}}<li>Afinación <b>{{.Sheet.Tuning}}</b></li>{{end}}
+			</ul>
+			{{/* The transposition has to be legible on paper: a printed sheet in
+			     the wrong key with nothing to say so is a wasted page. */}}
+			{{if .Sheet.Shifted}}
+				<p class="transposed">
+					{{if .Controls.CapoOn}}
+						Acordes que suenan con la cejilla en el traste {{.Controls.Capo}}
+					{{else}}
+						{{.Controls.StepLabel}}{{if .Controls.OrigKey}} · original en {{.Controls.OrigKey}}{{end}}
 					{{end}}
-				</section>
+				</p>
 			{{end}}
+			{{if .Sheet.TabNote}}<p class="transposed">{{.Sheet.TabNote}}</p>{{end}}
 		</div>
+
+		{{template "sections" .Sheet}}
 	{{end}}
 </main>
 </body>

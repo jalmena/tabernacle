@@ -125,16 +125,18 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /songs/{slug}/raw", s.handleRaw)
 	mux.HandleFunc("GET /songs/new", s.handleNewSong)
 	mux.HandleFunc("GET /songs/{slug}/edit", s.handleEditSong)
-	mux.HandleFunc("GET /tags", s.handleTags)
+	mux.HandleFunc("GET /songs/{slug}/delete", s.handleDeleteForm)
+	mux.HandleFunc("GET /artists", s.handleArtists)
+	mux.HandleFunc("GET /genres", s.handleGenres)
 	mux.HandleFunc("GET /import", s.handleImportForm)
 	mux.HandleFunc("GET /export", s.handleExport)
 
 	// Everything that changes the collection goes through s.mutating, which
 	// applies the read-only guard, the same-origin check and the body limit in
 	// one place, so a new write route cannot be added without them.
+	mux.HandleFunc("POST /songs/new", s.mutatingMultipart(s.handleLoadIntoEditor))
 	mux.HandleFunc("POST /songs", s.mutating(s.handleCreateSong))
 	mux.HandleFunc("POST /songs/{slug}", s.mutating(s.handleSaveSong))
-	mux.HandleFunc("POST /songs/{slug}/favorite", s.mutating(s.handleFavorite))
 	mux.HandleFunc("POST /songs/{slug}/delete", s.mutating(s.handleDelete))
 	mux.HandleFunc("POST /songs/{slug}/transpose", s.mutating(s.handleRememberTranspose))
 	mux.HandleFunc("POST /songs/{slug}/commit-transpose", s.mutating(s.handleCommitTranspose))
@@ -145,6 +147,12 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /healthz", s.handleHealth)
 	mux.HandleFunc("GET /robots.txt", s.handleRobots)
 	mux.HandleFunc("GET /static/{version}/{path...}", s.handleStatic)
+
+	// A catch-all for anything unmatched, so a mistyped address gets Tabernacle's
+	// own page with the navigation on it rather than a bare line of text with no
+	// way back. Registered for GET only, which leaves the wrong method on a real
+	// route answering 405 as it should.
+	mux.HandleFunc("GET /", s.handleNotFound)
 
 	// Outermost first. The host check comes before anything that reads the
 	// request, and the panic guard wraps everything so a bug is a 500 rather
@@ -166,10 +174,66 @@ type page struct {
 }
 
 // navState is what the header needs to render itself.
+//
+// It is built for every page, not just the listing, because navigation that
+// disappears on the import or editor page leaves the reader stranded.
 type navState struct {
 	Query    string
 	ReadOnly bool
 	Flash    string
+	Section  string    // which of the sections is current
+	Sections []navLink // Canciones, Artistas, Géneros, Añadir
+}
+
+// navLink is one entry in the header.
+type navLink struct {
+	Label string
+	URL   string
+	On    bool
+}
+
+// page builds the shell every template receives, including the navigation.
+//
+// Every page gets the same row of sections, so nothing has to vanish just
+// because the reader is on the import or editor page.
+//
+// There is no visible ordering control. The ?sort= parameter still works for a
+// link, but a row of orderings beside a row of sections was two vocabularies
+// competing for the same glance, and the collection is alphabetical by default —
+// which is what somebody looking for a song by name actually wants.
+func (s *Server) page(r *http.Request, title string, body any) page {
+	qs := r.URL.Query()
+	path := r.URL.Path
+
+	section := ""
+	switch {
+	case path == "/songs/new" || path == "/import":
+		section = "add"
+	case path == "/" || strings.HasPrefix(path, "/songs"):
+		section = "songs"
+	case path == "/artists":
+		section = "artists"
+	case path == "/genres":
+		section = "genres"
+	}
+
+	// Four sections and nothing else. Anything more and two labels start to look
+	// like each other, which is how "Artista" the order came to sit next to
+	// "Artistas" the section.
+	nav := navState{
+		Query:   qs.Get("q"),
+		Section: section,
+		Sections: []navLink{
+			{Label: "Canciones", URL: "/", On: section == "songs"},
+			{Label: "Artistas", URL: "/artists", On: section == "artists"},
+			{Label: "Géneros", URL: "/genres", On: section == "genres"},
+		},
+	}
+	if !s.cfg.ReadOnly {
+		nav.Sections = append(nav.Sections,
+			navLink{Label: "Añadir", URL: "/songs/new", On: section == "add"})
+	}
+	return page{Title: title, Nav: nav, Body: body}
 }
 
 // render executes a template into a buffer before writing anything.
@@ -196,11 +260,13 @@ func (s *Server) render(w http.ResponseWriter, r *http.Request, status int, name
 
 // fail shows an error page. The message is chosen by the caller from a fixed
 // set; nothing from the request is ever echoed back.
+//
+// It goes through s.page like everything else, so an error page carries the
+// navigation too. A 404 that strands the reader with no way out is a worse
+// failure than whatever they mistyped.
 func (s *Server) fail(w http.ResponseWriter, r *http.Request, status int, heading, detail string) {
-	s.render(w, r, status, "error.html", page{
-		Title: heading,
-		Body:  errorBody{Status: status, Heading: heading, Detail: detail},
-	})
+	s.render(w, r, status, "error.html",
+		s.page(r, heading, errorBody{Status: status, Heading: heading, Detail: detail}))
 }
 
 type errorBody struct {
@@ -215,6 +281,11 @@ func (s *Server) serverError(w http.ResponseWriter, r *http.Request, err error) 
 	s.log.Error("request failed", "method", r.Method, "path", r.URL.Path, "error", err)
 	s.fail(w, r, http.StatusInternalServerError, "Algo ha ido mal",
 		"No se ha podido completar la operación. Revisa el registro del servidor para más detalles.")
+}
+
+func (s *Server) handleNotFound(w http.ResponseWriter, r *http.Request) {
+	s.fail(w, r, http.StatusNotFound, "Aquí no hay nada",
+		"Esa dirección no existe. Prueba a buscar la canción desde la biblioteca.")
 }
 
 func (s *Server) handleRobots(w http.ResponseWriter, r *http.Request) {

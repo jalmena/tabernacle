@@ -3,6 +3,7 @@ package web
 import (
 	"archive/zip"
 	"bytes"
+	"context"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -28,11 +29,10 @@ func (ts *testServer) post(t *testing.T, target string, form url.Values) *httpte
 }
 
 const pasted = `---
-format: 1
 title: Nueva Canción
 artist: Alguien
 key: Am
-tags: [prueba]
+genre: prueba
 ---
 
 ## Estrofa 1
@@ -72,7 +72,7 @@ func TestCreateFromPastedText(t *testing.T) {
 // to fix, which is the entire point of showing a raw editor.
 func TestCreateRejectsBadTextAndKeepsIt(t *testing.T) {
 	ts := newTestServer(t, nil)
-	bad := "---\nformat: 1\ntitel: typo\n---\n\n## Estrofa\n[G]hola\n"
+	bad := "---\ntitel: typo\n---\n\n## Estrofa\n[G]hola\n"
 
 	w := ts.post(t, "/songs", url.Values{"text": {bad}})
 	if w.Code != http.StatusUnprocessableEntity {
@@ -162,35 +162,6 @@ func TestSaveDetectsACompetingEdit(t *testing.T) {
 	}
 }
 
-// A favourite is a tag in the file, which is what makes the index disposable.
-func TestFavoriteWritesTheTagIntoTheFile(t *testing.T) {
-	ts := newTestServer(t, map[string]string{
-		"A/Song.song": "---\nformat: 1\ntitle: Song\nartist: A\n---\n\n## V\n[G]x\n",
-	})
-	slug := "a-song"
-	path := filepath.Join(ts.songs, "A", "Song.song")
-
-	if w := ts.post(t, "/songs/"+slug+"/favorite", url.Values{"on": {"1"}}); w.Code != http.StatusSeeOther {
-		t.Fatalf("favouriting = %d\n%s", w.Code, w.Body.String())
-	}
-	data, _ := os.ReadFile(path)
-	if !strings.Contains(string(data), "favorite") {
-		t.Fatalf("the tag was not written into the file:\n%s", data)
-	}
-	// And it is searchable straight away.
-	if !strings.Contains(ts.get(t, "/?fav=1").Body.String(), "Song") {
-		t.Error("the favourite does not appear in the favourites filter")
-	}
-
-	if w := ts.post(t, "/songs/"+slug+"/favorite", url.Values{"on": {"0"}}); w.Code != http.StatusSeeOther {
-		t.Fatalf("unfavouriting = %d", w.Code)
-	}
-	data, _ = os.ReadFile(path)
-	if strings.Contains(string(data), "favorite") {
-		t.Errorf("the tag was not removed:\n%s", data)
-	}
-}
-
 func TestDeleteMovesToTrash(t *testing.T) {
 	ts := newTestServer(t, basicSongs())
 	w := ts.post(t, "/songs/traditional-amazing-grace/delete", nil)
@@ -245,22 +216,75 @@ func TestRememberAndCommitTranspose(t *testing.T) {
 	}
 }
 
-func TestReindexButton(t *testing.T) {
+// Revisar has to report what it did. The action always worked; what made it read
+// as unimplemented was that a scan finding nothing produced no visible
+// difference at all, so the button was indistinguishable from a dead one.
+func TestReindexReportsWhatItDid(t *testing.T) {
 	ts := newTestServer(t, nil)
+
+	// Nothing to find: it must still say so.
+	w := ts.post(t, "/reindex", nil)
+	if w.Code != http.StatusOK {
+		t.Fatalf("reindexing an empty collection = %d", w.Code)
+	}
+	if body := w.Body.String(); !strings.Contains(body, "Nada ha cambiado") {
+		t.Errorf("a scan that found nothing said nothing visible:\n%s", body)
+	}
+
 	// Drop a file in behind the application's back.
 	dir := filepath.Join(ts.songs, "Later")
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.WriteFile(filepath.Join(dir, "Song.song"),
-		[]byte("---\nformat: 1\ntitle: Song\nartist: Later\n---\n\n## V\n[G]x\n"), 0o644); err != nil {
+		[]byte(pasted), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if w := ts.post(t, "/reindex", nil); w.Code != http.StatusSeeOther {
+
+	w = ts.post(t, "/reindex", nil)
+	if w.Code != http.StatusOK {
 		t.Fatalf("reindexing = %d", w.Code)
 	}
-	if !strings.Contains(ts.get(t, "/").Body.String(), "Song") {
+	body := w.Body.String()
+	if !strings.Contains(body, "Añadidas") {
+		t.Errorf("the report does not say a song was added:\n%s", body)
+	}
+	if strings.Contains(body, "Nada ha cambiado") {
+		t.Error("the report claims nothing changed after adding a song")
+	}
+	if !strings.Contains(ts.get(t, "/").Body.String(), "Nueva") {
 		t.Error("the new file was not picked up")
+	}
+}
+
+// Deleting asks first, and the question names the song so nobody removes the
+// wrong one.
+func TestDeleteAsksBeforeDoingIt(t *testing.T) {
+	ts := newTestServer(t, basicSongs())
+	slug := "traditional-amazing-grace"
+
+	form := ts.get(t, "/songs/"+slug+"/delete")
+	if form.Code != http.StatusOK {
+		t.Fatalf("the confirmation page = %d", form.Code)
+	}
+	body := form.Body.String()
+	if !strings.Contains(body, "Amazing Grace") {
+		t.Error("the question does not name the song")
+	}
+	if !strings.Contains(body, "papelera") {
+		t.Error("the question does not say where the file goes")
+	}
+	if !strings.Contains(body, `action="/songs/`+slug+`/delete"`) {
+		t.Error("the confirmation form does not post anywhere")
+	}
+	// Merely asking must not delete anything.
+	if _, err := os.Stat(filepath.Join(ts.songs, "Traditional", "Amazing Grace.song")); err != nil {
+		t.Fatal("asking the question deleted the song")
+	}
+	// The song page links to the question rather than acting at once.
+	songPage := ts.get(t, "/songs/"+slug).Body.String()
+	if !strings.Contains(songPage, `href="/songs/`+slug+`/delete"`) {
+		t.Error("the song page does not link to the confirmation")
 	}
 }
 
@@ -274,7 +298,6 @@ func TestWritesRefuseForeignRequests(t *testing.T) {
 	}{
 		{"/songs", url.Values{"text": {pasted}}},
 		{"/songs/traditional-amazing-grace", url.Values{"text": {graceSong}}},
-		{"/songs/traditional-amazing-grace/favorite", url.Values{"on": {"1"}}},
 		{"/songs/traditional-amazing-grace/delete", nil},
 		{"/songs/traditional-amazing-grace/transpose", url.Values{"t": {"2"}}},
 		{"/songs/traditional-amazing-grace/commit-transpose", url.Values{"t": {"2"}}},
@@ -340,7 +363,6 @@ func TestReadOnlyModeRefusesEveryWrite(t *testing.T) {
 	for _, target := range []string{
 		"/songs",
 		"/songs/traditional-amazing-grace",
-		"/songs/traditional-amazing-grace/favorite",
 		"/songs/traditional-amazing-grace/delete",
 		"/reindex",
 	} {
@@ -424,6 +446,55 @@ func (ts *testServer) upload(t *testing.T, filename string, content []byte) *htt
 	return w
 }
 
+// uploadField posts one file under a chosen field name, which is how the editor
+// load and the bulk import differ.
+func (ts *testServer) uploadField(t *testing.T, field, target, filename string, content []byte) *httptest.ResponseRecorder {
+	t.Helper()
+	var body bytes.Buffer
+	mw := multipart.NewWriter(&body)
+	if filename != "" {
+		fw, err := mw.CreateFormFile(field, filename)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := fw.Write(content); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := mw.Close(); err != nil {
+		t.Fatal(err)
+	}
+	r := httptest.NewRequest(http.MethodPost, target, &body)
+	r.Host = "localhost:8080"
+	r.Header.Set("Content-Type", mw.FormDataContentType())
+	r.Header.Set("Origin", "http://localhost:8080")
+	r.Header.Set("Sec-Fetch-Site", "same-origin")
+	w := httptest.NewRecorder()
+	ts.h.ServeHTTP(w, r)
+	return w
+}
+
+// uploadForeign posts a file as another site would.
+func (ts *testServer) uploadForeign(t *testing.T, target, filename string, content []byte) *httptest.ResponseRecorder {
+	t.Helper()
+	var body bytes.Buffer
+	mw := multipart.NewWriter(&body)
+	fw, _ := mw.CreateFormFile("file", filename)
+	fw.Write(content)
+	mw.Close()
+
+	r := httptest.NewRequest(http.MethodPost, target, &body)
+	r.Host = "localhost:8080"
+	r.Header.Set("Content-Type", mw.FormDataContentType())
+	r.Header.Set("Origin", "https://evil.example")
+	r.Header.Set("Sec-Fetch-Site", "cross-site")
+	w := httptest.NewRecorder()
+	ts.h.ServeHTTP(w, r)
+	return w
+}
+
+func contextTODO() context.Context { return context.Background() }
+
 func TestImportSingleUpload(t *testing.T) {
 	ts := newTestServer(t, nil)
 	w := ts.upload(t, "anything.song", []byte(pasted))
@@ -450,9 +521,9 @@ func TestImportZipThroughTheWeb(t *testing.T) {
 	zw := zip.NewWriter(&buf)
 	for _, e := range []struct{ name, body string }{
 		{"a/Good.song", pasted},
-		{"../evil.song", pasted},                           // zip slip
-		{"notes.txt", "not a song"},                        // wrong kind
-		{"bad.song", "---\nformat: 1\ntitel: typo\n---\n"}, // will not parse
+		{"../evil.song", pasted},                // zip slip
+		{"notes.txt", "not a song"},             // wrong kind
+		{"bad.song", "---\ntitel: typo\n---\n"}, // will not parse
 	} {
 		h := &zip.FileHeader{Name: e.name, Method: zip.Deflate}
 		h.SetMode(0o644)

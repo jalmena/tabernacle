@@ -10,7 +10,7 @@ import (
 // write and a read back unchanged.
 func FuzzParse(f *testing.F) {
 	f.Add("---\ntitle: T\n---\n\n## Verse 1\n[C]hello [x2]\n")
-	f.Add("---\nformat: 1\ntitle: \"Yes\"\ntags: [a, b]\nnotes: |-\n  one\n  two\n---\n")
+	f.Add("---\ntitle: \"Yes\"\ngenre: rock\nnotes: |-\n  one\n  two\n---\n")
 	f.Add("---\ntitle: T\n---\n\n## Solo\n```tab\ne|-0-|\n```\n")
 	f.Add("---\ntitle: T\nkey: Bb\ncapo: 3\n---\n[Bb]x\\[y\\\\z\n")
 	f.Add("---\n")

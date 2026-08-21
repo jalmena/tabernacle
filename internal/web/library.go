@@ -9,39 +9,28 @@ import (
 
 const perPage = 40
 
-// libraryBody is what the library template receives.
+// libraryBody is what the song list receives.
 type libraryBody struct {
-	Result   library_result
-	Tags     []index.TagCount
-	Raw      string // the search box's current contents
-	Filters  []filterChip
-	Sort     string
-	SortURLs []sortOption
-	PrevURL  string
-	NextURL  string
-	Empty    emptyState
+	Total   int
+	Offset  int
+	Hits    []songRow
+	Raw     string // the search box's current contents
+	Filters []filterChip
+	PrevURL string
+	NextURL string
+	Empty   emptyState
 }
 
-// library_result mirrors what Browse returned, flattened for the template.
-type library_result struct {
-	Hits   []songRow
-	Total  int
-	Offset int
-	Shown  int
-}
-
-// songRow is one line of the library list.
+// songRow is one line of the song list.
 type songRow struct {
-	Title    string
-	Artist   string
-	URL      string
-	Key      string
-	Capo     int
-	Tags     []string
-	Chords   []string
-	Favorite bool
-	Broken   bool
-	Frags    []index.Frag
+	Title  string
+	Artist string
+	Genre  string
+	URL    string
+	Key    string
+	Capo   int
+	Broken bool
+	Frags  []index.Frag
 }
 
 // filterChip is an active filter, with a URL that removes it.
@@ -50,28 +39,23 @@ type filterChip struct {
 	ClearURL string
 }
 
-type sortOption struct {
-	Label string
-	URL   string
-	On    bool
-}
-
-// emptyState explains an empty list, which differs a lot between "you have no
-// songs yet" and "that search found nothing".
+// emptyState explains an empty list, which reads very differently between "you
+// have no songs yet" and "that search found nothing".
 type emptyState struct {
 	Searching bool
 	SongsDir  string
 }
 
-func (s *Server) handleLibrary(w http.ResponseWriter, r *http.Request) {
+// queryFrom builds a listing query from the request.
+func queryFrom(r *http.Request) (index.Query, int, string) {
 	qs := r.URL.Query()
 	raw := qs.Get("q")
 
 	q := index.ParseQuery(raw)
-	// Explicit parameters win over anything inferred from the search text, so a
-	// tag link is not overridden by whatever is in the box.
-	if v := qs.Get("tag"); v != "" {
-		q.Tag = v
+	// An explicit parameter wins over anything inferred from the search text, so
+	// a genre link is not overridden by whatever is in the box.
+	if v := qs.Get("genre"); v != "" {
+		q.Genre = v
 	}
 	if v := qs.Get("artist"); v != "" {
 		q.Artist = v
@@ -81,9 +65,6 @@ func (s *Server) handleLibrary(w http.ResponseWriter, r *http.Request) {
 	}
 	if v := qs.Get("key"); v != "" {
 		q.Key = v
-	}
-	if qs.Get("fav") == "1" {
-		q.Favorite = true
 	}
 	if qs.Get("broken") == "1" {
 		q.Broken = true
@@ -101,94 +82,58 @@ func (s *Server) handleLibrary(w http.ResponseWriter, r *http.Request) {
 	}
 	q.Limit = perPage
 	q.Offset = (page - 1) * perPage
+	return q, page, raw
+}
+
+func (s *Server) handleLibrary(w http.ResponseWriter, r *http.Request) {
+	q, page, raw := queryFrom(r)
 
 	res, err := s.lib.Browse(r.Context(), q)
 	if err != nil {
 		s.serverError(w, r, err)
 		return
 	}
-	tags, err := s.lib.Tags(r.Context())
-	if err != nil {
-		s.serverError(w, r, err)
-		return
-	}
 
 	body := libraryBody{
-		Raw:  raw,
-		Sort: string(q.Sort),
-		Result: library_result{
-			Total:  res.Total,
-			Offset: q.Offset,
-			Shown:  len(res.Hits),
-		},
-		Tags: tags,
+		Total:  res.Total,
+		Offset: q.Offset,
+		Raw:    raw,
 		Empty: emptyState{
-			Searching: raw != "" || q.Tag != "" || q.Artist != "" || q.Chord != "" ||
-				q.Key != "" || q.Favorite || q.Broken,
+			Searching: raw != "" || q.Genre != "" || q.Artist != "" ||
+				q.Chord != "" || q.Key != "" || q.Broken,
 			SongsDir: s.cfg.SongsDir,
 		},
 	}
-
 	for _, h := range res.Hits {
-		body.Result.Hits = append(body.Result.Hits, songRow{
-			Title:    h.Title,
-			Artist:   h.Artist,
-			URL:      "/songs/" + h.Slug,
-			Key:      h.Key,
-			Capo:     h.Capo,
-			Tags:     h.Tags,
-			Chords:   h.Chords,
-			Favorite: h.Favorite(),
-			Broken:   h.Broken(),
-			Frags:    h.Frags,
+		body.Hits = append(body.Hits, songRow{
+			Title:  h.Title,
+			Artist: h.Artist,
+			Genre:  h.Genre,
+			URL:    "/songs/" + h.Slug,
+			Key:    h.Key,
+			Capo:   h.Capo,
+			Broken: h.Broken(),
+			Frags:  h.Frags,
 		})
 	}
 
-	// Active filters, each with a link that drops just that one.
-	if q.Tag != "" {
-		body.Filters = append(body.Filters, filterChip{
-			Label: "etiqueta: " + q.Tag, ClearURL: libraryURL(qs, "tag", ""),
-		})
-	}
-	if q.Artist != "" {
-		body.Filters = append(body.Filters, filterChip{
-			Label: "artista: " + q.Artist, ClearURL: libraryURL(qs, "artist", ""),
-		})
-	}
-	if q.Chord != "" {
-		body.Filters = append(body.Filters, filterChip{
-			Label: "acorde: " + q.Chord, ClearURL: libraryURL(qs, "chord", ""),
-		})
-	}
-	if q.Key != "" {
-		body.Filters = append(body.Filters, filterChip{
-			Label: "tono: " + q.Key, ClearURL: libraryURL(qs, "key", ""),
-		})
-	}
-	if q.Favorite {
-		body.Filters = append(body.Filters, filterChip{
-			Label: "favoritas", ClearURL: libraryURL(qs, "fav", ""),
-		})
+	qs := r.URL.Query()
+	for _, f := range []struct{ key, label, value string }{
+		{"genre", "género", q.Genre},
+		{"artist", "artista", q.Artist},
+		{"chord", "acorde", q.Chord},
+		{"key", "tono", q.Key},
+	} {
+		if f.value != "" {
+			body.Filters = append(body.Filters, filterChip{
+				Label:    f.label + ": " + f.value,
+				ClearURL: libraryURL(qs, f.key, ""),
+			})
+		}
 	}
 	if q.Broken {
 		body.Filters = append(body.Filters, filterChip{
 			Label: "con errores", ClearURL: libraryURL(qs, "broken", ""),
-		})
-	}
-
-	for _, opt := range []struct {
-		label string
-		order index.SortOrder
-	}{
-		{"Título", index.SortTitle},
-		{"Artista", index.SortArtist},
-		{"Recientes", index.SortRecent},
-		{"Añadidas", index.SortAdded},
-	} {
-		body.SortURLs = append(body.SortURLs, sortOption{
-			Label: opt.label,
-			URL:   libraryURL(qs, "sort", string(opt.order)),
-			On:    q.Sort == opt.order,
 		})
 	}
 
@@ -199,7 +144,31 @@ func (s *Server) handleLibrary(w http.ResponseWriter, r *http.Request) {
 		body.NextURL = libraryURL(qs, "page", strconv.Itoa(page+1))
 	}
 
-	s.render(w, r, http.StatusOK, "library.html", page_(title(res.Total, raw), raw, body))
+	title := "Canciones"
+	if raw != "" {
+		title = "Buscar: " + raw
+	}
+	s.render(w, r, http.StatusOK, "library.html", s.page(r, title, body))
+}
+
+// handleArtists lists the artists in the collection.
+func (s *Server) handleArtists(w http.ResponseWriter, r *http.Request) {
+	artists, err := s.lib.Artists(r.Context())
+	if err != nil {
+		s.serverError(w, r, err)
+		return
+	}
+	s.render(w, r, http.StatusOK, "artists.html", s.page(r, "Artistas", artists))
+}
+
+// handleGenres lists the genres in the collection.
+func (s *Server) handleGenres(w http.ResponseWriter, r *http.Request) {
+	genres, err := s.lib.Genres(r.Context())
+	if err != nil {
+		s.serverError(w, r, err)
+		return
+	}
+	s.render(w, r, http.StatusOK, "genres.html", s.page(r, "Géneros", genres))
 }
 
 // libraryURL rewrites one parameter of the current query.
@@ -219,38 +188,5 @@ func libraryURL(qs map[string][]string, key, value string) string {
 	if value != "" {
 		next[key] = []string{value}
 	}
-	if key != "page" {
-		delete(next, "page")
-	}
 	return "/" + encodeQuery(next)
-}
-
-func title(total int, raw string) string {
-	if raw != "" {
-		return "Buscar: " + raw
-	}
-	return "Tabernacle"
-}
-
-// page_ builds the template shell. The trailing underscore keeps it from
-// colliding with the page type.
-func page_(t, query string, body any) page {
-	return page{Title: t, Nav: navState{Query: query}, Body: body}
-}
-
-func (s *Server) handleTags(w http.ResponseWriter, r *http.Request) {
-	tags, err := s.lib.Tags(r.Context())
-	if err != nil {
-		s.serverError(w, r, err)
-		return
-	}
-	artists, err := s.lib.Artists(r.Context())
-	if err != nil {
-		s.serverError(w, r, err)
-		return
-	}
-	s.render(w, r, http.StatusOK, "tags.html", page_("Etiquetas", "", struct {
-		Tags    []index.TagCount
-		Artists []index.ArtistCount
-	}{tags, artists}))
 }

@@ -22,14 +22,14 @@ func TestParseCanonical(t *testing.T) {
 		t.Fatalf("Parse: %v", err)
 	}
 
-	if s.Format != 1 || s.Title != "Amazing Grace" || s.Artist != "Traditional" {
+	if s.Title != "Amazing Grace" || s.Artist != "Traditional" {
 		t.Errorf("metadata = %+v", s)
 	}
-	if s.Key != "G" || s.Capo != 2 || s.Tuning != "EADGBE" || s.Tempo != 90 || s.Meter != "3/4" {
+	if s.Key != "G" || s.Capo != 2 || s.Tuning != "EADGBE" {
 		t.Errorf("metadata = %+v", s)
 	}
-	if got, want := strings.Join(s.Tags, ","), "hymn,public-domain"; got != want {
-		t.Errorf("tags = %q, want %q", got, want)
+	if got, want := s.Genre, "hymn"; got != want {
+		t.Errorf("genre = %q, want %q", got, want)
 	}
 	if !strings.HasPrefix(s.Notes, "Public domain") || !strings.Contains(s.Notes, "\n") {
 		t.Errorf("notes = %q", s.Notes)
@@ -170,9 +170,7 @@ func TestParseFrontMatterForms(t *testing.T) {
 		"title: 'Ain''t No Sunshine'",
 		`artist: "Bill Withers"`,
 		"key: Am",
-		"tags:",
-		"  - soul",
-		"  - cover",
+		"genre: soul",
 		"notes: |",
 		"  first",
 		"",
@@ -190,8 +188,8 @@ func TestParseFrontMatterForms(t *testing.T) {
 	if s.Artist != "Bill Withers" {
 		t.Errorf("artist = %q", s.Artist)
 	}
-	if strings.Join(s.Tags, ",") != "soul,cover" {
-		t.Errorf("tags = %v", s.Tags)
+	if s.Genre != "soul" {
+		t.Errorf("genre = %q", s.Genre)
 	}
 	if s.Notes != "first\n\nthird" {
 		t.Errorf("notes = %q", s.Notes)
@@ -218,12 +216,9 @@ func TestParseErrors(t *testing.T) {
 		{"bad number", "---\ntitle: T\ncapo: high\n---\n", 3, "whole number"},
 		{"capo range", "---\ntitle: T\ncapo: 13\n---\n", 3, "out of range"},
 		{"bad key", "---\ntitle: T\nkey: H\n---\n", 3, "not a chord symbol"},
-		{"bad meter", "---\ntitle: T\nmeter: fast\n---\n", 3, "time signature"},
-		{"bad tempo", "---\ntitle: T\ntempo: 900\n---\n", 3, "out of range"},
-		{"future format", "---\nformat: 2\ntitle: T\n---\n", 2, "unsupported format version 2"},
 		{"list for scalar", "---\ntitle: [a, b]\n---\n", 2, "not a list"},
-		{"scalar for list", "---\ntitle: T\ntags: soul\n---\n", 3, "takes a list"},
-		{"nested list", "---\ntitle: T\ntags: [a, [b]]\n---\n", 3, "nested lists"},
+		{"list for a scalar field", "---\ntitle: T\ngenre: [a, b]\n---\n", 3, "not a list"},
+		{"comma in genre", "---\ntitle: T\ngenre: \"a,b\"\n---\n", 3, "single label"},
 		{"unquoted colon", "---\ntitle: a: b\n---\n", 2, "must be quoted"},
 		{"heading no label", "---\ntitle: T\n---\n##\n", 4, `"## Label"`},
 		{"heading no space", "---\ntitle: T\n---\n##Verse\n", 4, `"## Label"`},
@@ -249,6 +244,44 @@ func TestParseErrors(t *testing.T) {
 				t.Errorf("error on line %d, want %d (%v)", se.Line, tt.line, err)
 			}
 		})
+	}
+}
+
+// A collection written before these fields were dropped still has to read. The
+// point of rejecting an unknown field is to catch a typo, not to punish somebody
+// for having older files.
+func TestParseIgnoresRetiredFields(t *testing.T) {
+	// This source keeps the retired fields on purpose: it is the only place they
+	// should still appear, because it is what proves an older collection still
+	// reads.
+	src := "---\n" +
+		"format: 1\n" +
+		"title: T\n" +
+		"artist: A\n" +
+		"tempo: 90\n" +
+		"meter: 3/4\n" +
+		"tags: [rock, cover]\n" +
+		"---\n\n## Verse 1\n[G]x\n"
+	s, err := Parse([]byte(src))
+	if err != nil {
+		t.Fatalf("a file with retired fields must still parse: %v", err)
+	}
+	if s.Title != "T" || s.Artist != "A" {
+		t.Errorf("metadata = %+v", s)
+	}
+	// And they are gone for good: writing it back does not put them back.
+	out, err := Marshal(s)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, gone := range []string{"format:", "tempo:", "meter:", "tags:"} {
+		if strings.Contains(string(out), gone) {
+			t.Errorf("Marshal wrote a retired field %q:\n%s", gone, out)
+		}
+	}
+	// A real typo is still an error.
+	if _, err := Parse([]byte("---\ntitle: T\ntitel: X\n---\n")); err == nil {
+		t.Error("a misspelled field was accepted")
 	}
 }
 

@@ -36,7 +36,7 @@ var derivedSchema string
 // derivedSchemaVersion is bumped whenever derived.sql changes. A mismatch
 // against what the database records causes the derived tables to be rebuilt and
 // NeedsFullScan to report true.
-const derivedSchemaVersion = 1
+const derivedSchemaVersion = 3
 
 const settingDerivedVersion = "derived_schema_version"
 

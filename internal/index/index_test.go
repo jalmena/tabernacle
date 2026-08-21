@@ -72,10 +72,8 @@ func TestUpsertReadAndUpdate(t *testing.T) {
 	r.Key = "G"
 	r.Capo = 2
 	r.Tuning = "EADGBE"
-	r.Tempo = 90
-	r.Meter = "3/4"
 	r.Notes = "Public domain"
-	r.Tags = []string{"hymn", "public-domain"}
+	r.Genre = "hymn"
 	r.Chords = []string{"G", "C", "Em", "D"}
 	r.Lyrics = "Amazing grace how sweet the sound"
 	r.Sections = 3
@@ -101,8 +99,6 @@ func TestUpsertReadAndUpdate(t *testing.T) {
 		{"artist", got.Artist, "Traditional"},
 		{"key", got.Key, "G"},
 		{"capo", got.Capo, 2},
-		{"tempo", got.Tempo, 90},
-		{"meter", got.Meter, "3/4"},
 		{"sections", got.Sections, 3},
 		{"lines", got.Lines, 12},
 	} {
@@ -110,17 +106,14 @@ func TestUpsertReadAndUpdate(t *testing.T) {
 			t.Errorf("%s = %v, want %v", c.name, c.got, c.want)
 		}
 	}
-	// Chords keep the order they first appeared in; tags are sorted for display.
+	// Chords keep the order they first appeared in.
 	if strings.Join(got.Chords, " ") != "G C Em D" {
 		t.Errorf("chords = %v, want first-appearance order", got.Chords)
-	}
-	if strings.Join(got.Tags, " ") != "hymn public-domain" {
-		t.Errorf("tags = %v", got.Tags)
 	}
 
 	// Updating the same path must reuse the row rather than making a second one.
 	r.Title = "Amazing Grace (revised)"
-	r.Tags = []string{"hymn"}
+	r.Genre = "hymn"
 	r.Chords = []string{"G", "D"}
 	id2, err := x.Upsert(ctx, r)
 	if err != nil {
@@ -132,9 +125,6 @@ func TestUpsertReadAndUpdate(t *testing.T) {
 	got, _, _ = x.BySlug(ctx, r.Slug)
 	if got.Title != "Amazing Grace (revised)" {
 		t.Errorf("title was not updated: %q", got.Title)
-	}
-	if strings.Join(got.Tags, " ") != "hymn" {
-		t.Errorf("tags were not replaced: %v", got.Tags)
 	}
 	if strings.Join(got.Chords, " ") != "G D" {
 		t.Errorf("chords were not replaced: %v", got.Chords)
@@ -148,7 +138,7 @@ func TestDeleteRemovesDerivedRows(t *testing.T) {
 	ctx := context.Background()
 	x, _ := newIndex(t)
 	r := rec("A/Song.song", "Song", "A")
-	r.Tags = []string{"rock"}
+	r.Genre = "rock"
 	r.Chords = []string{"E"}
 	r.Lyrics = "unmistakable lyric"
 	if _, err := x.Upsert(ctx, r); err != nil {
@@ -168,8 +158,8 @@ func TestDeleteRemovesDerivedRows(t *testing.T) {
 	if total != 0 || len(hits) != 0 {
 		t.Errorf("search still finds the deleted song: %d hits", total)
 	}
-	if tags, _ := x.Tags(ctx); len(tags) != 0 {
-		t.Errorf("orphan tags left behind: %v", tags)
+	if genres, _ := x.Genres(ctx); len(genres) != 0 {
+		t.Errorf("a genre survived its only song: %v", genres)
 	}
 	// Deleting something absent is not an error.
 	if err := x.DeleteByRelPath(ctx, "nope.song"); err != nil {
@@ -279,32 +269,44 @@ func TestBrokenFilesStayVisible(t *testing.T) {
 	}
 }
 
-func TestFavoriteComesFromTheTag(t *testing.T) {
+func TestGenreFilter(t *testing.T) {
 	ctx := context.Background()
 	x, _ := newIndex(t)
-	fav := rec("A/Loved.song", "Loved", "A")
-	fav.Tags = []string{"rock", FavoriteTag}
-	plain := rec("A/Plain.song", "Plain", "A")
-	plain.Tags = []string{"rock"}
-	for _, r := range []Record{fav, plain} {
+	rock := rec("A/Loud.song", "Loud", "A")
+	rock.Genre = "Rock"
+	bolero := rec("A/Slow.song", "Slow", "A")
+	bolero.Genre = "bolero"
+	for _, r := range []Record{rock, bolero} {
 		if _, err := x.Upsert(ctx, r); err != nil {
 			t.Fatal(err)
 		}
 	}
-	got, _, _ := x.BySlug(ctx, fav.Slug)
-	if !got.Favorite() {
-		t.Error("the tagged song is not reported as a favourite")
+	// A genre is matched folded, so case and accents do not matter.
+	for _, q := range []string{"rock", "Rock", "ROCK"} {
+		hits, total, err := x.List(ctx, Query{Genre: q})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if total != 1 || hits[0].Title != "Loud" {
+			t.Errorf("Genre %q matched %d songs", q, total)
+		}
 	}
-	got, _, _ = x.BySlug(ctx, plain.Slug)
-	if got.Favorite() {
-		t.Error("an untagged song is reported as a favourite")
-	}
-	hits, total, err := x.List(ctx, Query{Favorite: true})
+	genres, err := x.Genres(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if total != 1 || hits[0].Title != "Loved" {
-		t.Errorf("favourites filter returned %d hits", total)
+	if len(genres) != 2 {
+		t.Fatalf("Genres = %v, want two", genres)
+	}
+	// The label keeps the case it was written with.
+	found := false
+	for _, g := range genres {
+		if g.Name == "Rock" {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("Genres = %v, want the original spelling kept", genres)
 	}
 }
 

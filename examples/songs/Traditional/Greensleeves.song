@@ -1,12 +1,9 @@
 ---
-format: 1
 title: Greensleeves
 artist: Traditional
 key: Am
 tuning: EADGBE
-tempo: 90
-meter: 6/8
-tags: [traditional, public-domain, example]
+genre: traditional
 notes: |-
   English ballad first registered in 1580. Words and melody are both long out of
   copyright. Included as example content: this repository never ships

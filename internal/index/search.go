@@ -46,16 +46,15 @@ const (
 // already been lifted out by ParseQuery into the fields below, so nothing the
 // user writes is ever handed to the full-text parser as syntax.
 type Query struct {
-	Text     string
-	Tag      string
-	Artist   string
-	Key      string
-	Chord    string
-	Favorite bool
-	Broken   bool
-	Sort     SortOrder
-	Limit    int
-	Offset   int
+	Text   string
+	Genre  string
+	Artist string
+	Key    string
+	Chord  string
+	Broken bool
+	Sort   SortOrder
+	Limit  int
+	Offset int
 }
 
 // Frag is a piece of a search excerpt. Hit marks the part that matched.
@@ -84,8 +83,8 @@ func ParseQuery(raw string) Query {
 			continue
 		}
 		switch strings.ToLower(name) {
-		case "tag", "etiqueta":
-			q.Tag = value
+		case "genre", "genero", "género":
+			q.Genre = value
 		case "artist", "artista":
 			q.Artist = value
 		case "key", "tono":
@@ -190,15 +189,9 @@ func (x *Index) List(ctx context.Context, q Query) ([]Hit, int, error) {
 		wheres = append(wheres, `song_fts MATCH ?`)
 		args = append(args, match)
 	}
-	if q.Tag != "" {
-		wheres = append(wheres, `EXISTS (SELECT 1 FROM song_tags st JOIN tags t ON t.id = st.tag_id
-		                                 WHERE st.song_id = s.id AND t.fold = ?)`)
-		args = append(args, Slugify(q.Tag))
-	}
-	if q.Favorite {
-		wheres = append(wheres, `EXISTS (SELECT 1 FROM song_tags st JOIN tags t ON t.id = st.tag_id
-		                                 WHERE st.song_id = s.id AND t.fold = ?)`)
-		args = append(args, FavoriteTag)
+	if q.Genre != "" {
+		wheres = append(wheres, `s.genre_fold = ?`)
+		args = append(args, Slugify(q.Genre))
 	}
 	if q.Artist != "" {
 		wheres = append(wheres, `s.sort_artist = ?`)
@@ -285,7 +278,7 @@ func (x *Index) List(ctx context.Context, q Query) ([]Hit, int, error) {
 			mtime, first, indexed int64
 		)
 		if err := rows.Scan(&r.ID, &r.RelPath, &r.Slug, &r.Title, &r.Artist, &r.Key, &r.Capo,
-			&r.Tuning, &r.Tempo, &r.Meter, &r.Notes, &r.Sections, &r.Lines, &r.Size,
+			&r.Tuning, &r.Genre, &r.Notes, &r.Sections, &r.Lines, &r.Size,
 			&mtime, &r.Hash, &r.ParseError, &r.ParseErrorLine, &first, &indexed,
 			&score, &frag); err != nil {
 			return nil, 0, err
@@ -307,31 +300,29 @@ func (x *Index) List(ctx context.Context, q Query) ([]Hit, int, error) {
 	return hits, total, nil
 }
 
-// TagCount is a tag and how many songs carry it.
-type TagCount struct {
+// GenreCount is a genre and how many songs carry it.
+type GenreCount struct {
 	Name  string
 	Fold  string
 	Count int
 }
 
-// Tags lists every tag in use, most used first.
-func (x *Index) Tags(ctx context.Context) ([]TagCount, error) {
+// Genres lists the genres in use, most used first.
+func (x *Index) Genres(ctx context.Context) ([]GenreCount, error) {
 	rows, err := x.db.QueryContext(ctx,
-		`SELECT t.name, t.fold, COUNT(st.song_id) AS n
-		 FROM tags t JOIN song_tags st ON st.tag_id = t.id
-		 GROUP BY t.id HAVING n > 0
-		 ORDER BY n DESC, t.fold`)
+		`SELECT genre, genre_fold, COUNT(*) AS n FROM songs
+		 WHERE genre <> '' GROUP BY genre_fold ORDER BY n DESC, genre_fold`)
 	if err != nil {
-		return nil, fmt.Errorf("index: list tags: %w", err)
+		return nil, fmt.Errorf("index: list genres: %w", err)
 	}
 	defer rows.Close()
-	var out []TagCount
+	var out []GenreCount
 	for rows.Next() {
-		var t TagCount
-		if err := rows.Scan(&t.Name, &t.Fold, &t.Count); err != nil {
+		var g GenreCount
+		if err := rows.Scan(&g.Name, &g.Fold, &g.Count); err != nil {
 			return nil, err
 		}
-		out = append(out, t)
+		out = append(out, g)
 	}
 	return out, rows.Err()
 }

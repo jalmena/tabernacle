@@ -9,6 +9,8 @@
 </head>
 {{end}}
 
+{{/* The header is the same on every page. Navigation that vanishes on the
+     import or editor page leaves the reader with nowhere to go. */}}
 {{define "top"}}
 <header class="top noprint">
 	<a class="brand" href="/">Taber<span>nacle</span></a>
@@ -21,13 +23,25 @@
 {{if .Nav.Flash}}<p class="flash noprint" role="status">{{.Nav.Flash}}</p>{{end}}
 {{end}}
 
-{{/* The sheet and its controls. The full song page and the fragment endpoint
-     both render this, so the two can never drift apart. */}}
+{{/* One row of buttons, in the same shape the page has always had. There is a
+     single vocabulary here: four sections and nothing else, so that no label can
+     be mistaken for another. */}}
+{{define "nav"}}
+<div class="filters noprint">
+	{{range .Nav.Sections}}
+		<a class="btn btn-quiet{{if .On}} on{{end}}" href="{{.URL}}"
+		   {{if .On}}aria-current="page"{{end}}>{{.Label}}</a>
+	{{end}}
+</div>
+{{end}}
+
+{{/* The sheet and its controls. The song page and the fragment endpoint both
+     render this, so the two cannot drift apart. */}}
 {{define "songsheet"}}
 <div class="controls noprint" id="controls">
 	<div class="group" role="group" aria-label="Transportar">
 		<a class="btn" data-sheet="down" href="{{.Controls.DownURL}}" title="Bajar un semitono" rel="nofollow">−</a>
-		<span class="now" aria-live="polite">{{if .Controls.KeyLabel}}{{.Controls.KeyLabel}}{{else}}{{.Controls.StepLabel}}{{end}}</span>
+		<span class="now" aria-live="polite">{{if .Controls.KeyLabel}}{{.Controls.KeyLabel}}{{end}}{{if .Controls.StepShort}} <span class="step">({{.Controls.StepShort}})</span>{{end}}</span>
 		<a class="btn" data-sheet="up" href="{{.Controls.UpURL}}" title="Subir un semitono" rel="nofollow">+</a>
 		{{if .Controls.CanReset}}
 			<a class="btn btn-quiet" data-sheet="reset" href="{{.Controls.ResetURL}}"
@@ -38,7 +52,7 @@
 	<span class="sep"></span>
 
 	<a class="btn btn-quiet" data-sheet="notation" href="{{.Controls.NotationURL}}"
-	   title="Cambiar la notación de las notas" rel="nofollow">{{.Controls.NotationLabel}}</a>
+	   title="Ver las notas como {{.Controls.NotationLabel}}" rel="nofollow">{{.Controls.NotationLabel}}</a>
 
 	{{if .Controls.ShowCapo}}
 		<a class="btn btn-quiet{{if .Controls.CapoOn}} on{{end}}" data-sheet="capo"
@@ -51,16 +65,8 @@
 </div>
 
 <div id="sheet">
-	{{if .Sheet.Shifted}}
-		<p class="notice">
-			{{if .Controls.CapoOn}}
-				Se muestran los acordes que <b>suenan</b> con la cejilla en el traste {{.Controls.Capo}}.
-			{{else}}
-				Transportada {{.Controls.StepLabel}}{{if .Controls.OrigKey}} desde {{.Controls.OrigKey}}{{end}}.
-			{{end}}
-			El archivo no se ha modificado.
-		</p>
-	{{end}}
+	{{if .Sheet.TabNote}}<p class="quiet">{{.Sheet.TabNote}}</p>{{end}}
+	{{if .Sheet.TuningNote}}<p class="quiet">{{.Sheet.TuningNote}}</p>{{end}}
 
 	{{if .Sheet.Chords}}
 		<nav class="usedchords" aria-label="Acordes utilizados">
@@ -74,30 +80,7 @@
 		</nav>
 	{{end}}
 
-	{{if .Sheet.TuningNote}}<p class="notice">{{.Sheet.TuningNote}}</p>{{end}}
-
-	<div class="sheet">
-		{{range .Sheet.Sections}}
-			<section class="section section-{{.Kind}}" id="{{.Anchor}}">
-				{{if .Label}}<h2>{{.Label}}</h2>{{end}}
-				{{range .Blocks}}
-					{{if .Verbatim}}
-						<pre class="tab" {{if .Info}}data-kind="{{.Info}}"{{end}}>{{.Text}}</pre>
-					{{else}}
-						<div class="block">
-							{{range .Lines}}
-								{{if .HasChord}}
-									<p class="line line-chords">{{range .Words}}<span class="word">{{range .Cells}}<span class="cell"><span class="chord">{{if .Chord}}<a href="#acorde-{{.ChordID}}" data-chord="{{.ChordID}}" title="Ver la posición de {{.Chord}}">{{.Chord}}</a>{{end}}</span><span class="lyric">{{if .Annotation}}<span class="annotation">[{{.Annotation}}]</span>{{else}}{{.Text}}{{end}}</span></span>{{end}}</span>{{.Sep}}{{end}}</p>
-								{{else}}
-									<p class="line">{{range .Words}}{{range .Cells}}{{if .Annotation}}<span class="annotation">[{{.Annotation}}]</span>{{else}}{{.Text}}{{end}}{{end}}{{.Sep}}{{end}}</p>
-								{{end}}
-							{{end}}
-						</div>
-					{{end}}
-				{{end}}
-			</section>
-		{{end}}
-	</div>
+	{{template "sections" .Sheet}}
 
 	{{if .Sheet.Chords}}
 		<section class="chordbook" aria-label="Posiciones de los acordes">
@@ -126,13 +109,39 @@
 								{{end}}
 							{{end}}
 						{{else}}
-							<p class="shapedesc">{{if .Warning}}{{.Warning}}{{else}}Sin posición conocida.{{end}}</p>
+							<p class="shapedesc-visible">{{if .Warning}}{{.Warning}}{{else}}Sin posición conocida.{{end}}</p>
 						{{end}}
-						{{if .Warning}}{{if .Voicings}}<p class="shapewarn">{{.Warning}}</p>{{end}}{{end}}
+						{{if and .Warning .Voicings}}<p class="shapewarn">{{.Warning}}</p>{{end}}
 						<a class="findchord" href="/?chord={{.Text}}">Canciones con {{.Text}}</a>
 					</article>
 				{{end}}
 			</div>
+		</section>
+	{{end}}
+</div>
+{{end}}
+
+{{/* The words themselves, shared by the screen and the printed sheet. */}}
+{{define "sections"}}
+<div class="sheet">
+	{{range .Sections}}
+		<section class="section section-{{.Kind}}" id="{{.Anchor}}">
+			{{if .Label}}<h2>{{.Label}}</h2>{{end}}
+			{{range .Blocks}}
+				{{if .Verbatim}}
+					<pre class="tab" {{if .Info}}data-kind="{{.Info}}"{{end}}>{{.Text}}</pre>
+				{{else}}
+					<div class="block">
+						{{range .Lines}}
+							{{if .HasChord}}
+								<p class="line line-chords">{{range .Words}}<span class="word">{{range .Cells}}<span class="cell"><span class="chord">{{.Chord}}</span><span class="lyric">{{if .Annotation}}<span class="annotation">[{{.Annotation}}]</span>{{else}}{{.Text}}{{end}}</span></span>{{end}}</span>{{.Sep}}{{end}}</p>
+							{{else}}
+								<p class="line">{{range .Words}}{{range .Cells}}{{if .Annotation}}<span class="annotation">[{{.Annotation}}]</span>{{else}}{{.Text}}{{end}}{{end}}{{.Sep}}{{end}}</p>
+							{{end}}
+						{{end}}
+					</div>
+				{{end}}
+			{{end}}
 		</section>
 	{{end}}
 </div>
@@ -146,9 +155,7 @@
 		{{if .Sheet.Key}}<li>Tono <b>{{.Sheet.Key}}</b></li>{{end}}
 		{{if .Sheet.Capo}}<li>Cejilla <b>{{.Sheet.Capo}}</b></li>{{end}}
 		{{if .Sheet.Tuning}}<li>Afinación <b>{{.Sheet.Tuning}}</b></li>{{end}}
-		{{if .Sheet.Tempo}}<li><b>{{.Sheet.Tempo}}</b> ppm</li>{{end}}
-		{{if .Sheet.Meter}}<li>Compás <b>{{.Sheet.Meter}}</b></li>{{end}}
-		{{range .Sheet.Tags}}<li><a class="pill" href="/?tag={{.}}">{{.}}</a></li>{{end}}
+		{{if .Sheet.Genre}}<li><a class="pill" href="/?genre={{.Sheet.Genre}}">{{.Sheet.Genre}}</a></li>{{end}}
 	</ul>
 	{{range .Sheet.Notes}}<p class="by">{{.}}</p>{{end}}
 </div>

@@ -1,12 +1,9 @@
 ---
-format: 1
 title: Amazing Grace
 artist: Traditional
 key: G
 tuning: EADGBE
-tempo: 90
-meter: 3/4
-tags: [hymn, public-domain, example]
+genre: hymn
 notes: |-
   Words by John Newton, 1779. Melody "New Britain", 1835. Both public domain.
   Included as example content: this repository never ships copyrighted songs.

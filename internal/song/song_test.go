@@ -129,3 +129,106 @@ func mustMarshal(t *testing.T, s Song) []byte {
 	}
 	return b
 }
+
+// A solo has to move with the chords above it. A sheet whose verse is in F and
+// whose tab is still in E is worse than one with no tab at all.
+func TestTransposeMovesTablature(t *testing.T) {
+	src := "---\ntitle: T\nkey: E\n---\n\n## Verse 1\n[E]one\n\n## Solo\n```tab\n" +
+		"e|---5---7---|\nB|---5---7---|\n```\n"
+	s, err := Parse([]byte(src))
+	if err != nil {
+		t.Fatal(err)
+	}
+	out, rep := s.TransposeReport(2)
+	if rep.TabsShifted != 1 {
+		t.Errorf("report = %+v, want one tab shifted", rep)
+	}
+	if rep.Clamped() {
+		t.Errorf("report = %+v, want no clamping", rep)
+	}
+
+	var tabText string
+	for _, sec := range out.Sections {
+		for _, ln := range sec.Lines {
+			if ln.Kind == LineVerbatim {
+				tabText = ln.Text
+			}
+		}
+	}
+	if !strings.Contains(tabText, "7---9") {
+		t.Errorf("the tab did not move up two frets:\n%s", tabText)
+	}
+	// And the chords moved too, in the same direction.
+	if out.Key != "F#" {
+		t.Errorf("key = %q, want F#", out.Key)
+	}
+}
+
+// Going below an open string is impossible, so the block stays put and says so.
+func TestTransposeClampsTablatureAtTheOpenString(t *testing.T) {
+	src := "---\ntitle: T\nkey: E\n---\n\n## Solo\n```tab\ne|---0---3---|\nB|---0---1---|\n```\n"
+	s, err := Parse([]byte(src))
+	if err != nil {
+		t.Fatal(err)
+	}
+	original := s.Sections[0].Lines[0].Text
+
+	out, rep := s.TransposeReport(-2)
+	if rep.TabsTooLow != 1 {
+		t.Errorf("report = %+v, want one tab refused for being too low", rep)
+	}
+	if !rep.Clamped() {
+		t.Error("Clamped() is false even though a tab was left behind")
+	}
+	if got := out.Sections[0].Lines[0].Text; got != original {
+		t.Errorf("the tab was altered despite being refused:\n%s", got)
+	}
+	// The chords still move: only the tablature is stuck.
+	if out.Key != "D" {
+		t.Errorf("key = %q, want D", out.Key)
+	}
+}
+
+func TestTransposeClampsTablatureAtTheEndOfTheNeck(t *testing.T) {
+	src := "---\ntitle: T\nkey: E\n---\n\n## Solo\n```tab\ne|---22---|\nB|---20---|\n```\n"
+	s, err := Parse([]byte(src))
+	if err != nil {
+		t.Fatal(err)
+	}
+	out, rep := s.TransposeReport(5)
+	if rep.TabsTooHigh != 1 {
+		t.Errorf("report = %+v, want one tab refused for running off the neck", rep)
+	}
+	if !strings.Contains(out.Sections[0].Lines[0].Text, "22") {
+		t.Error("the tab was altered despite being refused")
+	}
+}
+
+// A verbatim block that is not tablature is never touched, whatever the shift.
+func TestTransposeLeavesNonTabBlocksAlone(t *testing.T) {
+	src := "---\ntitle: T\nkey: E\n---\n\n## Notes\n```\nPlay the intro twice.\n```\n"
+	s, err := Parse([]byte(src))
+	if err != nil {
+		t.Fatal(err)
+	}
+	out, rep := s.TransposeReport(3)
+	if rep.TabsShifted != 0 || rep.Clamped() {
+		t.Errorf("report = %+v, want nothing done to a prose block", rep)
+	}
+	if !strings.Contains(out.Sections[0].Lines[0].Text, "Play the intro twice.") {
+		t.Error("a prose block was modified")
+	}
+}
+
+// Transpose keeps its old signature, so nothing that only wanted the song had to
+// change.
+func TestTransposeWrapperStillWorks(t *testing.T) {
+	src := "---\ntitle: T\nkey: E\n---\n\n## Solo\n```tab\ne|---5---|\n```\n"
+	s, err := Parse([]byte(src))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := s.Transpose(2); !strings.Contains(got.Sections[0].Lines[0].Text, "7") {
+		t.Error("the wrapper did not move the tab")
+	}
+}

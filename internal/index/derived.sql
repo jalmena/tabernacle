@@ -17,8 +17,8 @@ CREATE TABLE songs (
     song_key         TEXT    NOT NULL DEFAULT '',
     capo             INTEGER NOT NULL DEFAULT 0,
     tuning           TEXT    NOT NULL DEFAULT '',
-    tempo            INTEGER NOT NULL DEFAULT 0,
-    meter            TEXT    NOT NULL DEFAULT '',
+    genre            TEXT    NOT NULL DEFAULT '',
+    genre_fold       TEXT    NOT NULL DEFAULT '',
     notes            TEXT    NOT NULL DEFAULT '',
     sort_title       TEXT    NOT NULL,
     sort_artist      TEXT    NOT NULL,
@@ -39,20 +39,7 @@ CREATE INDEX songs_by_title  ON songs(sort_title);
 CREATE INDEX songs_by_artist ON songs(sort_artist, sort_title);
 CREATE INDEX songs_by_hash   ON songs(content_hash);   -- rename detection
 CREATE INDEX songs_broken    ON songs(id) WHERE parse_error <> '';
-
-CREATE TABLE tags (
-    id   INTEGER PRIMARY KEY,
-    name TEXT NOT NULL UNIQUE,  -- exactly as written in the file
-    fold TEXT NOT NULL          -- lowercased and folded, for lookup
-);
-CREATE INDEX tags_by_fold ON tags(fold);
-
-CREATE TABLE song_tags (
-    song_id INTEGER NOT NULL REFERENCES songs(id) ON DELETE CASCADE,
-    tag_id  INTEGER NOT NULL REFERENCES tags(id)  ON DELETE CASCADE,
-    PRIMARY KEY (song_id, tag_id)
-) WITHOUT ROWID;
-CREATE INDEX song_tags_by_tag ON song_tags(tag_id, song_id);
+CREATE INDEX songs_by_genre  ON songs(genre_fold) WHERE genre_fold <> '';
 
 -- The chords a song actually uses, derived from its content. The user never
 -- maintains this list, which is the same rule the .song format applies to the
@@ -76,7 +63,7 @@ CREATE INDEX song_chords_by_symbol ON song_chords(symbol, song_id);
 CREATE VIRTUAL TABLE song_fts USING fts5(
     title,
     artist,
-    tags,
+    genre,
     lyrics,
     notes,
     chords,

@@ -1,13 +1,10 @@
 ---
-format: 1
 title: Amazing Grace
 artist: Traditional
 key: G
 capo: 2
 tuning: EADGBE
-tempo: 90
-meter: 3/4
-tags: [hymn, public-domain]
+genre: hymn
 notes: |-
   Public domain: words by John Newton, 1779.
   Play it slowly and let the open strings ring.

@@ -1,0 +1,18 @@
+{{template "head" .}}
+<body>
+{{template "top" .}}
+<main class="wrap">
+	{{template "nav" .}}
+	{{with .Body}}
+		<h1>{{.Heading}}</h1>
+		<p class="count">{{.Detail}}</p>
+		<form method="post" action="{{.Action}}" class="editor">
+			<div class="filters">
+				<button class="btn btn-danger" type="submit">{{.Confirm}}</button>
+				<a class="btn btn-quiet" href="{{.CancelURL}}">Cancelar</a>
+			</div>
+		</form>
+	{{end}}
+</main>
+</body>
+</html>

@@ -18,14 +18,11 @@ func parse(t *testing.T, src string) song.Song {
 }
 
 const sample = `---
-format: 1
 title: Amazing Grace
 artist: Traditional
 key: G
 capo: 2
-tempo: 90
-meter: 3/4
-tags: [hymn, example]
+genre: hymn
 notes: |-
   First note line.
   Second note line.
@@ -96,7 +93,7 @@ func TestLineReconstructionIsExact(t *testing.T) {
 	}
 	for _, body := range sources {
 		t.Run(body, func(t *testing.T) {
-			s := parse(t, "---\nformat: 1\ntitle: T\n---\n\n## Verse 1\n"+body+"\n")
+			s := parse(t, "---\ntitle: T\n---\n\n## Verse 1\n"+body+"\n")
 			got := reconstruct(Sheet(s, Options{}))
 			want := strings.TrimSuffix(s.PlainText(), "\n")
 			if got != want {
@@ -114,8 +111,8 @@ func TestSheetMetadata(t *testing.T) {
 	if v.Key != "G" || v.OrigKey != "G" {
 		t.Errorf("key = %q, original = %q", v.Key, v.OrigKey)
 	}
-	if v.Capo != 2 || v.Tempo != 90 || v.Meter != "3/4" {
-		t.Errorf("capo/tempo/meter = %d/%d/%q", v.Capo, v.Tempo, v.Meter)
+	if v.Capo != 2 {
+		t.Errorf("capo = %d, want 2", v.Capo)
 	}
 	if len(v.Notes) != 2 || v.Notes[0] != "First note line." {
 		t.Errorf("notes = %v, want one entry per line", v.Notes)
@@ -165,7 +162,7 @@ func TestChordsUsedIsDerivedAndOrdered(t *testing.T) {
 // A chord landing inside a word must stay inside that word, or the browser will
 // break the word in half when the line wraps.
 func TestMidWordChordStaysInOneWord(t *testing.T) {
-	s := parse(t, "---\nformat: 1\ntitle: T\n---\n\n## Verse 1\nA[G]mazing grace\n")
+	s := parse(t, "---\ntitle: T\n---\n\n## Verse 1\nA[G]mazing grace\n")
 	v := Sheet(s, Options{})
 	line := v.Sections[0].Blocks[0].Lines[0]
 
@@ -174,13 +171,15 @@ func TestMidWordChordStaysInOneWord(t *testing.T) {
 	}
 	first := line.Words[0]
 	if len(first.Cells) != 2 {
-		t.Fatalf("the first word has %d cells, want two: 'A' and the chorded 'mazing'", len(first.Cells))
+		t.Fatalf("the first word has %d cells, want two", len(first.Cells))
 	}
-	if first.Cells[0].Text != "A" || first.Cells[0].Chord != "" {
-		t.Errorf("first cell = %+v, want the bare letter A", first.Cells[0])
+	// The chord slides onto the vowel, so the split lands after the "m": the
+	// beat falls on the "a", not on the consonant that opens the syllable.
+	if first.Cells[0].Text != "Am" || first.Cells[0].Chord != "" {
+		t.Errorf("first cell = %+v, want the chordless \"Am\"", first.Cells[0])
 	}
-	if first.Cells[1].Chord != "G" || first.Cells[1].Text != "mazing" {
-		t.Errorf("second cell = %+v, want G above 'mazing'", first.Cells[1])
+	if first.Cells[1].Chord != "G" || first.Cells[1].Text != "azing" {
+		t.Errorf("second cell = %+v, want G above \"azing\"", first.Cells[1])
 	}
 	if first.Sep != " " {
 		t.Errorf("separator = %q, want a single space", first.Sep)
@@ -258,7 +257,7 @@ func TestVerbatimBlockIsItsOwnBlock(t *testing.T) {
 }
 
 func TestAnnotationsAreNeverChords(t *testing.T) {
-	s := parse(t, "---\nformat: 1\ntitle: T\n---\n\n## Verse 1\n[G]word [x2] [N.C.] [Chorus]\n")
+	s := parse(t, "---\ntitle: T\n---\n\n## Verse 1\n[G]word [x2] [N.C.] [Chorus]\n")
 	v := Sheet(s, Options{Transpose: 2})
 
 	var annotations, chords []string
@@ -327,7 +326,7 @@ func TestTransposeNormalisation(t *testing.T) {
 
 func TestSpellingIsConsistentAcrossTheWholeSheet(t *testing.T) {
 	// E major up one semitone is F, which is conventionally written with flats.
-	src := "---\nformat: 1\ntitle: T\nkey: E\n---\n\n## Verse 1\n[E]one [A]two [B]three [C#m]four\n"
+	src := "---\ntitle: T\nkey: E\n---\n\n## Verse 1\n[E]one [A]two [B]three [C#m]four\n"
 	v := Sheet(parse(t, src), Options{Transpose: 1})
 	var got []string
 	for _, c := range v.Chords {
@@ -429,7 +428,6 @@ func TestChordID(t *testing.T) {
 
 func TestSectionAnchorsAreUnique(t *testing.T) {
 	src := `---
-format: 1
 title: T
 ---
 
@@ -463,7 +461,7 @@ title: T
 }
 
 func TestUnlabelledSectionIsStillRendered(t *testing.T) {
-	v := Sheet(parse(t, "---\nformat: 1\ntitle: T\n---\n[G]straight in with no heading\n"), Options{})
+	v := Sheet(parse(t, "---\ntitle: T\n---\n[G]straight in with no heading\n"), Options{})
 	if len(v.Sections) != 1 {
 		t.Fatalf("got %d sections", len(v.Sections))
 	}
@@ -482,7 +480,7 @@ func TestUnlabelledSectionIsStillRendered(t *testing.T) {
 // Section kinds are used directly as CSS classes, so they must stay in the
 // restricted alphabet even for a heading full of punctuation.
 func TestSectionKindIsSafeAsAClass(t *testing.T) {
-	src := "---\nformat: 1\ntitle: T\n---\n\n## <script>alert(1)</script>\n[G]x\n"
+	src := "---\ntitle: T\n---\n\n## <script>alert(1)</script>\n[G]x\n"
 	v := Sheet(parse(t, src), Options{})
 	kind := v.Sections[0].Kind
 	if kind != "other" {
@@ -499,7 +497,7 @@ func TestSectionKindIsSafeAsAClass(t *testing.T) {
 }
 
 func TestEmptySong(t *testing.T) {
-	v := Sheet(parse(t, "---\nformat: 1\ntitle: Nothing\n---\n"), Options{})
+	v := Sheet(parse(t, "---\ntitle: Nothing\n---\n"), Options{})
 	if v.Title != "Nothing" {
 		t.Errorf("title = %q", v.Title)
 	}
@@ -512,8 +510,8 @@ func TestEmptySong(t *testing.T) {
 // Rendering must never panic and never lose the words, whatever the file holds.
 func FuzzSheet(f *testing.F) {
 	f.Add(sample)
-	f.Add("---\nformat: 1\ntitle: T\n---\n\n## V\n[G]x\n")
-	f.Add("---\nformat: 1\ntitle: T\n---\n\n[x2]   [G]\n")
+	f.Add("---\ntitle: T\n---\n\n## V\n[G]x\n")
+	f.Add("---\ntitle: T\n---\n\n[x2]   [G]\n")
 	f.Fuzz(func(t *testing.T, src string) {
 		s, err := song.Parse([]byte(src))
 		if err != nil {
@@ -547,7 +545,7 @@ func TestTuningNote(t *testing.T) {
 		{"whatever the guy on the video said", "no se conoce"},
 	}
 	for _, tt := range tests {
-		src := "---\nformat: 1\ntitle: T\n"
+		src := "---\ntitle: T\n"
 		if tt.tuning != "" {
 			src += "tuning: " + tt.tuning + "\n"
 		}
@@ -566,7 +564,7 @@ func TestTuningNote(t *testing.T) {
 		}
 	}
 	// Without diagrams there is nothing to explain.
-	v := Sheet(parse(t, "---\nformat: 1\ntitle: T\ntuning: DADGAD\n---\n\n## V\n[G]x\n"), Options{})
+	v := Sheet(parse(t, "---\ntitle: T\ntuning: DADGAD\n---\n\n## V\n[G]x\n"), Options{})
 	if v.TuningNote != "" {
 		t.Errorf("a sheet without diagrams produced a tuning note: %q", v.TuningNote)
 	}
@@ -605,11 +603,134 @@ func TestChordsCarryVoicingsOnlyWhenAsked(t *testing.T) {
 // The spoken description counts strings the way a player does, with the sixth
 // lowest, even though the data is stored the other way round.
 func TestFingeringDescriptionUsesPlayerStringNumbers(t *testing.T) {
-	v := Sheet(parse(t, "---\nformat: 1\ntitle: T\n---\n\n## V\n[C]x\n"), Options{Diagrams: true})
+	v := Sheet(parse(t, "---\ntitle: T\n---\n\n## V\n[C]x\n"), Options{Diagrams: true})
 	desc := v.Chords[0].Voicings[0].Fingering
 	for _, want := range []string{"6ª cuerda", "5ª cuerda traste 3", "1ª cuerda al aire"} {
 		if !strings.Contains(desc, want) {
 			t.Errorf("description %q is missing %q", desc, want)
 		}
+	}
+}
+
+// The beat falls on the vowel, not on the consonant that opens the syllable, so
+// that is where the chord belongs.
+func TestChordSitsOnTheVowel(t *testing.T) {
+	tests := []struct {
+		line       string
+		wantBefore string // text of the cell before the chord
+		wantOn     string // text the chord sits above
+	}{
+		{"A[G]mazing grace", "Am", "azing"},
+		{"co[C]razón", "cor", "azón"},
+		{"quie[Am]ro más", "quier", "o"},
+		{"Fue en un [Am]pueblo", "", "pueblo"}, // chord opens the word: unchanged
+		{"des[G]pués", "desp", "ués"},
+		{"lo[D]s años", "lo", "s"},
+		// The vowel here is the accented one, which is exactly where the beat is.
+		{"a[G]sí", "as", "í"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.line, func(t *testing.T) {
+			s := parse(t, "---\ntitle: T\n---\n\n## Verse 1\n"+tt.line+"\n")
+			v := Sheet(s, Options{})
+			line := v.Sections[0].Blocks[0].Lines[0]
+
+			var before, on string
+			for _, w := range line.Words {
+				for i, c := range w.Cells {
+					if c.Chord == "" {
+						continue
+					}
+					on = c.Text
+					if i > 0 {
+						before = w.Cells[i-1].Text
+					}
+				}
+			}
+			if tt.wantBefore != "" && before != tt.wantBefore {
+				t.Errorf("cell before the chord = %q, want %q", before, tt.wantBefore)
+			}
+			if tt.wantOn != "" && on != tt.wantOn {
+				t.Errorf("chord sits above %q, want %q", on, tt.wantOn)
+			}
+			// Whatever moved, the words themselves must be untouched.
+			if got, want := reconstruct(v), strings.TrimSuffix(s.PlainText(), "\n"); got != want {
+				t.Errorf("moving the chord changed the text\n got: %q\nwant: %q", got, want)
+			}
+		})
+	}
+}
+
+// A chord at the start of a word must not drag letters out of the word before it.
+func TestVowelAlignmentNeverCrossesAWordBoundary(t *testing.T) {
+	s := parse(t, "---\ntitle: T\n---\n\n## Verse 1\nhold [G]strong now\n")
+	v := Sheet(s, Options{})
+	line := v.Sections[0].Blocks[0].Lines[0]
+
+	if len(line.Words) < 2 {
+		t.Fatalf("got %d words", len(line.Words))
+	}
+	if got := line.Words[0].Cells[0].Text; got != "hold" {
+		t.Errorf("the first word became %q; letters were dragged across the space", got)
+	}
+	// "strong" opens the word, so the chord stays at its head rather than
+	// sliding onto the vowel of a word it does not belong to.
+	if got := line.Words[1].Cells[0].Text; got != "strong" {
+		t.Errorf("second word cell = %q, want the whole word", got)
+	}
+}
+
+// An annotation is not a syllable, so nothing slides into or out of it.
+func TestVowelAlignmentIgnoresAnnotations(t *testing.T) {
+	s := parse(t, "---\ntitle: T\n---\n\n## Verse 1\n[x2][G]mano\n")
+	v := Sheet(s, Options{})
+	var texts []string
+	for _, w := range v.Sections[0].Blocks[0].Lines[0].Words {
+		for _, c := range w.Cells {
+			texts = append(texts, c.Annotation+c.Text)
+		}
+	}
+	if strings.Join(texts, "|") != "x2|mano" {
+		t.Errorf("cells = %v, want the annotation left intact", texts)
+	}
+}
+
+func TestTabNoteExplainsClampedTablature(t *testing.T) {
+	// A tab sitting on open strings cannot go down.
+	src := "---\ntitle: T\nkey: E\n---\n\n## Solo\n```tab\ne|---0---3---|\n```\n"
+	s := parse(t, src)
+
+	if v := Sheet(s, Options{Transpose: -2}); v.TabNote == "" {
+		t.Error("no note explaining why the tab did not move")
+	} else if strings.Contains(strings.ToLower(v.TabNote), "error") {
+		t.Errorf("the note reads as a fault rather than information: %q", v.TabNote)
+	}
+	// Up is fine, so there is nothing to say.
+	if v := Sheet(s, Options{Transpose: 2}); v.TabNote != "" {
+		t.Errorf("a note appeared for a tab that moved fine: %q", v.TabNote)
+	}
+	// And at the original key there is nothing to say either.
+	if v := Sheet(s, Options{}); v.TabNote != "" {
+		t.Errorf("a note appeared at the original key: %q", v.TabNote)
+	}
+}
+
+func TestTabFollowsTheChords(t *testing.T) {
+	src := "---\ntitle: T\nkey: E\n---\n\n## Verse 1\n[E]one\n\n## Solo\n```tab\ne|---5---7---|\n```\n"
+	v := Sheet(parse(t, src), Options{Transpose: 2})
+
+	var tabText string
+	for _, sec := range v.Sections {
+		for _, b := range sec.Blocks {
+			if b.Verbatim {
+				tabText = b.Text
+			}
+		}
+	}
+	if !strings.Contains(tabText, "7---9") {
+		t.Errorf("the tab did not follow the chords up:\n%s", tabText)
+	}
+	if v.TabNote != "" {
+		t.Errorf("an unnecessary note: %q", v.TabNote)
 	}
 }

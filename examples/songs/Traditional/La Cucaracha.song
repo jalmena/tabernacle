@@ -1,13 +1,10 @@
 ---
-format: 1
 title: La Cucaracha
 artist: Traditional
 key: C
 capo: 2
 tuning: EADGBE
-tempo: 120
-meter: 3/4
-tags: [traditional, public-domain, example, español]
+genre: traditional
 notes: |-
   Corrido tradicional mexicano, de dominio público. Se conocen versos desde el
   siglo XIX y existen decenas de variantes; aquí van los más difundidos.

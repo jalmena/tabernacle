@@ -347,54 +347,6 @@ a:hover { text-decoration-thickness: 2px; }
 	.songhead h1 { font-size: 1.75rem; }
 }
 
-/* ----------------------------------------------------------------- print --- */
-
-@media print {
-	/* A4 with margins a home printer can actually reach. */
-	@page { size: A4 portrait; margin: 14mm 12mm; }
-
-	:root {
-		--ink: #000;
-		--ink-soft: #333;
-		--ink-faint: #555;
-		--paper: #fff;
-		--paper-raised: #fff;
-		--rule: #bbb;
-		--chord: #000;
-		--chord-bg: transparent;
-		--annotation: #444;
-		--song-size: 10.5pt;
-	}
-
-	/* Nothing interactive belongs on paper. */
-	.top, .controls, .sheet-foot, .noprint { display: none !important; }
-
-	body { background: #fff; }
-	.wrap { max-width: none; margin: 0; padding: 0; }
-
-	.songhead h1 { font-size: 15pt; }
-	.songhead .by { font-size: 11pt; }
-	.facts { font-size: 8.5pt; }
-
-	.section h2 { font-size: 8.5pt; }
-
-	/* Keep a stanza whole, and never leave a heading alone at the foot of a
-	 * page. Both are what make the difference between a printout and a song
-	 * sheet worth putting in a binder. */
-	.block, .tab { break-inside: avoid; page-break-inside: avoid; }
-	.section h2 { break-after: avoid; page-break-after: avoid; }
-	.section { break-inside: auto; }
-
-	.usedchords { break-inside: avoid; }
-	.chordref { border: 1px solid #999; background: transparent; }
-
-	.tab { border: 1px solid #999; background: transparent; }
-
-	/* A printed sheet has no use for a URL after every chord name. */
-	a { color: inherit; text-decoration: none; }
-	a[href]::after { content: none !important; }
-}
-
 /* ------------------------------------------------------- chord positions --- */
 
 /* The appendix is not scaffolding: it is what a real songbook prints, it is the
@@ -534,3 +486,128 @@ a:hover { text-decoration-thickness: 2px; }
 
 /* Forms inside a row of buttons should not break the row. */
 .filters form, .sheet-foot form { display: inline; margin: 0; }
+
+/* ------------------------------------------------------- small additions --- */
+
+.quiet { color: var(--ink-soft); font-size: 0.875rem; margin: 0 0 0.6rem; }
+.facts-block { flex-direction: column; gap: 0.2rem; font-size: 0.9375rem; }
+.btn-danger { color: #b3261e; border-color: #b3261e; }
+@media (prefers-color-scheme: dark) { .btn-danger { color: #f2b8b5; border-color: #8c1d18; } }
+.btn-danger:hover { background: #b3261e; color: #fff; }
+
+.filters .sep { flex: 1; min-width: 0.5rem; }
+
+/* Loading a file into the editor. The real input is hidden behind its label so
+ * it matches the other buttons; the label is what gets clicked. */
+.loadbar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.4rem;
+	margin: 0 0 0.75rem;
+}
+.loadbar input[type="file"] {
+	position: absolute;
+	width: 1px; height: 1px;
+	opacity: 0;
+	pointer-events: none;
+}
+.loadbar label { cursor: pointer; }
+.loadbar input[type="file"]:focus-visible + .btn,
+.loadbar label:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.loadbar .quiet { margin: 0; }
+
+.shapedesc-visible { margin: 0.3rem 0 0; font-size: 0.75rem; color: var(--ink-soft); }
+
+/* The transposition is stated next to the note, between the two buttons, which
+ * is where the reader is already looking. */
+.now .step { color: var(--ink-faint); font-weight: 500; }
+
+/* ----------------------------------------------------------- print view --- */
+
+/* The print view is a page in its own right, on paper of its own choosing. It is
+ * never dark: a dark sheet empties a cartridge and reads worse than the white
+ * one, so the only choice offered is how light. */
+body.printing {
+	--ink: #111;
+	--ink-soft: #444;
+	--ink-faint: #666;
+	--paper: #fff;
+	--paper-raised: #fff;
+	--rule: #c8c8c8;
+	--chord: #000;
+	--chord-bg: transparent;
+	--annotation: #555;
+	background: var(--paper);
+	color: var(--ink);
+}
+body.paper-cream    { --paper: #fbf7ec; --paper-raised: #fbf7ec; --rule: #ded5c0; }
+body.paper-grey     { --paper: #f4f4f4; --paper-raised: #f4f4f4; --rule: #cfcfcf; }
+body.paper-contrast { --ink: #000; --ink-soft: #000; --ink-faint: #333; --rule: #888; }
+body.paper-contrast .cell .chord { font-weight: 800; }
+
+.paperbar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.35rem;
+	padding: 0.5rem 0.875rem;
+	border-bottom: 1px solid var(--rule);
+}
+.paperbar .sep { flex: 1; }
+.paperbar .quiet { margin: 0; }
+
+/* On paper the chords are bold rather than coloured, so a black-and-white
+ * printer still distinguishes them from the words. */
+body.printing .cell .chord { font-weight: 750; }
+body.printing .transposed {
+	display: inline-block;
+	margin: 0.5rem 0 0;
+	padding: 0.2rem 0.5rem;
+	font-size: 0.9375rem;
+	font-weight: 600;
+	border: 1.5px solid var(--ink-soft);
+	border-radius: 4px;
+}
+
+@media print {
+	/* A4 with margins a consumer printer can actually reach. */
+	@page { size: A4 portrait; margin: 14mm 12mm; }
+
+	:root {
+		--ink: #000;
+		--ink-soft: #333;
+		--ink-faint: #555;
+		--paper: #fff;
+		--paper-raised: #fff;
+		--rule: #bbb;
+		--chord: #000;
+		--chord-bg: transparent;
+		--annotation: #444;
+		--song-size: 10.5pt;
+	}
+
+	/* Nothing interactive belongs on paper. */
+	.top, .sections, .controls, .sheet-foot, .paperbar, .flash,
+	.chordpop, .chordbook, .usedchords, .noprint { display: none !important; }
+
+	body { background: #fff; }
+	.wrap { max-width: none; margin: 0; padding: 0; }
+
+	.songhead h1 { font-size: 15pt; }
+	.songhead .by { font-size: 11pt; }
+	.facts { font-size: 8.5pt; }
+	.transposed { font-size: 9.5pt; }
+	.section h2 { font-size: 8.5pt; }
+
+	/* Keep a stanza whole and never leave a heading alone at the foot of a page.
+	 * Both are what separate a printout from a song sheet worth filing. */
+	.block, .tab { break-inside: avoid; page-break-inside: avoid; }
+	.section h2 { break-after: avoid; page-break-after: avoid; }
+
+	.tab { border: 1px solid #999; background: transparent; }
+
+	/* A printed sheet has no use for a URL after every link. */
+	a { color: inherit; text-decoration: none; }
+	a[href]::after { content: none !important; }
+}

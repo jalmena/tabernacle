@@ -49,6 +49,7 @@ type songView struct {
 	Notation  string
 	CapoView  render.CapoView
 	Print     bool
+	Theme     string // print paper; only ever appears on a print URL
 
 	// DefaultNotation is what a URL with no notation parameter would show, so
 	// that the parameter can be left out when it would change nothing.
@@ -77,6 +78,11 @@ func (v songView) URL() string {
 	base := "/songs/" + v.Slug
 	if v.Print {
 		base += "/print"
+		// The paper only means anything on the print view, so it is left out
+		// everywhere else rather than trailing around the whole application.
+		if v.Theme != "" && v.Theme != "white" {
+			q["theme"] = []string{v.Theme}
+		}
 	}
 	return base + encodeQuery(q)
 }

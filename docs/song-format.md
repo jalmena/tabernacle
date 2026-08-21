@@ -1,4 +1,4 @@
-# The `.song` format, version 1
+# The `.song` format
 
 A song lives in one file. The file is the source of truth: the database is an
 index that can be thrown away and rebuilt from the files at any time, and a
@@ -17,15 +17,12 @@ A file has two parts: a metadata block delimited by `---`, and a body.
 
 ```
 ---
-format: 1
 title: Amazing Grace
 artist: Traditional
 key: G
 capo: 2
 tuning: EADGBE
-tempo: 90
-meter: 3/4
-tags: [hymn, public-domain]
+genre: hymn
 notes: |-
   Public domain: words by John Newton, 1779.
   Play it slowly and let the open strings ring.
@@ -69,26 +66,22 @@ the reverse is guesswork.
 ## Metadata
 
 The metadata block is a deliberately small subset of YAML: flat fields, scalar
-values, one-level lists and literal block scalars. Everything the reader accepts
-is also valid YAML with the same meaning, so a future switch to a real YAML
-parser is not a format change.
+values and literal block scalars. No field takes a list. Everything the reader
+accepts is also valid YAML with the same meaning, so a future switch to a real
+YAML parser would not change the format.
 
-| Field    | Type            | Notes                                                    |
-| -------- | --------------- | -------------------------------------------------------- |
-| `format` | integer         | Format version. Always written; assumed `1` when missing. |
-| `title`  | string          | Required.                                                |
-| `artist` | string          | Optional.                                                |
-| `key`    | chord symbol    | `G`, `Am`, `F#m`, `Bb`. Drives transposition spelling.   |
-| `capo`   | integer 0–12    | Fret the capo sits on. `0` means none and is omitted.    |
-| `tuning` | string          | Free text: `EADGBE`, `Drop D`, `DADGAD`.                 |
-| `tempo`  | integer 1–400   | Beats per minute.                                        |
-| `meter`  | `N/N`           | Time signature: `4/4`, `6/8`.                            |
-| `tags`   | list of strings | `[hymn, public-domain]` or a `-` list on following lines. |
-| `notes`  | string          | Free text. Use `|-` for several lines.                   |
+| Field    | Type          | Notes                                                  |
+| -------- | ------------- | ------------------------------------------------------ |
+| `title`  | string        | The only required field.                               |
+| `artist` | string        | Optional.                                              |
+| `key`    | chord symbol  | `G`, `Am`, `F#m`, `Bb`. Drives transposition spelling. |
+| `capo`   | integer 0–12  | Fret the capo sits on. `0` means none and is omitted.  |
+| `tuning` | string        | Free text: `EADGBE`, `Drop D`, `DADGAD`.               |
+| `genre`  | string        | One short label: `hymn`, `bolero`, `rock`.             |
+| `notes`  | string        | Free text. Use `|-` for several lines.                 |
 
 Unknown fields are an error rather than being ignored, so that `titel:` is
-caught instead of silently dropping a title. Forward compatibility is handled by
-bumping `format`.
+caught instead of silently dropping a title.
 
 Rules worth knowing:
 
@@ -102,6 +95,41 @@ Rules worth knowing:
   called `1984`.
 - Folded block scalars (`>`) are rejected. Use `|` or `|-`; both are read the
   same way, and trailing blank lines in a block are not significant.
+
+### The genre
+
+`genre` is one short label. It is what the Géneros section lists and what a genre
+filter matches, folded for accents and case, so `Canción` and `cancion` are the
+same genre.
+
+### There is no version number
+
+The format is small, and the parts that matter — inline chords, `##` headings,
+fenced blocks — have not needed to change. Carrying a version field to describe
+that was a promise to future maintenance nobody was going to keep.
+
+If a change ever does need announcing, a new field can announce it, and a file
+without that field means what files mean today. Nothing is closed off; there is
+simply one fewer line to type in every song.
+
+### Fields that used to exist
+
+`format`, `tempo`, `meter` and `tags` were once part of the header. They are read
+and discarded, so a collection written before they were dropped still opens, and
+they are never written back — a file loses them the next time something actually
+changes it.
+
+- `format` carried the schema version, for the reason above.
+- `tempo` and `meter` describe a performance, not a page. Neither changes a
+  single thing a guitarist reads while playing, and both were another field to
+  fill in and keep true.
+- `tags` was a free list of labels, which is a filing system nobody maintains
+  past the first month. `genre` replaces it: one label, the part people used.
+
+There is also no favourites field. It was tried, as a reserved tag written into
+the file, and removed: a star that rewrites a file is a surprising amount of
+machinery for a shortcut nobody asked for.
+
 
 ## Body
 
@@ -170,6 +198,12 @@ song in E up a semitone gives F, Bb and C rather than F, A# and C. An explicit
 accidental in the declared key wins, so a song written in Gb stays in flats. A
 song with no declared key falls back to its first chord.
 
+Tablature moves with the chords: a solo left in the old key when the verse above
+it has changed is worse than no tab at all. Frets have a floor and a ceiling that
+chord symbols do not, though — there is nothing below an open string, and the
+neck runs out — so a block that cannot move is left exactly as it was and the
+page says so.
+
 Capo is left alone. It describes what the player does with a piece of metal, not
 what the sheet says.
 
@@ -181,31 +215,19 @@ what the sheet says.
 - Anything the reader rejects, it rejects with a line number.
 
 Two things are not preserved across a write: comments in the metadata block, and
-a `format` older than the current one. Files are therefore only rewritten when
-something actually changed.
+the retired fields above. Files are therefore only rewritten when something
+actually changed.
 
-## Deliberately not in version 1
+## Deliberately left out
 
 - Per-section metadata such as repeat counts. `## Chorus (x2)` keeps the text;
   parsing it would mean inventing a small language in the heading, and that can
   wait until there is a real need.
-- Chord diagrams, fingerings and custom chord definitions.
+- Chord shapes. Diagrams exist, and come from the application's own dataset; a
+  song file says which chords are played, not how to hold them.
 - Multiple arrangements or translations in one file. Use separate files.
 - ChordPro import and export. The inline bracket notation is the same, so this
   is a converter rather than a format concern.
-
-## Reserved tags
-
-One tag has a meaning to the application: `favorite` marks a song as a
-favourite.
-
-It lives in the file rather than in the database on purpose. A favourite then
-survives the index being deleted, travels with a copy of the collection, and
-appears in a `git diff` as a single line. The cost is that starring a song writes
-to its file, which is fair for something done deliberately.
-
-Any other tag is yours. Nothing else is reserved, and a tag called `favorite`
-that you added by hand means exactly what the star means.
 
 ## What the application derives
 

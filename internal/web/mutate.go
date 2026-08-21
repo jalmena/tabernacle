@@ -2,10 +2,12 @@ package web
 
 import (
 	"errors"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/jalmena/tabernacle/internal/library"
 	"github.com/jalmena/tabernacle/internal/render"
@@ -19,14 +21,12 @@ const maxFormBytes = 2 << 20
 // flash codes. A message is chosen from this fixed set and looked up
 // server-side, so nothing from a query string is ever rendered back to the page.
 var flashes = map[string]string{
-	"created":     "Canción guardada.",
-	"saved":       "Cambios guardados.",
-	"deleted":     "Canción movida a la papelera.",
-	"committed":   "Tono guardado en el archivo.",
-	"favorited":   "Añadida a favoritas.",
-	"unfavorited": "Quitada de favoritas.",
-	"reindexed":   "Biblioteca revisada.",
-	"scanning":    "Ya hay una revisión en curso.",
+	"created":   "Canción guardada.",
+	"saved":     "Cambios guardados.",
+	"deleted":   "Canción movida a la papelera.",
+	"committed": "Tono guardado en el archivo.",
+	"reindexed": "Biblioteca revisada.",
+	"scanning":  "Ya hay una revisión en curso.",
 }
 
 // flashFor resolves a message code, ignoring anything not in the list.
@@ -133,8 +133,47 @@ func (s *Server) redirect(w http.ResponseWriter, r *http.Request, target, msg st
 	http.Redirect(w, r, target, http.StatusSeeOther)
 }
 
+// newSongPlaceholder shows the whole header a song may carry.
+//
+// A field nobody knows about might as well not exist, and the format is small
+// enough that showing all of it costs nothing. Only the title is required; the
+// rest is there to be deleted.
+const newSongPlaceholder = `---
+title: Título de la canción
+artist: Artista
+key: Am
+capo: 2
+tuning: EADGBE
+genre: bolero
+notes: |-
+  Lo que quieras recordar sobre la canción.
+  Puede ocupar varias líneas.
+---
+
+## Estrofa 1
+A[Am]quí van las [F]letras, con los acordes
+donde de verdad [C]caen al can[G]tar
+
+## Estribillo
+[F]Otra sección, con su [C]nombre
+
+## Solo
+` + "```" + `tab
+e|-------------------|
+B|-------------------|
+G|-------0-----------|
+D|---0-------0---2---|
+A|-------------------|
+E|-3-----------------|
+` + "```" + `
+`
+
 // editorBody is what the create and edit forms receive.
 type editorBody struct {
+	Placeholder string
+	// Loaded names the file whose text is sitting in the box, so the reader can
+	// tell that the upload arrived.
+	Loaded     string
 	Title      string // page heading
 	Action     string // where the form posts
 	Slug       string
@@ -147,11 +186,11 @@ type editorBody struct {
 }
 
 func (s *Server) handleNewSong(w http.ResponseWriter, r *http.Request) {
-	s.render(w, r, http.StatusOK, "editor.html", page_("Añadir una canción", "", editorBody{
-		Title:     "Añadir una canción",
-		Action:    "/songs",
-		CancelURL: "/",
-		Text:      "",
+	s.render(w, r, http.StatusOK, "editor.html", s.page(r, "Añadir una canción", editorBody{
+		Title:       "Añadir una canción",
+		Action:      "/songs",
+		CancelURL:   "/",
+		Placeholder: newSongPlaceholder,
 	}))
 }
 
@@ -160,14 +199,89 @@ func (s *Server) handleCreateSong(w http.ResponseWriter, r *http.Request) {
 	slug, err := s.lib.CreateFromText(r.Context(), text)
 	if err != nil {
 		s.renderEditorError(w, r, editorBody{
-			Title:     "Añadir una canción",
-			Action:    "/songs",
-			CancelURL: "/",
-			Text:      text,
+			Title:       "Añadir una canción",
+			Action:      "/songs",
+			CancelURL:   "/",
+			Text:        text,
+			Placeholder: newSongPlaceholder,
 		}, err)
 		return
 	}
 	s.redirect(w, r, "/songs/"+slug, "created")
+}
+
+// handleLoadIntoEditor takes an uploaded .song file and puts its text in the
+// editor, without saving anything.
+//
+// It is a round trip rather than a purely local read so that it works with
+// scripting off; app.js shortcuts it with a FileReader when it can. Either way
+// nothing is written until the reader presses Guardar, which is the point: an
+// upload you cannot see before it lands is how a collection fills with files
+// nobody meant to add.
+func (s *Server) handleLoadIntoEditor(w http.ResponseWriter, r *http.Request) {
+	body := editorBody{
+		Title:       "Añadir una canción",
+		Action:      "/songs",
+		CancelURL:   "/",
+		Placeholder: newSongPlaceholder,
+	}
+
+	r.Body = http.MaxBytesReader(w, r.Body, s.cfg.MaxSongBytes+(1<<16))
+	if err := r.ParseMultipartForm(1 << 20); err != nil {
+		body.ErrMessage = "No se ha podido leer el archivo, o es demasiado grande."
+		s.render(w, r, http.StatusRequestEntityTooLarge, "editor.html",
+			s.page(r, body.Title, body))
+		return
+	}
+	defer func() {
+		if r.MultipartForm != nil {
+			_ = r.MultipartForm.RemoveAll()
+		}
+	}()
+
+	files := r.MultipartForm.File["file"]
+	if len(files) == 0 {
+		body.ErrMessage = "No has seleccionado ningún archivo."
+		s.render(w, r, http.StatusBadRequest, "editor.html", s.page(r, body.Title, body))
+		return
+	}
+
+	f, err := files[0].Open()
+	if err != nil {
+		body.ErrMessage = "No se ha podido abrir el archivo."
+		s.render(w, r, http.StatusBadRequest, "editor.html", s.page(r, body.Title, body))
+		return
+	}
+	defer f.Close()
+
+	data, err := io.ReadAll(io.LimitReader(f, s.cfg.MaxSongBytes+1))
+	if err != nil || int64(len(data)) > s.cfg.MaxSongBytes {
+		body.ErrMessage = "El archivo es demasiado grande."
+		s.render(w, r, http.StatusRequestEntityTooLarge, "editor.html",
+			s.page(r, body.Title, body))
+		return
+	}
+	if !utf8.Valid(data) {
+		body.ErrMessage = "El archivo no es texto: un .song es texto plano."
+		s.render(w, r, http.StatusUnprocessableEntity, "editor.html",
+			s.page(r, body.Title, body))
+		return
+	}
+
+	body.Text = strings.ReplaceAll(strings.ReplaceAll(string(data), "\r\n", "\n"), "\r", "\n")
+	body.Loaded = safeName(files[0].Filename)
+	// The text is shown, not saved. If it does not parse, the reader sees the
+	// line to fix before anything reaches the collection.
+	if _, err := song.Parse([]byte(body.Text)); err != nil {
+		var se *song.SyntaxError
+		if errors.As(err, &se) {
+			body.ErrMessage = se.Msg
+			body.ErrLine = se.Line
+		} else {
+			body.ErrMessage = err.Error()
+		}
+	}
+	s.render(w, r, http.StatusOK, "editor.html", s.page(r, body.Title, body))
 }
 
 func (s *Server) handleEditSong(w http.ResponseWriter, r *http.Request) {
@@ -177,7 +291,7 @@ func (s *Server) handleEditSong(w http.ResponseWriter, r *http.Request) {
 		s.resolve(w, r, err)
 		return
 	}
-	s.render(w, r, http.StatusOK, "editor.html", page_("Editar", "", editorBody{
+	s.render(w, r, http.StatusOK, "editor.html", s.page(r, "Editar", editorBody{
 		Title:     "Editar el archivo",
 		Action:    "/songs/" + slug,
 		Slug:      slug,
@@ -209,7 +323,7 @@ func (s *Server) handleSaveSong(w http.ResponseWriter, r *http.Request) {
 			// one of them quietly discarded.
 			body.ErrMessage = "El archivo ha cambiado desde que abriste el editor. " +
 				"Copia tu texto, vuelve a abrir la canción y aplica los cambios de nuevo."
-			s.render(w, r, http.StatusConflict, "editor.html", page_("Conflicto", "", body))
+			s.render(w, r, http.StatusConflict, "editor.html", s.page(r, "Conflicto", body))
 			return
 		}
 		s.renderEditorError(w, r, body, err)
@@ -229,21 +343,42 @@ func (s *Server) renderEditorError(w http.ResponseWriter, r *http.Request, body 
 		body.ErrMessage = err.Error()
 	}
 	s.render(w, r, http.StatusUnprocessableEntity, "editor.html",
-		page_(body.Title, "", body))
+		s.page(r, body.Title, body))
 }
 
-func (s *Server) handleFavorite(w http.ResponseWriter, r *http.Request) {
+// confirmBody is a question with two answers.
+type confirmBody struct {
+	Heading   string
+	Detail    string
+	Action    string
+	Confirm   string
+	CancelURL string
+}
+
+// handleDeleteForm asks before removing a song.
+//
+// A page rather than a scripted dialog, because the content security policy
+// rules out inline handlers and because a real page works with scripting off. It
+// also gives room to say where the file is going, which is the reassuring part.
+func (s *Server) handleDeleteForm(w http.ResponseWriter, r *http.Request) {
 	slug := r.PathValue("slug")
-	on := r.PostFormValue("on") == "1"
-	if err := s.lib.SetFavorite(r.Context(), slug, on); err != nil {
+	view, err := s.lib.Get(r.Context(), slug)
+	if err != nil {
 		s.resolve(w, r, err)
 		return
 	}
-	msg := "unfavorited"
-	if on {
-		msg = "favorited"
+	name := view.Record.Title
+	if view.Record.Artist != "" {
+		name += " · " + view.Record.Artist
 	}
-	s.redirect(w, r, "/songs/"+slug, msg)
+	s.render(w, r, http.StatusOK, "confirm.html", s.page(r, "Eliminar", confirmBody{
+		Heading: "¿Eliminar " + name + "?",
+		Detail: "El archivo se mueve a la carpeta de la papelera, dentro del directorio " +
+			"de datos. Puedes recuperarlo desde ahí con el gestor de archivos.",
+		Action:    "/songs/" + slug + "/delete",
+		Confirm:   "Sí, eliminar",
+		CancelURL: "/songs/" + slug,
+	}))
 }
 
 func (s *Server) handleDelete(w http.ResponseWriter, r *http.Request) {
@@ -294,14 +429,31 @@ func (s *Server) handleCommitTranspose(w http.ResponseWriter, r *http.Request) {
 	s.redirect(w, r, "/songs/"+slug, "committed")
 }
 
+// scanBody reports what a scan did.
+type scanBody struct {
+	Report  library.SyncReport
+	Changed bool
+}
+
+// handleReindex rescans the collection and says what changed.
+//
+// It renders the result instead of redirecting with a one-line message. When
+// nothing has changed there is otherwise no visible difference at all, and a
+// button that reports nothing is indistinguishable from a button that does
+// nothing — which is exactly how this one read.
 func (s *Server) handleReindex(w http.ResponseWriter, r *http.Request) {
-	if _, err := s.lib.Sync(r.Context()); err != nil {
+	rep, err := s.lib.Sync(r.Context())
+	if err != nil {
 		if errors.Is(err, library.ErrSyncBusy) {
-			s.redirect(w, r, "/", "scanning")
+			// Another scan is already doing the work; report its result.
+			last, _ := s.lib.LastScan()
+			s.render(w, r, http.StatusOK, "scan.html", s.page(r, "Revisión", scanBody{Report: last}))
 			return
 		}
 		s.serverError(w, r, err)
 		return
 	}
-	s.redirect(w, r, "/", "reindexed")
+	changed := rep.Added+rep.Updated+rep.Renamed+rep.Removed+rep.Failed > 0
+	s.render(w, r, http.StatusOK, "scan.html",
+		s.page(r, "Revisión", scanBody{Report: rep, Changed: changed}))
 }

@@ -15,13 +15,15 @@ import (
 
 // songBody is what the song templates receive.
 type songBody struct {
-	Slug     string
-	Sheet    render.SheetView
+	Slug  string
+	Sheet render.SheetView
+	// Theme and Themes drive the print view's paper choice.
+	Theme    string
+	Themes   []themeChoice
 	Controls controlSet
 	Broken   bool
 	ParseMsg string
 	ParseAt  int
-	Favorite bool
 	ReadOnly bool
 	PrintURL string
 	RawURL   string
@@ -43,6 +45,9 @@ type controlSet struct {
 	KeyLabel  string
 	OrigKey   string
 	StepLabel string
+	// StepShort is "+2" or "-1", empty at the original key. It sits next to the
+	// note between the two buttons, which is where a reader is already looking.
+	StepShort string
 
 	NotationURL   string
 	NotationLabel string
@@ -51,6 +56,53 @@ type controlSet struct {
 	CapoURL  string
 	CapoOn   bool
 	Capo     int
+}
+
+// themeChoice is one paper option offered inside the print view.
+type themeChoice struct {
+	ID    string
+	Label string
+	URL   string
+	On    bool
+}
+
+// printThemes are the papers a sheet can be printed on.
+//
+// All of them are light. A dark sheet on paper costs a cartridge and reads worse
+// than the white one, so there is no dark option here at all: the choice is
+// between shades of nearly-white and how heavy the ink is.
+var printThemeList = []struct{ id, label string }{
+	{"white", "Blanco"},
+	{"cream", "Crema"},
+	{"grey", "Gris claro"},
+	{"contrast", "Alto contraste"},
+}
+
+func printThemes(cur songView) []themeChoice {
+	current := cur.Theme
+	if current == "" {
+		current = "white"
+	}
+	out := make([]themeChoice, 0, len(printThemeList))
+	for _, t := range printThemeList {
+		v := cur
+		v.Theme = t.id
+		out = append(out, themeChoice{
+			ID: t.id, Label: t.label, URL: v.printing().URL(), On: t.id == current,
+		})
+	}
+	return out
+}
+
+// printThemeFor reads the requested paper, falling back to plain white.
+func printThemeFor(r *http.Request) string {
+	want := r.URL.Query().Get("theme")
+	for _, t := range printThemeList {
+		if t.id == want {
+			return want
+		}
+	}
+	return "white"
 }
 
 // loadSong assembles everything both the full page and the fragment need.
@@ -80,6 +132,7 @@ func (s *Server) loadSong(r *http.Request) (songBody, songView, error) {
 	}
 	cur := songView{
 		Slug:            slug,
+		Theme:           printThemeFor(r),
 		Transpose:       transpose,
 		Notation:        notationName,
 		CapoView:        capo,
@@ -89,7 +142,8 @@ func (s *Server) loadSong(r *http.Request) (songBody, songView, error) {
 	body := songBody{
 		Slug:     slug,
 		Sheet:    sheet,
-		Favorite: view.Record.Favorite(),
+		Theme:    printThemeFor(r),
+		Themes:   printThemes(cur),
 		ReadOnly: s.cfg.ReadOnly,
 		PrintURL: cur.printing().URL(),
 		RawURL:   "/songs/" + slug + "/raw",
@@ -104,6 +158,7 @@ func (s *Server) loadSong(r *http.Request) (songBody, songView, error) {
 			KeyLabel:  sheet.Key,
 			OrigKey:   sheet.OrigKey,
 			StepLabel: stepLabel(transpose),
+			StepShort: stepShort(transpose),
 
 			NotationURL:   cur.withNotation(otherNotation(notationName)).URL(),
 			NotationLabel: notationLabel(notationName),
@@ -156,12 +211,28 @@ func stepLabel(n int) string {
 	}
 }
 
-// notationLabel names the notation the toggle would switch to.
+// stepShort is the signed number of semitones, or "" at the original key.
+func stepShort(n int) string {
+	switch {
+	case n == 0:
+		return ""
+	case n > 0:
+		return "+" + strconv.Itoa(n)
+	default:
+		return "\u2212" + strconv.Itoa(-n) // a real minus sign, not a hyphen
+	}
+}
+
+// notationLabel names the notation the button switches TO, not the one in use.
+//
+// A button labelled with what you are already looking at reads as a statement
+// and leaves you guessing what pressing it does; labelled with the destination,
+// it reads as an instruction.
 func notationLabel(current string) string {
 	if current == config.NotationSolfege {
-		return "Do Re Mi"
+		return "C D E"
 	}
-	return "C D E"
+	return "Do Re Mi"
 }
 
 // describeSyntax pulls a message and a line number out of a parse failure, so
@@ -208,7 +279,7 @@ func (s *Server) handleSong(w http.ResponseWriter, r *http.Request) {
 	if body.Sheet.Artist != "" {
 		t += " · " + body.Sheet.Artist
 	}
-	s.render(w, r, http.StatusOK, "song.html", page_(t, "", body))
+	s.render(w, r, http.StatusOK, "song.html", s.page(r, t, body))
 }
 
 // handleSheetFragment returns just the sheet and its controls, for the
@@ -222,7 +293,7 @@ func (s *Server) handleSheetFragment(w http.ResponseWriter, r *http.Request) {
 		s.resolve(w, r, err)
 		return
 	}
-	s.render(w, r, http.StatusOK, "fragment.html", page_("", "", body))
+	s.render(w, r, http.StatusOK, "fragment.html", s.page(r, "", body))
 }
 
 func (s *Server) handlePrint(w http.ResponseWriter, r *http.Request) {
@@ -231,7 +302,7 @@ func (s *Server) handlePrint(w http.ResponseWriter, r *http.Request) {
 		s.resolve(w, r, err)
 		return
 	}
-	s.render(w, r, http.StatusOK, "print.html", page_(body.Sheet.Title, "", body))
+	s.render(w, r, http.StatusOK, "print.html", s.page(r, body.Sheet.Title, body))
 }
 
 // handleRaw serves the .song file itself.

@@ -6,7 +6,6 @@ import (
 )
 
 const chordSong = `---
-format: 1
 title: Test
 ---
 
@@ -45,7 +44,7 @@ func TestSongChords(t *testing.T) {
 }
 
 func TestSongChordsIgnoresAnnotations(t *testing.T) {
-	s, err := Parse([]byte("---\nformat: 1\ntitle: T\n---\n\n## Verse 1\n[x2] [N.C.] [Chorus] [let ring] [G]word\n"))
+	s, err := Parse([]byte("---\ntitle: T\n---\n\n## Verse 1\n[x2] [N.C.] [Chorus] [let ring] [G]word\n"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,7 +55,7 @@ func TestSongChordsIgnoresAnnotations(t *testing.T) {
 }
 
 func TestSongChordsEmpty(t *testing.T) {
-	s, err := Parse([]byte("---\nformat: 1\ntitle: T\n---\n\n## Verse 1\njust words, no chords\n"))
+	s, err := Parse([]byte("---\ntitle: T\n---\n\n## Verse 1\njust words, no chords\n"))
 	if err != nil {
 		t.Fatal(err)
 	}

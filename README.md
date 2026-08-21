@@ -31,9 +31,9 @@ accounts.
 **The songbook**
 
 - Songs are `.song` text files in `data/songs/Artist/Title.song`. That is the whole storage design.
-- Full-text search across titles, artists, lyrics, tags and chords, accent-insensitive so
+- Full-text search across titles, artists, lyrics, genres and chords, accent-insensitive so
   `corazon` finds `corazón`.
-- Browse by artist, by tag, by chord, by favourites, by recently opened.
+- Browse by artist, by genre, or by chord.
 - Paste a song in and save it, or edit the raw `.song` text with syntax errors reported by line.
 
 **Playing**
@@ -44,11 +44,13 @@ accounts.
   or losing your place.
 - Several practical voicings per chord — open position, barre shapes, higher positions — with
   left/right navigation. Real playable shapes only.
+- Tablature transposes with the chords. When a shift would take a fret below an open string, or
+  past the end of the neck, the tab stays as it was and the page says so.
 - A "chords used" panel at the top so you can learn the shapes before you start.
 - Note names in English (`C D E F G A B`) or solfège (`Do Re Mi Fa Sol La Si`), switchable at any
   time. One file serves both; switching never rewrites anything.
-- Capo and tuning are first-class metadata, and chords can be shown as written or as fingered with
-  the capo on.
+- Capo and tuning are first-class metadata, and chords can be shown as written or as the pitches
+  that actually sound with the capo on.
 
 **Practical matters**
 
@@ -215,8 +217,9 @@ data/
 and small conveniences such as which songs you opened recently. Delete `index.db` and Tabernacle
 rebuilds it from the files on the next start, with the same URLs as before.
 
-Song content never lives only in the database. Favourites are stored as a `favorite` tag inside the
-song file itself, so they survive a database wipe and travel with your backup.
+Song content never lives only in the database. What the index holds is derived from the files and
+nothing else, so throwing it away costs you the recently-opened list and any key you asked it to
+remember, and nothing more.
 
 You can edit songs with any text editor while Tabernacle is running; it notices within a minute, or
 immediately if you press Reindex.
@@ -229,13 +232,12 @@ A song is one file: a small metadata block, then the words with chords in bracke
 
 ````
 ---
-format: 1
 title: Amazing Grace
 artist: Traditional
 key: G
 capo: 2
 tuning: EADGBE
-tags: [hymn, public-domain]
+genre: hymn
 ---
 
 ## Verse 1
@@ -463,12 +465,12 @@ Consequences worth knowing:
 
 Complete and tested:
 
-- [x] The `.song` format: parsing, serialisation, versioning, byte-identical round trip, fuzzing
+- [x] The `.song` format: parsing, serialisation, byte-identical round trip, fuzzing
 - [x] Chords: parsing, note names in both systems, transposition, enharmonic spelling
 - [x] Configuration, the binary, health endpoint, container image, compose packaging
 - [x] Song storage: a confined collection directory, atomic writes, rename detection
 - [x] The search index, rebuildable from the files at any time
-- [x] Library browsing, full-text search, tags and artists
+- [x] Library browsing, full-text search, artists and genres
 - [x] The song sheet: transposition, both note-name systems, the capo view, printing
 
 - [x] Chord diagrams, alternative voicings, and the chord panel

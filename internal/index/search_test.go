@@ -14,19 +14,19 @@ func seed(t *testing.T, x *Index) {
 	songs := []Record{
 		{
 			RelPath: "Traditional/Amazing Grace.song", Title: "Amazing Grace", Artist: "Traditional",
-			Key: "G", Tags: []string{"hymn", "public-domain"}, Chords: []string{"G", "C", "Em", "D"},
+			Key: "G", Genre: "hymn", Chords: []string{"G", "C", "Em", "D"},
 			Lyrics: "Amazing grace how sweet the sound that saved a wretch like me",
 			Notes:  "Words by John Newton",
 		},
 		{
 			RelPath: "Joaquín Sabina/Y nos dieron las diez.song", Title: "Y nos dieron las diez",
-			Artist: "Joaquín Sabina", Key: "Am", Tags: []string{"cancion", FavoriteTag},
+			Artist: "Joaquín Sabina", Key: "Am", Genre: "cancion",
 			Chords: []string{"Am", "F", "C", "G"},
 			Lyrics: "Mi corazón está partido y así nos dieron las diez y las once",
 		},
 		{
 			RelPath: "Bill Withers/Ain't No Sunshine.song", Title: "Ain't No Sunshine",
-			Artist: "Bill Withers", Key: "Am", Tags: []string{"soul"},
+			Artist: "Bill Withers", Key: "Am", Genre: "soul",
 			Chords: []string{"Am", "Em", "G", "A7"},
 			Lyrics: "Ain't no sunshine when she's gone, it's not warm when she's away",
 		},
@@ -60,7 +60,7 @@ func TestSearchAcrossEveryColumn(t *testing.T) {
 		{"artist", "withers", "Ain't No Sunshine"},
 		{"lyrics", "wretch", "Amazing Grace"},
 		{"notes", "newton", "Amazing Grace"},
-		{"tag", "soul", "Ain't No Sunshine"},
+		{"genre", "soul", "Ain't No Sunshine"},
 		{"chord", "A7", "Ain't No Sunshine"},
 		{"prefix", "sunsh", "Ain't No Sunshine"},
 		{"two terms", "amazing grace", "Amazing Grace"},
@@ -257,14 +257,13 @@ func TestFilters(t *testing.T) {
 		q    Query
 		want []string
 	}{
-		{"tag", Query{Tag: "hymn"}, []string{"Amazing Grace"}},
-		{"tag is accent and case insensitive", Query{Tag: "Canción"}, []string{"Y nos dieron las diez"}},
+		{"genre", Query{Genre: "hymn"}, []string{"Amazing Grace"}},
+		{"genre is accent and case insensitive", Query{Genre: "Canción"}, []string{"Y nos dieron las diez"}},
 		{"artist", Query{Artist: "Bill Withers"}, []string{"Ain't No Sunshine"}},
 		{"key", Query{Key: "Am"}, []string{"Ain't No Sunshine", "Y nos dieron las diez"}},
 		{"chord", Query{Chord: "Em"}, []string{"Ain't No Sunshine", "Amazing Grace"}},
-		{"favorite", Query{Favorite: true}, []string{"Y nos dieron las diez"}},
-		{"unknown tag", Query{Tag: "nonexistent"}, nil},
-		{"text and filter together", Query{Text: "am", Tag: "soul"}, []string{"Ain't No Sunshine"}},
+		{"unknown genre", Query{Genre: "nonexistent"}, nil},
+		{"text and filter together", Query{Text: "am", Genre: "soul"}, []string{"Ain't No Sunshine"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -369,20 +368,20 @@ func TestParseQuery(t *testing.T) {
 		want Query
 	}{
 		{"amazing grace", Query{Text: "amazing grace", Sort: SortRelevance}},
-		{"tag:hymn", Query{Tag: "hymn", Sort: SortTitle}},
-		{"tag:hymn amazing", Query{Text: "amazing", Tag: "hymn", Sort: SortRelevance}},
+		{"genre:hymn", Query{Genre: "hymn", Sort: SortTitle}},
+		{"genre:hymn amazing", Query{Text: "amazing", Genre: "hymn", Sort: SortRelevance}},
 		{"artist:Sabina", Query{Artist: "Sabina", Sort: SortTitle}},
 		{"chord:F#m", Query{Chord: "F#m", Sort: SortTitle}},
 		{"key:Am", Query{Key: "Am", Sort: SortTitle}},
 		// Spanish field names, since the interface is in Spanish.
-		{"etiqueta:himno", Query{Tag: "himno", Sort: SortTitle}},
+		{"genero:himno", Query{Genre: "himno", Sort: SortTitle}},
 		{"artista:Sabina", Query{Artist: "Sabina", Sort: SortTitle}},
 		{"acorde:Am", Query{Chord: "Am", Sort: SortTitle}},
 		{"tono:G", Query{Key: "G", Sort: SortTitle}},
 		// An unknown prefix is not a field, so it stays as search text.
 		{"nonsense:value", Query{Text: "nonsense:value", Sort: SortRelevance}},
 		// A prefix with no value is text too, not an empty filter.
-		{"tag:", Query{Text: "tag:", Sort: SortRelevance}},
+		{"genre:", Query{Text: "genre:", Sort: SortRelevance}},
 		{"", Query{Sort: SortTitle}},
 	}
 	for _, tt := range tests {

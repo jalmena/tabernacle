@@ -40,7 +40,7 @@ func TestReparseIsStable(t *testing.T) {
 		// Multi-line notes with an internal blank line.
 		"---\ntitle: T\nnotes: |-\n  one\n\n  three\n---\n",
 		// A tag list and an unlabelled section.
-		"---\ntitle: T\ntags: [a, \"b c\"]\n---\n\n[G]No heading here\n",
+		"---\ntitle: T\ngenre: \"b c\"\n---\n\n[G]No heading here\n",
 	}
 
 	for _, src := range sources {
@@ -102,9 +102,7 @@ func TestMarshalRejectsInvalid(t *testing.T) {
 		"no title":          {},
 		"bad key":           {Title: "T", Key: "H"},
 		"capo out of range": {Title: "T", Capo: 99},
-		"bad meter":         {Title: "T", Meter: "fast"},
-		"empty tag":         {Title: "T", Tags: []string{""}},
-		"comma in tag":      {Title: "T", Tags: []string{"a,b"}},
+		"comma in genre":    {Title: "T", Genre: "a,b"},
 		"newline in label":  {Title: "T", Sections: []Section{{Label: "a\nb"}}},
 		"bracket in annotation": {Title: "T", Sections: []Section{{Label: "V", Lines: []Line{
 			{Kind: LineLyric, Tokens: []Token{{Kind: TokenAnnotation, Text: "a]b"}}},
@@ -117,12 +115,12 @@ func TestMarshalRejectsInvalid(t *testing.T) {
 	}
 }
 
-func TestMarshalAlwaysWritesFormat(t *testing.T) {
+func TestMarshalStartsWithTheTitle(t *testing.T) {
 	out, err := Marshal(Song{Title: "T"})
 	if err != nil {
 		t.Fatalf("Marshal: %v", err)
 	}
-	if !strings.HasPrefix(string(out), "---\nformat: 1\ntitle: T\n---\n") {
+	if !strings.HasPrefix(string(out), "---\ntitle: T\n---\n") {
 		t.Errorf("output = %q", out)
 	}
 }

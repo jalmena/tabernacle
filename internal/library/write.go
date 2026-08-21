@@ -79,28 +79,6 @@ func (l *Library) SaveRaw(ctx context.Context, slug string, text string, expectH
 	return l.slugAfterWrite(ctx, rec.RelPath)
 }
 
-// SetFavorite marks or unmarks a song.
-//
-// A favourite is a tag in the song file, not a row in the database, so it
-// survives the index being deleted, travels with a copy of the collection and
-// shows up in a diff as one line. The cost is a file write, which is fair for
-// something the reader did on purpose.
-func (l *Library) SetFavorite(ctx context.Context, slug string, on bool) error {
-	return l.rewrite(ctx, slug, func(s song.Song) (song.Song, error) {
-		out := s
-		out.Tags = nil
-		for _, t := range s.Tags {
-			if !strings.EqualFold(t, index.FavoriteTag) {
-				out.Tags = append(out.Tags, t)
-			}
-		}
-		if on {
-			out.Tags = append(out.Tags, index.FavoriteTag)
-		}
-		return out, nil
-	})
-}
-
 // CommitTranspose writes a transposition into the file.
 //
 // This is the deliberate, separate counterpart to transposing for reading: that
