@@ -768,8 +768,36 @@ html { accent-color: var(--accent); }
 
 /* One song per page, so a book can be handed out a sheet at a time. The first
  * gets no break, or the document opens on a blank page. */
-.songbook-song + .songbook-song { break-before: page; }
-.songbook-index { break-after: page; }
+/* One song per page, so a book can be handed out a sheet at a time. Both
+ * spellings: the modern property and the one older engines still act on. */
+.songbook-song + .songbook-song {
+	break-before: page;
+	page-break-before: always;
+}
+.songbook-index {
+	break-after: page;
+	page-break-after: always;
+}
+
+/* On screen the same document shows where those pages fall, so what you see
+ * before printing is what comes out of the printer. */
+@media screen {
+	body.printing .songbook-song,
+	body.printing .songbook-index {
+		margin: 0 auto 1.5rem;
+		padding: 2rem 2.5rem;
+		max-width: 46rem;
+		background: var(--paper-raised);
+		border: 1px solid var(--rule);
+		border-radius: 4px;
+		box-shadow: 0 2px 10px rgb(0 0 0 / 8%);
+	}
+	/* The desk the sheets lie on, so their edges are visible. Printing paints
+	 * none of this: the sheets are the page. */
+	body.printing { background: #d9d9d9; }
+	body.printing .wrap { max-width: none; padding: 1.5rem 1rem; }
+	body.printing .paperbar { background: var(--paper-raised); }
+}
 .songbook-index ol { margin: 0.5rem 0 0; padding-left: 1.4rem; }
 .songbook-index li { margin: 0.15rem 0; }
 
@@ -882,12 +910,10 @@ input[type="file"].filepick:focus-visible { outline: 2px solid var(--accent); ou
 
 /* ---------- the songbook chooser ---------- */
 
+/* What to print, then how. One after the other, because that is the order the
+ * decisions are made in. */
 .booklayout { display: grid; gap: 1.5rem; align-items: start; }
-@media (min-width: 52rem) {
-	/* What to print, and how. Two questions, two columns. */
-	.booklayout { grid-template-columns: minmax(0, 1fr) 17rem; }
-	.bookopts { position: sticky; top: 4rem; }
-}
+.bookopts { max-width: 34rem; }
 
 .card {
 	padding: 1rem;

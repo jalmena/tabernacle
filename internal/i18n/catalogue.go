@@ -136,7 +136,7 @@ var catalogue = map[Lang]map[string]string{
 		"book.explain": "Elige las canciones y cómo quieres imprimirlas. Sale un solo " +
 			"documento listo para imprimir o guardar en PDF.",
 		"book.songs":            "Canciones",
-		"book.look":             "Cómo se imprime",
+		"book.look":             "Formato",
 		"book.selected":         "%d seleccionadas",
 		"book.selected.one":     "1 seleccionada",
 		"book.keys":             "Cada canción sale en el tono que le tengas recordado.",
@@ -287,7 +287,7 @@ var catalogue = map[Lang]map[string]string{
 		"book.explain": "Choose the songs and how to print them. You get one document, ready " +
 			"to print or save as a PDF.",
 		"book.songs":            "Songs",
-		"book.look":             "How it prints",
+		"book.look":             "Format",
 		"book.selected":         "%d chosen",
 		"book.selected.one":     "1 chosen",
 		"book.keys":             "Each song comes out in the key you asked it to remember.",
