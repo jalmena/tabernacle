@@ -913,7 +913,9 @@ input[type="file"].filepick:focus-visible { outline: 2px solid var(--accent); ou
 /* What to print, then how. One after the other, because that is the order the
  * decisions are made in. */
 .booklayout { display: grid; gap: 1.5rem; align-items: start; }
-.bookopts { max-width: 34rem; }
+/* The same width as the list and the box above it: three stacked blocks that do
+ * not line up read as three unrelated things. */
+.bookopts { max-width: none; }
 
 .card {
 	padding: 1rem;
