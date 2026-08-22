@@ -384,3 +384,54 @@
 		window.print();
 	});
 })();
+
+/* The chord page.
+ *
+ * The neck is a plain GET form and works without any of this: pressing
+ * Identificar reloads the page with the shape in the URL. What the script adds
+ * is that moving a finger answers immediately, by fetching the part of the page
+ * that depends on the shape and swapping it in.
+ *
+ * The neck itself is never replaced, which is what keeps the keyboard focus on
+ * the radio button the reader just moved to. */
+(function () {
+	"use strict";
+
+	var board = document.getElementById("fretboard");
+	var result = document.getElementById("chordresult");
+	if (!board || !result || !window.fetch || !window.history) return;
+
+	var timer = null;
+	var pending = null;
+
+	function state() {
+		var params = new URLSearchParams(new FormData(board));
+		return params.toString();
+	}
+
+	function refresh() {
+		var query = state();
+		if (pending) pending.abort();
+		pending = new AbortController();
+		fetch("/chords/fragment?" + query, {
+			signal: pending.signal,
+			headers: { "Accept": "text/html" },
+		})
+			.then(function (r) { return r.ok ? r.text() : Promise.reject(r.status); })
+			.then(function (html) {
+				result.innerHTML = html;
+				history.replaceState(null, "", "/chords?" + query);
+			})
+			/* A failed refresh leaves the last good answer on screen. The form
+			 * still submits the ordinary way, so nothing is unreachable. */
+			.catch(function () {});
+	}
+
+	board.addEventListener("change", function (e) {
+		if (!e.target.matches('input[name="s"]')) return;
+		clearTimeout(timer);
+		/* Long enough that dragging across a string is one request rather than
+		 * six, short enough to feel like the page is keeping up. */
+		timer = setTimeout(refresh, 120);
+	});
+})();

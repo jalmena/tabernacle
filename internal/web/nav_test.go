@@ -29,9 +29,9 @@ func labelsIn(t *testing.T, block *regexp.Regexp, body string) []string {
 	return out
 }
 
-// The section row names the three ways to walk the collection, so it belongs on
-// every page that is a place in it — including the error page, because a mistyped
-// address should still offer a way back.
+// The section row names the three ways to walk the collection and the chord
+// reference, so it belongs on every page that is a place in it — including the
+// error page, because a mistyped address should still offer a way back.
 func TestTheSectionRowIsOnEveryPlaceInTheLibrary(t *testing.T) {
 	ts := newTestServer(t, basicSongs())
 	for _, target := range []string{
@@ -39,6 +39,7 @@ func TestTheSectionRowIsOnEveryPlaceInTheLibrary(t *testing.T) {
 		"/artists",
 		"/genres",
 		"/songs/traditional-amazing-grace",
+		"/chords",
 		"/nope",
 	} {
 		got := labelsIn(t, navBlock, ts.get(t, target).Body.String())
@@ -46,7 +47,7 @@ func TestTheSectionRowIsOnEveryPlaceInTheLibrary(t *testing.T) {
 			t.Errorf("%s has no section row", target)
 			continue
 		}
-		if want := "Canciones|Artistas|Géneros"; strings.Join(got, "|") != want {
+		if want := "Canciones|Artistas|Géneros|Acordes"; strings.Join(got, "|") != want {
 			t.Errorf("%s section row = %v, want %s", target, got, want)
 		}
 	}
@@ -165,7 +166,7 @@ func TestReviewIsNotOfferedInTheNavigation(t *testing.T) {
 func TestSectionLabelsAreDistinct(t *testing.T) {
 	ts := newTestServer(t, basicSongs())
 	sections := labelsIn(t, navBlock, ts.get(t, "/").Body.String())
-	if len(sections) < 3 {
+	if len(sections) < 4 {
 		t.Fatalf("sections = %v", sections)
 	}
 	for i, a := range sections {
@@ -214,8 +215,8 @@ func TestAddIsHiddenInReadOnlyMode(t *testing.T) {
 	if strings.Contains(body, `href="/songs/new"`) {
 		t.Error("read-only mode still offers Añadir")
 	}
-	if got := labelsIn(t, navBlock, body); len(got) != 3 {
-		t.Errorf("navigation = %v, want the three reading sections", got)
+	if got := labelsIn(t, navBlock, body); len(got) != 4 {
+		t.Errorf("navigation = %v, want the reading sections and the chord reference", got)
 	}
 	// Reading is untouched.
 	if !strings.Contains(body, "Amazing Grace") {

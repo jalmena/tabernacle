@@ -228,3 +228,134 @@
 {{end}}
 
 {{define "scripts"}}<script src="/static/{{.AssetVersion}}/app.js" defer></script>{{end}}
+
+{{/* The editable neck.
+
+     A form of radio buttons rather than a drawing: the browser already knows how
+     to move between them with the arrow keys, label them for a screen reader and
+     submit them without any script. An SVG with thirty-six clickable circles
+     would be worse at every one of those and useless with JavaScript off. */}}
+{{define "fretboard"}}
+{{with .Body}}
+<form class="board" id="fretboard" method="get" action="/chords">
+	{{if .Symbol}}<input type="hidden" name="c" value="{{.Symbol}}">{{end}}
+	{{if .All}}<input type="hidden" name="all" value="1">{{end}}
+	<input type="hidden" name="start" value="{{.Board.Start}}">
+
+	<div class="boardhead">
+		<h2>La posición</h2>
+		<p class="boardwindow">
+			{{if .Board.Down}}<a class="boardmove" href="{{.Board.Down}}" rel="nofollow"
+				title="Bajar un traste">−</a>{{else}}<span class="boardmove off">−</span>{{end}}
+			<span>Trastes {{.Board.Start}} a {{add .Board.Start 4}}</span>
+			{{if .Board.Up}}<a class="boardmove" href="{{.Board.Up}}" rel="nofollow"
+				title="Subir un traste">+</a>{{else}}<span class="boardmove off">+</span>{{end}}
+		</p>
+	</div>
+
+	<div class="boardgrid" role="group" aria-label="Posición en el mástil">
+		{{range .Board.Strings}}
+			{{/* One radio group per string, which is what a name does. Sharing a
+			     name across the whole neck would make it a single group and let
+			     only one string at a time be set. */}}
+			{{$s := .Index}}
+			<fieldset class="boardstring">
+				<legend>{{.Name}}</legend>
+				<label class="boardcell mute" title="No suena">
+					<input type="radio" name="s{{.Index}}" value="x" {{if .Muted}}checked{{end}}>
+					<span aria-hidden="true">×</span>
+					<span class="sr">{{.Name}} cuerda, no suena</span>
+				</label>
+				<label class="boardcell open" title="Al aire">
+					<input type="radio" name="s{{.Index}}" value="0" {{if .Open}}checked{{end}}>
+					<span aria-hidden="true">○</span>
+					<span class="sr">{{.Name}} cuerda, al aire</span>
+				</label>
+				{{range .Cells}}
+					<label class="boardcell" title="Traste {{.Fret}}">
+						<input type="radio" name="s{{$s}}" value="{{.Fret}}" {{if .On}}checked{{end}}>
+						<span class="sr">traste {{.Fret}}</span>
+					</label>
+				{{end}}
+			</fieldset>
+		{{end}}
+	</div>
+
+	<div class="boardfoot">
+		<button class="btn btn-primary" type="submit">Identificar</button>
+		<a class="btn btn-quiet" href="/chords{{if .Symbol}}?c={{.Symbol}}{{end}}">Vaciar</a>
+	</div>
+</form>
+{{end}}
+{{end}}
+
+{{/* Everything downstream of the shape and the chord: what was drawn, what was
+     asked for, and every way to hold it. */}}
+{{define "chordresult"}}
+{{with .Body}}
+<section class="labread">
+	<h2>Lo que has dibujado</h2>
+	{{if .Readings}}
+		<ul class="readings">
+			{{range .Readings}}
+				<li><a href="{{.URL}}"><span class="rname">{{.Name}}</span>
+					{{if .Note}}<span class="rnote">{{.Note}}</span>{{end}}</a></li>
+			{{end}}
+		</ul>
+	{{else if .Sounds}}
+		<p class="empty-inline">Suena {{range $i, $n := .Sounds}}{{if $i}}, {{end}}{{$n}}{{end}} —
+			no es un acorde que sepamos nombrar.</p>
+	{{else}}
+		<p class="empty-inline">Marca algunas cuerdas y se te dirá qué acorde forman.</p>
+	{{end}}
+</section>
+
+<section class="labpick">
+	<h2>Elegir un acorde</h2>
+	<form class="pickform" method="get" action="/chords">
+		<label class="sr" for="csym">Acorde</label>
+		<input id="csym" type="text" name="c" value="{{.Symbol}}" placeholder="Am7, C/E, F#m7b5…"
+			maxlength="32" autocomplete="off" spellcheck="false">
+		<button class="btn btn-primary" type="submit">Ver</button>
+	</form>
+	<p class="rootrow">{{range .Roots}}<a class="rootlink{{if .On}} on{{end}}"
+		href="/chords?c={{.Value}}">{{.Label}}</a>{{end}}</p>
+	<form class="pickform" method="get" action="/chords">
+		<label class="sr" for="cqual">Tipo de acorde</label>
+		<select id="cqual" name="c">
+			{{range .Qualities}}<option value="{{.Value}}" {{if .On}}selected{{end}}>{{.Label}}</option>{{end}}
+		</select>
+		<button class="btn" type="submit">Ver</button>
+	</form>
+</section>
+
+<section class="labshapes">
+	{{if .Problem}}
+		<p class="empty-inline">{{.Problem}}</p>
+	{{end}}
+	{{with .Group}}
+		<h2>{{.Name}} <span class="count">{{.Total}} {{plural .Total "posición" "posiciones"}}</span></h2>
+		{{range .Positions}}
+			<div class="labpos">
+				<h3>{{.Name}}{{if gt .Total (len .Shapes)}}
+					<span class="count">{{len .Shapes}} de {{.Total}}</span>{{end}}</h3>
+				<div class="shaperow">
+					{{range .Shapes}}
+						<a class="labshape{{if .On}} on{{end}}" href="{{.URL}}">
+							{{diagram .Shape ""}}
+							{{if .Note}}<p class="shapename">{{.Note}}</p>{{end}}
+						</a>
+					{{end}}
+				</div>
+			</div>
+		{{end}}
+		{{if $.Body.AllURL}}<p class="labmore"><a class="btn btn-quiet" href="{{$.Body.AllURL}}">Ver más posiciones</a></p>{{end}}
+	{{end}}
+	{{with .Inversions}}
+		<h3 class="invhead">Con otra nota en el bajo</h3>
+		<p class="rootrow">{{range .}}<a class="rootlink" href="{{.URL}}">{{.Name}}
+			<span class="count">{{.Total}}</span></a>{{end}}</p>
+	{{end}}
+</section>
+{{end}}
+{{end}}

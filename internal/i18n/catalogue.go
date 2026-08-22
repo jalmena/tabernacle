@@ -19,6 +19,7 @@ var catalogue = map[Lang]map[string]string{
 		"nav.songs":              "Canciones",
 		"nav.artists":            "Artistas",
 		"nav.genres":             "Géneros",
+		"nav.chords":             "Acordes",
 
 		// Signing in.
 		"login.title":     "Acceder",
@@ -177,6 +178,7 @@ var catalogue = map[Lang]map[string]string{
 		"nav.songs":              "Songs",
 		"nav.artists":            "Artists",
 		"nav.genres":             "Genres",
+		"nav.chords":             "Chords",
 
 		"login.title":     "Sign in",
 		"login.user":      "Username",

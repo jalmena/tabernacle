@@ -8,7 +8,7 @@ this repository and there will not be.
 | Package | Question it answers |
 | --- | --- |
 | `internal/harmony` | What kind of chord is this? |
-| `internal/voicing` | Which shapes play it? |
+| `internal/voicing` | Which shapes play it, and what is this shape? |
 | `internal/diagram` | What does a shape look like? |
 
 They are separate because those are genuinely different questions.
@@ -25,16 +25,18 @@ concern, so it lives separately.
 
 `internal/voicing/data/chords.json`, embedded in the binary.
 
-Shapes are curated rather than generated. Generating every fingering that
-satisfies a chord's notes produces mostly things no hand would attempt, and the
-point of a diagram is to show something playable.
+A song sheet is drawn from this dataset and never from the generator. A sheet
+shows one shape per chord and it should be the shape people actually play, which
+is a question about custom rather than about arithmetic — `x 3 2 0 1 0` is C
+because that is how people play C, not because it falls out of a rule. The chord
+page is the other way round and is described under
+[Generating shapes](#generating-shapes).
 
 There are two kinds of entry.
 
 **Curated** shapes are written out in full, with absolute fret numbers. This is
 how open-position fingerings get in, because those are idiomatic rather than
-derived — `x 3 2 0 1 0` is C because that is how people play C, not because it
-falls out of a rule.
+derived.
 
 **Movable** shapes are templates with frets relative to their own lowest line,
 which slide up the neck. A handful of them covers all twelve roots. They are
@@ -187,6 +189,123 @@ A diminished seventh sounds the same set of notes every three frets, and an
 augmented triad every four. Templates step by the family's own period rather than
 by twelve, so `Cdim7` is offered at the first fret and not only at the tenth.
 
+## Generating shapes
+
+The chord page answers a different question from a song sheet. A sheet asks "how
+do I play this chord", once; the page asks "show me every way", and the dataset
+has one shape per chord and no template at all for seven of the twenty families.
+So the page generates, on demand, per request, with nothing precomputed.
+
+### What counts as playing the chord
+
+One rule, in `Requirement.Satisfies`, used by the generator, the identifier and
+the dataset's own validator, so the three cannot drift apart.
+
+- No note sounds that the chord does not contain.
+- Every note of the chord sounds, **except a perfect fifth when the chord has
+  four notes or more**. That one sentence gives the right answer for all twenty
+  families without a list of exceptions: the third and the seventh never drop, a
+  seventh chord may lose its fifth, and an *altered* fifth never does, because a
+  diminished fifth is six semitones and an augmented one is eight, so the clause
+  never reaches them. The four-note clause is also what stops `{C, E}` being
+  called C.
+- The root sounds. A rootless voicing is real practice, but it cannot honestly be
+  captioned with the chord's name on a page for learning chords.
+- A ninth sounds *above* the root. A D below the E is a sus2 colour, not an added
+  ninth.
+- A slash chord's named bass is the lowest note.
+
+### The search
+
+Per window of four frets from the first to the twelfth, each string may be
+muted, open if its note belongs, or fretted at one of the four frets whose note
+belongs. That is a few thousand combinations per chord and a few milliseconds.
+
+Four frets and not the five a diagram draws: a shape spans at most four, so
+walking windows of four is already exhaustive and a wider one would only
+rediscover the same shapes.
+
+### Fingering
+
+Deterministic and without the thumb. Fingers go on in order of fret and then of
+string, which is what a player does — it is why the ordinary D and Dm come out
+with the fingering they are taught with.
+
+A barre is laid only when four fingers are not enough, which is the only reason
+anyone lays one. Asking the question that way needs no special cases: E major and
+A major keep their three separate fingers, F and Bm get the full barre, and F/C
+gets the small one across the top two strings. The barre spans from the first
+sounding string at the lowest fret to the last, and is refused if an open string
+falls inside it, because a finger lying across cannot let one ring.
+
+Where a generated fret vector matches a dataset shape, the dataset's shape is
+used instead, with its fingering and its CAGED name.
+
+`TestGenerationCoversTheCuratedDataset` requires the generator to rediscover all
+fifty hand-typed shapes on its own, and asserts the list of exceptions is
+**exact** so it cannot grow in silence. It is currently empty.
+
+### The order shapes are shown in
+
+Not the order a song sheet uses. A reference lists: the dataset's shape first,
+then the fullest, then the easiest.
+
+Fullness comes before cost deliberately. Cost measures how hard a grip is to
+hold, and by that measure the thinnest shape always wins — for `Csus4` it puts
+two notes on two strings ahead of the voicing everyone is taught, and for `F` it
+sinks the barre below half a dozen grips nobody has played. A reference is
+answering "how do I play this chord", and the answer is the whole chord.
+
+Shapes are then grouped by the window a diagram draws, so every picture under one
+heading shows the same stretch of neck, and each place shows its easiest three
+with the real total beside it.
+
+Inversions are never mixed in with the chord. A diagram captioned `C` whose
+lowest note is E is a lie by omission, and the chord already has a name for that,
+so `C/E` is offered as its own page.
+
+## Identifying a shape
+
+`voicing.Identify` names what a reader has drawn: twelve roots against twenty
+families, accepted by the same `Satisfies`.
+
+**The answer is a list, not a name.** The ambiguity is real, and on a page for
+learning chords it is the interesting part rather than noise to hide:
+
+| Notes | Readings |
+| --- | --- |
+| C E G A | **C6** if C is lowest, **Am7** if A is |
+| C E♭ G♭ A | Cdim7, E♭dim7, G♭dim7, Adim7 — all four exact |
+| C F G | Csus4 / Fsus2 |
+| C E A | Am/C — three notes, and C is not its root |
+
+Ties are broken by fewest notes omitted, then root position before inversion,
+then an explicit order of preference between families. Explicit, rather than the
+order the `Quality` constants happen to be declared in: that order belongs to
+another package and could be rearranged by somebody with no idea it was deciding
+what a fingering is called. A test fails if a family is missing from it, so
+adding a twenty-first is a decision rather than an accident.
+
+If nothing fits, the page says which notes are sounding and that they are not a
+chord we can name. It never invents one.
+
+## The editable neck
+
+The neck on the chord page is a form of radio buttons, one group per string, and
+not a drawing. The browser already knows how to move between radios with the
+arrow keys, label them for a screen reader and submit them without any script;
+thirty-six clickable SVG circles would be worse at every one of those and useless
+with JavaScript off.
+
+All of the state is in the query — `?c=`, `?grip=`, `?start=`, `?all=` — so every
+view can be linked to and the back button works. The script is an enhancement: it
+fetches the same region the page renders and swaps it in, and never replaces the
+neck, which is what keeps the keyboard focus where the reader left it. A test
+asserts the fragment and the page produce identical markup.
+
+The result diagrams stay SVG. The editor is a control and the variants are
+pictures; they answer different questions.
+
 ## Tunings
 
 Standard tuning is the dataset's tuning. A song in another tuning gets the
@@ -212,6 +331,8 @@ than a rewrite.
 - Chord shapes in the `.song` format. A song file describes music, not
   fingerings, and per-file chord definitions would mean every reader needing this
   code to render a sheet.
-- Generated fingerings, for the reason at the top.
+- Generated fingerings on a song sheet. Generation belongs to the chord page,
+  where a reader is asking for choices; a sheet wants one shape and it should be
+  the one a person chose.
 - Left-handed diagrams, alternative instruments, and audio. All reasonable; none
   needed yet.

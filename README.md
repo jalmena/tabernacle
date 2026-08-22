@@ -17,6 +17,7 @@ telemetry. Reading needs no account; changing anything does.
 | **Search** | full text over titles, artists and lyrics; accent- and case-insensitive |
 | **Transpose** | chords and tablature together, clamped at either end of the neck |
 | **Chord diagrams** | curated and movable shapes, with alternative voicings |
+| **Chord reference** | draw a shape and be told what it is, or see every way to play a chord |
 | **Simplify** | rewrites a sheet's unplayable chords into ones you can hold |
 | **Note names** | `C D E` or `Do Re Mi` |
 | **Print** | A4, light paper themes, no interface on the page |

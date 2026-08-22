@@ -26,6 +26,10 @@ type VoicingView struct {
 	Index      int    // 1-based, for "2 de 4"
 	Total      int
 	ID         string
+	// Grip is the shape as a chord chart writes it, "x-3-2-0-1-0". It is how a
+	// shape travels in a URL, so that one clicked in a list can be put back on
+	// the editable neck exactly as it was.
+	Grip string
 }
 
 // BarreView is a barre, flattened for a template.

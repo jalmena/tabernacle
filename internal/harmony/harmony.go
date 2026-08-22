@@ -13,6 +13,7 @@
 package harmony
 
 import (
+	"slices"
 	"strings"
 
 	"github.com/jalmena/tabernacle/internal/chord"
@@ -105,12 +106,17 @@ func (q Quality) Parent() (Quality, bool) {
 // Known reports whether the quality is one this package understands.
 func (q Quality) Known() bool { _, ok := table[q]; return ok }
 
-// All returns every known quality, for tests and for the dataset validator.
+// All returns every known quality, in a fixed order.
+//
+// Sorted, because a map's order is not one: a caller that lists qualities on a
+// page or breaks a tie between two readings of the same fingering would
+// otherwise give a different answer on every run.
 func All() []Quality {
 	out := make([]Quality, 0, len(table))
 	for q := range table {
 		out = append(out, q)
 	}
+	slices.Sort(out)
 	return out
 }
 

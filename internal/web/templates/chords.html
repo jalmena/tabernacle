@@ -1,0 +1,15 @@
+{{template "head" .}}
+{{template "bodyopen" .}}
+{{template "top" .}}
+<main class="wrap wrap-wide">
+	{{template "nav" .}}
+	<h1>Acordes</h1>
+	<p class="lede">Dibuja una posición y se te dirá qué acorde es, o pide un acorde y se te
+		mostrarán todas las formas de tocarlo.</p>
+
+	{{template "fretboard" .}}
+	<div id="chordresult">{{template "chordresult" .}}</div>
+</main>
+{{template "scripts" .}}
+</body>
+</html>

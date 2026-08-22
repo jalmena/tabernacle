@@ -986,3 +986,178 @@ input[type="file"].filepick:focus-visible { outline: 2px solid var(--accent); ou
 /* A ticked song has to look ticked from across the list, not only at its box. */
 .bookrow:has(input:checked) { background: var(--chord-bg); }
 .bookrow:has(input:checked) .booktitle { color: var(--chord); }
+
+/* The chord page.
+ *
+ * The neck is a grid of radio buttons with their own appearance taken away, so
+ * that a checked one draws the dot. Doing it in the stylesheet rather than with
+ * a script is what makes the page work with JavaScript off, and it is the only
+ * way that is legal under a policy that forbids inline styles. */
+.sr {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+	border: 0;
+}
+.lede { margin: -0.5rem 0 1.5rem; color: var(--ink-soft); max-width: 42rem; }
+.empty-inline { color: var(--ink-soft); margin: 0.25rem 0 0; }
+
+.board {
+	background: var(--paper-raised);
+	border: 1px solid var(--rule);
+	border-radius: var(--radius);
+	padding: 1rem;
+	margin: 0 0 1.5rem;
+	max-width: 34rem;
+}
+.boardhead { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
+.boardhead h2 { margin: 0; font-size: 1rem; }
+.boardwindow {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	margin: 0;
+	font-size: 0.875rem;
+	color: var(--ink-soft);
+	font-variant-numeric: tabular-nums;
+}
+.boardmove {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 2rem;
+	height: 2rem;
+	border: 1px solid var(--rule);
+	border-radius: var(--radius);
+	text-decoration: none;
+	color: var(--ink);
+	font-size: 1.125rem;
+	line-height: 1;
+}
+.boardmove:hover { border-color: var(--ink-faint); }
+.boardmove.off { color: var(--ink-faint); opacity: 0.4; }
+
+.boardgrid { display: flex; flex-direction: column; gap: 0.25rem; margin: 1rem 0; }
+.boardstring {
+	display: grid;
+	grid-template-columns: 2rem repeat(7, 1fr);
+	align-items: center;
+	gap: 0.25rem;
+	border: 0;
+	padding: 0;
+	margin: 0;
+	min-inline-size: 0;
+}
+.boardstring legend {
+	float: left;
+	width: 2rem;
+	padding: 0;
+	font-size: 0.8125rem;
+	color: var(--ink-faint);
+}
+.boardcell {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	position: relative;
+	height: 2.25rem;
+	cursor: pointer;
+	/* The string itself, drawn behind the dot. */
+	background: linear-gradient(var(--rule), var(--rule)) center / 100% 1px no-repeat;
+	color: var(--ink-faint);
+}
+/* The nut, and then the frets. */
+.boardcell.open { box-shadow: inset -2px 0 0 var(--ink-faint); }
+.boardcell:not(.mute):not(.open) { box-shadow: inset -1px 0 0 var(--rule); }
+.boardcell.mute { background: none; }
+.boardcell input {
+	appearance: none;
+	position: absolute;
+	inset: 0;
+	margin: 0;
+	border-radius: var(--radius);
+	cursor: pointer;
+}
+.boardcell input:hover { background: var(--chord-bg); }
+.boardcell input:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.boardcell:not(.mute):not(.open) input:checked {
+	background: radial-gradient(circle at center, var(--accent) 0 0.55rem, transparent 0.55rem);
+}
+.boardcell.mute input:checked ~ span,
+.boardcell.open input:checked ~ span { color: var(--accent); font-weight: 700; }
+.boardcell span[aria-hidden] { position: relative; font-size: 1rem; line-height: 1; }
+
+.boardfoot { display: flex; gap: 0.5rem; }
+
+.labread, .labpick, .labshapes { margin: 0 0 2rem; }
+.labread h2, .labpick h2, .labshapes h2 { font-size: 1rem; margin: 0 0 0.6rem; }
+.labshapes h2 .count { display: inline; margin-left: 0.4rem; font-weight: 400; }
+
+.readings { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.readings a {
+	display: flex;
+	flex-direction: column;
+	gap: 0.1rem;
+	padding: 0.45rem 0.7rem;
+	border: 1px solid var(--rule);
+	border-radius: var(--radius);
+	background: var(--paper-raised);
+	text-decoration: none;
+}
+.readings a:hover { border-color: var(--ink-faint); }
+.readings .rname { font-weight: 600; color: var(--chord); }
+.readings .rnote { font-size: 0.75rem; color: var(--ink-soft); }
+/* The first reading is the likeliest one, and says so. */
+.readings li:first-child a { border-color: var(--accent); }
+
+.pickform { display: flex; gap: 0.4rem; margin: 0 0 0.6rem; flex-wrap: wrap; }
+.pickform input[type="text"], .pickform select {
+	flex: 1 1 12rem;
+	min-height: 2.75rem;
+	padding: 0 0.6rem;
+	font: inherit;
+	color: var(--ink);
+	background: var(--paper-raised);
+	border: 1px solid var(--rule);
+	border-radius: var(--radius);
+}
+.rootrow { display: flex; flex-wrap: wrap; gap: 0.3rem; margin: 0 0 0.8rem; }
+.rootlink {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 2.5rem;
+	min-height: 2.25rem;
+	padding: 0 0.4rem;
+	border: 1px solid var(--rule);
+	border-radius: var(--radius);
+	text-decoration: none;
+	color: var(--ink);
+	font-size: 0.875rem;
+}
+.rootlink:hover { border-color: var(--ink-faint); }
+.rootlink.on { background: var(--chord-bg); border-color: var(--accent); color: var(--chord); }
+
+.labpos { margin: 0 0 1.25rem; }
+.labpos h3 { font-size: 0.875rem; font-weight: 600; color: var(--ink-soft); margin: 0 0 0.5rem; }
+.labpos h3 .count { display: inline; margin-left: 0.4rem; font-weight: 400; }
+.shaperow { display: flex; flex-wrap: wrap; gap: 1rem; }
+.labshape {
+	display: block;
+	text-align: center;
+	text-decoration: none;
+	color: inherit;
+	padding: 0.5rem;
+	border: 1px solid transparent;
+	border-radius: var(--radius);
+}
+.labshape:hover { border-color: var(--rule); background: var(--paper-raised); }
+.labmore { margin: 0.5rem 0 0; }
+.invhead { font-size: 0.875rem; font-weight: 600; color: var(--ink-soft); margin: 1.5rem 0 0.5rem; }
+.rootlink .count { display: inline; margin: 0 0 0 0.3rem; font-size: 0.75rem; }
+.labshape.on { border-color: var(--accent); background: var(--chord-bg); }

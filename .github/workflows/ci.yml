@@ -47,6 +47,9 @@ jobs:
         run: |
           go test ./internal/song   -run FuzzParse            -fuzz FuzzParse            -fuzztime 20s
           go test ./internal/songfs -run FuzzSanitizeSegment  -fuzz FuzzSanitizeSegment  -fuzztime 20s
+          go test ./internal/voicing -run FuzzParseGrip       -fuzz FuzzParseGrip        -fuzztime 20s
+          go test ./internal/voicing -run FuzzIdentify        -fuzz FuzzIdentify         -fuzztime 20s
+          go test ./internal/voicing -run FuzzGenerate        -fuzz FuzzGenerate         -fuzztime 20s
 
   image:
     runs-on: ubuntu-latest

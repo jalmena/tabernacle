@@ -20,11 +20,16 @@ var flatSpelling = [12]Note{
 	{'G', -1}, {'G', 0}, {'A', -1}, {'A', 0}, {'B', -1}, {'B', 0},
 }
 
-func spell(pitchClass int, sp Spelling) Note {
+// Spell names a pitch class with the given accidentals.
+//
+// It is the only way to turn a number back into a note, which matters wherever a
+// name is derived from sound rather than copied from what someone wrote: a
+// chord identified from a fingering has no written spelling to inherit.
+func Spell(pitchClass int, sp Spelling) Note {
 	if sp == Flats {
-		return flatSpelling[pitchClass]
+		return flatSpelling[wrap(pitchClass)]
 	}
-	return sharpSpelling[pitchClass]
+	return sharpSpelling[wrap(pitchClass)]
 }
 
 func wrap(pitchClass int) int {
@@ -40,7 +45,7 @@ func (n Note) Transpose(semitones int, sp Spelling) Note {
 	if semitones%12 == 0 {
 		return n
 	}
-	return spell(wrap(n.PitchClass()+semitones), sp)
+	return Spell(wrap(n.PitchClass()+semitones), sp)
 }
 
 // Transpose moves the chord by the given number of semitones, preserving its
@@ -94,7 +99,9 @@ var minorKeySpelling = [12]Spelling{
 	Sharps, // Bm
 }
 
-func spellingOf(pitchClass int, minor bool) Spelling {
+// SpellingFor picks the accidentals that a chord rooted on this pitch class
+// conventionally takes: Eb rather than D#, F# rather than Gb.
+func SpellingFor(pitchClass int, minor bool) Spelling {
 	if minor {
 		return minorKeySpelling[pitchClass]
 	}
@@ -112,7 +119,7 @@ func SpellingForKey(key Chord) Spelling {
 	case key.Root.Accidental > 0:
 		return Sharps
 	}
-	return spellingOf(key.Root.PitchClass(), key.IsMinor())
+	return SpellingFor(key.Root.PitchClass(), key.IsMinor())
 }
 
 // TransposeKey moves a key symbol and returns the new key together with the
@@ -125,9 +132,9 @@ func TransposeKey(key Chord, semitones int) (Chord, Spelling) {
 		return key, SpellingForKey(key)
 	}
 	pc := wrap(key.Root.PitchClass() + semitones)
-	sp := spellingOf(pc, key.IsMinor())
+	sp := SpellingFor(pc, key.IsMinor())
 	out := key
-	out.Root = spell(pc, sp)
+	out.Root = Spell(pc, sp)
 	if key.HasBass {
 		out.Bass = key.Bass.Transpose(semitones, sp)
 	}

@@ -95,6 +95,7 @@ func funcs() template.FuncMap {
 			}
 			return strconv.Itoa(n)
 		},
+		"add": func(a, b int) int { return a + b },
 		"plural": func(n int, one, many string) string {
 			if n == 1 {
 				return one
@@ -151,6 +152,8 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /songs/{slug}/delete", s.handleDeleteForm)
 	mux.HandleFunc("GET /artists", s.handleArtists)
 	mux.HandleFunc("GET /genres", s.handleGenres)
+	mux.HandleFunc("GET /chords", s.handleChords)
+	mux.HandleFunc("GET /chords/fragment", s.handleChordFragment)
 	mux.HandleFunc("GET /import", s.handleImportForm)
 	mux.HandleFunc("GET /export", s.handleExport)
 
@@ -241,7 +244,7 @@ type navState struct {
 	ReadOnly bool
 	Flash    string
 	Section  string    // which of the sections is current
-	Sections []navLink // Canciones, Artistas, Géneros
+	Sections []navLink // Canciones, Artistas, Géneros, Acordes
 
 	// Add is the primary action and lives in the header rather than among the
 	// sections, because it is something you do, not somewhere you go. Nil when
@@ -305,6 +308,8 @@ func (s *Server) page(r *http.Request, title string, body any) page {
 		section = "artists"
 	case path == "/genres":
 		section = "genres"
+	case strings.HasPrefix(path, "/chords"):
+		section = "chords"
 	case strings.HasPrefix(path, "/settings"), strings.HasPrefix(path, "/songbook"):
 		section = "settings"
 	}
@@ -312,9 +317,10 @@ func (s *Server) page(r *http.Request, title string, body any) page {
 	v := viewerOf(r)
 	t := i18n.For(i18n.Lang(v.User.Lang))
 
-	// Three sections and nothing else: these are the three ways to walk the
-	// collection. Anything more and two labels start to look like each other,
-	// which is how a reader ends up clicking the wrong one.
+	// Three ways to walk the collection, and then the chord reference, which is
+	// last because it is not one of them: it is the only section that is not
+	// about the songs you have. Anything more and two labels start to look like
+	// each other, which is how a reader ends up clicking the wrong one.
 	nav := navState{
 		Query:   qs.Get("q"),
 		Section: section,
@@ -322,6 +328,7 @@ func (s *Server) page(r *http.Request, title string, body any) page {
 			{Label: t.T("nav.songs"), URL: "/", On: section == "songs"},
 			{Label: t.T("nav.artists"), URL: "/artists", On: section == "artists"},
 			{Label: t.T("nav.genres"), URL: "/genres", On: section == "genres"},
+			{Label: t.T("nav.chords"), URL: "/chords", On: section == "chords"},
 		},
 	}
 	if !s.cfg.ReadOnly && v.MayWrite() {
