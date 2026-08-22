@@ -508,20 +508,6 @@ func TestSyncPicksUpAFileAddedWhileStopped(t *testing.T) {
 	}
 }
 
-func TestNotationSetting(t *testing.T) {
-	ctx := context.Background()
-	h := newHarness(t)
-	if v, err := h.lib.Notation(ctx); err != nil || v != "" {
-		t.Errorf("Notation = %q %v, want empty so the configured default applies", v, err)
-	}
-	if err := h.lib.SetNotation(ctx, "solfege"); err != nil {
-		t.Fatal(err)
-	}
-	if v, _ := h.lib.Notation(ctx); v != "solfege" {
-		t.Errorf("Notation = %q", v)
-	}
-}
-
 func TestPeriodicSyncStopsWithTheContext(t *testing.T) {
 	h := newHarness(t)
 	ctx, cancel := context.WithCancel(context.Background())

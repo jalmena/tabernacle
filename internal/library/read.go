@@ -12,9 +12,6 @@ import (
 	"github.com/jalmena/tabernacle/internal/song"
 )
 
-// SettingNotation is the key under which the default note names are stored.
-const SettingNotation = "notation"
-
 // SongView is everything needed to show one song.
 //
 // Song comes from the file on disk, never from the index. The index knows how to
@@ -152,17 +149,6 @@ func (l *Library) Artists(ctx context.Context) ([]index.ArtistCount, error) {
 
 // Stats summarises the collection.
 func (l *Library) Stats(ctx context.Context) (index.Stats, error) { return l.idx.Stats(ctx) }
-
-// Notation returns the stored default note names, or "" when none is set and
-// the configured default should apply.
-func (l *Library) Notation(ctx context.Context) (string, error) {
-	return l.idx.Setting(ctx, SettingNotation)
-}
-
-// SetNotation stores the default note names.
-func (l *Library) SetNotation(ctx context.Context, value string) error {
-	return l.idx.SetSetting(ctx, SettingNotation, value)
-}
 
 // StartPeriodicSync rescans on an interval until the context is cancelled.
 //

@@ -4,85 +4,107 @@
 <main class="wrap">
 	{{with .Body}}
 		{{template "settingsnav" .}}
+
 		<h1>{{$.T "book.title"}}</h1>
-		<p class="quiet">
-			{{$.T "book.explain"}}
-		</p>
+		<p class="quiet">{{$.T "book.explain"}}</p>
 
-		<form class="searchagain" role="search" action="/songbook" method="get">
-			<input type="search" name="q" value="{{.Raw}}"
-			       placeholder="{{$.T "book.filter"}}"
-			       aria-label="{{$.T "book.filter.label"}}" autocomplete="off">
-			<button class="btn btn-quiet" type="submit">{{$.T "book.filter.do"}}</button>
-			{{if .Raw}}
-				<a class="btn btn-quiet clearfilter" href="/songbook"
-				   aria-label="{{$.T "book.filter.clear"}}" title="{{$.T "book.filter.clear"}}">&times;</a>
-			{{end}}
-		</form>
+		{{/* One form for the whole thing. What to print is on the left and how to
+		     print it on the right, because those are the two questions and they
+		     are not the same question. On a phone the second follows the first. */}}
+		<form action="/songbook/print" method="get" id="songbookform" class="booklayout">
 
-		<form action="/songbook/print" method="get" id="songbookform">
-			<div class="row bookopts">
-				<span class="quiet">{{$.T "book.paper"}}</span>
-				{{range .Papers}}
-					<label class="choice">
-						<input type="radio" name="theme" value="{{.ID}}" {{if .On}}checked{{end}}>
-						{{.Label}}
-					</label>
+			<section class="bookpick">
+				<h2>{{$.T "book.songs"}}</h2>
+
+				<div class="searchagain">
+					<div class="searchbox">
+						{{if .Raw}}
+							<a class="clearfilter" href="/songbook"
+							   aria-label="{{$.T "book.filter.clear"}}"
+							   title="{{$.T "book.filter.clear"}}">&times;</a>
+						{{end}}
+						<input type="search" name="q" form="filterform" value="{{.Raw}}"
+						       placeholder="{{$.T "book.filter"}}"
+						       aria-label="{{$.T "book.filter.label"}}" autocomplete="off"
+						       {{if .Raw}}class="hasclear"{{end}}>
+					</div>
+				</div>
+
+				{{if .Rows}}
+					<div class="row bookcount">
+						<span class="quiet">
+							{{if eq .Total 1}}{{$.T "book.count.one"}}{{else}}{{$.T "book.count" .Total}}{{end}}
+						</span>
+						<span class="sep"></span>
+						<button class="btn btn-quiet" type="button" data-pick="all">{{$.T "book.all"}}</button>
+						<button class="btn btn-quiet" type="button" data-pick="none">{{$.T "book.none"}}</button>
+					</div>
+					<ul class="booklist">
+						{{range .Rows}}
+							<li>
+								<label class="bookrow">
+									<input type="checkbox" name="s" value="{{.Slug}}">
+									<span class="bookmeta">
+										<span class="booktitle">{{.Title}}</span>
+										<span class="quiet">
+											{{if .Artist}}{{.Artist}}{{end}}{{if and .Artist .Key}} · {{end}}{{if .Key}}{{.Key}}{{end}}
+										</span>
+									</span>
+								</label>
+							</li>
+						{{end}}
+					</ul>
+				{{else}}
+					<p class="quiet">{{$.T "book.empty"}}</p>
 				{{end}}
-			</div>
-			<div class="row bookopts">
-				<span class="quiet">{{$.T "settings.notation"}}</span>
-				<label class="choice">
-					<input type="radio" name="n" value="english" {{if not .Solfege}}checked{{end}}>
-					A B C
-				</label>
-				<label class="choice">
-					<input type="radio" name="n" value="solfege" {{if .Solfege}}checked{{end}}>
-					Do Re Mi
-				</label>
-				<span class="sep"></span>
-				<label class="choice">
+			</section>
+
+			<aside class="bookopts card">
+				<h2>{{$.T "book.look"}}</h2>
+
+				<fieldset class="choices">
+					<legend>{{$.T "book.paper"}}</legend>
+					<div class="segmented">
+						{{range .Papers}}
+							<label><input type="radio" name="theme" value="{{.ID}}"
+							              {{if .On}}checked{{end}}><span>{{.Label}}</span></label>
+						{{end}}
+					</div>
+				</fieldset>
+
+				<fieldset class="choices">
+					<legend>{{$.T "settings.notation"}}</legend>
+					<div class="segmented">
+						<label><input type="radio" name="n" value="english"
+						              {{if not .Solfege}}checked{{end}}><span>A B C</span></label>
+						<label><input type="radio" name="n" value="solfege"
+						              {{if .Solfege}}checked{{end}}><span>Do Re Mi</span></label>
+					</div>
+				</fieldset>
+
+				<label class="choice withindex">
 					<input type="checkbox" name="index" value="1" checked>
 					{{$.T "book.index"}}
 				</label>
-			</div>
 
-			<div class="row bookopts" id="bookpick">
-				<button class="btn" type="submit">{{$.T "book.print"}}</button>
-				<button class="btn btn-quiet" type="button" data-pick="all">{{$.T "book.all"}}</button>
-				<button class="btn btn-quiet" type="button" data-pick="none">{{$.T "book.none"}}</button>
-				<span class="quiet">{{if eq .Total 1}}{{$.T "book.count.one"}}{{else}}{{$.T "book.count" .Total}}{{end}}</span>
-			</div>
+				<p class="quiet">{{$.T "book.keys"}}</p>
 
-			{{if .Rows}}
-				<ul class="booklist">
-					{{range .Rows}}
-						<li>
-							<label class="bookrow">
-								<input type="checkbox" name="s" value="{{.Slug}}">
-								<span class="booktitle">{{.Title}}</span>
-								{{if .Artist}}<span class="quiet">{{.Artist}}</span>{{end}}
-								{{if .Key}}<span class="quiet">{{.Key}}</span>{{end}}
-							</label>
-						</li>
-					{{end}}
-				</ul>
-			{{else}}
-				<p class="quiet">{{$.T "book.empty"}}</p>
-			{{end}}
+				<button class="btn btn-primary bookgo" type="submit">{{$.T "book.print"}}</button>
+
+				{{if .Filtered}}
+					<p class="quiet wholesearch">
+						<button class="linkish" type="submit" name="all" value="1">
+							{{$.T "book.wholesearch"}}
+						</button>
+						<span>{{$.T "book.wholesearch.note"}}</span>
+					</p>
+				{{end}}
+			</aside>
 		</form>
 
-		{{if .Filtered}}
-			<form action="/songbook/print" method="get" class="row bookopts">
-				<input type="hidden" name="q" value="{{.Raw}}">
-				<input type="hidden" name="all" value="1">
-				<input type="hidden" name="index" value="1">
-				<button class="btn btn-quiet" type="submit">
-					{{$.T "book.wholesearch"}}
-				</button>
-				<span class="quiet">{{$.T "book.wholesearch.note"}}</span>
-			</form>
-		{{end}}
+		{{/* The filter is its own form so that pressing Enter in the box filters
+		     the list instead of printing whatever happens to be ticked. */}}
+		<form id="filterform" action="/songbook" method="get" hidden></form>
 	{{end}}
 </main>
 {{template "scripts" .}}

@@ -187,7 +187,6 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /settings/look", s.authedPost(s.handleLook))
 	mux.HandleFunc("POST /settings/sessions/revoke", s.authedPost(s.handleRevokeSessions))
 	mux.HandleFunc("POST /settings/claim", s.openPost(s.handleClaim))
-	mux.HandleFunc("POST /settings/notation", s.adminPost(s.handleSetNotation))
 
 	mux.HandleFunc("GET /settings/users", s.handleUsers)
 	mux.HandleFunc("POST /settings/users", s.adminPost(s.handleCreateUser))
@@ -461,9 +460,15 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 // a notation and a printed page is reproducible, then the reader's stored
 // preference, then whatever the deployment configured.
 func (s *Server) notationFor(r *http.Request, stored string) chord.Notation {
+	// Narrowest first: what this page asks for, then what was saved for this
+	// song, then what the reader chose for themselves, then what the instance
+	// says for somebody who has chosen nothing.
 	pick := r.URL.Query().Get("n")
 	if pick == "" {
 		pick = stored
+	}
+	if pick == "" {
+		pick = viewerOf(r).User.Notation
 	}
 	if pick == "" {
 		pick = s.cfg.Notation

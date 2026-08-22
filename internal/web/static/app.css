@@ -6,6 +6,7 @@
  */
 
 :root {
+
 	--ink: #1a1a1a;
 	--ink-soft: #5c5c5c;
 	--ink-faint: #8a8a8a;
@@ -655,6 +656,10 @@ body.theme-dark {
 	--warn-bg: #2a2113; --warn-ink: #fcd34d; --warn-rule: #6b5320;
 }
 
+/* One colour of interaction. Without this the browser draws its own blue on
+ * every radio and checkbox, which is the only thing on the page nobody chose. */
+html { accent-color: var(--accent); }
+
 .top .account { flex: 0 0 auto; white-space: nowrap; }
 .signout { flex: 0 0 auto; display: flex; }
 
@@ -757,27 +762,8 @@ body.theme-dark {
 
 /* ---------- the songbook ---------- */
 
-.searchagain { display: flex; gap: 0.4rem; margin: 0 0 1rem; max-width: 32rem; }
-.searchagain input[type="search"] {
-	flex: 1; min-width: 0;
-	padding: 0.4rem 0.55rem;
-	font: inherit;
-	color: var(--ink);
-	background: var(--paper-raised);
-	border: 1px solid var(--rule);
-	border-radius: var(--radius);
-}
-.bookopts { margin: 0 0 0.75rem; }
-.booklist { list-style: none; margin: 0.5rem 0 1.5rem; padding: 0; }
-.bookrow {
-	display: flex;
-	align-items: baseline;
-	gap: 0.5rem;
-	padding: 0.35rem 0.2rem;
-	border-bottom: 1px solid var(--rule);
-	cursor: pointer;
-}
-.bookrow:hover { background: var(--paper-raised); }
+.searchagain { margin: 0 0 0.5rem; }
+.booklist { list-style: none; margin: 0.25rem 0 1rem; padding: 0; }
 .booktitle { font-weight: 600; }
 
 /* One song per page, so a book can be handed out a sheet at a time. The first
@@ -852,10 +838,123 @@ input[type="file"].filepick:focus-visible { outline: 2px solid var(--accent); ou
 .userrole { min-width: 8rem; }
 .userseen { flex: 1; }
 .loginalt { margin: 0.5rem 0 0; font-size: 0.8125rem; }
-.clearfilter { line-height: 1; }
 
 /* The second group of settings starts a new block rather than continuing the
  * first, because they answer a different question. */
 .secondgroup { margin-top: 2.5rem; }
 .choices { border: 0; margin: 0.5rem 0 0; padding: 0; display: grid; gap: 0.25rem; }
 .choices legend { padding: 0; font-size: 0.8125rem; color: var(--ink-soft); }
+
+/* ---------- segmented controls ---------- */
+
+/* Two or four exclusive options read better as one control than as a row of
+ * dots. The radio itself stays, hidden but focusable, so the keyboard and the
+ * screen reader still see a radio group. */
+/* Pills with a gap rather than one joined bar: a group of four wraps on a narrow
+ * column, and a joined bar that wraps loses the ends it was drawing. */
+.segmented { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.segmented label { display: inline-flex; }
+.segmented input {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	opacity: 0;
+	pointer-events: none;
+}
+.segmented span {
+	display: inline-block;
+	padding: 0.35rem 0.7rem;
+	font-size: 0.9375rem;
+	color: var(--ink-soft);
+	background: var(--paper);
+	border: 1px solid var(--rule);
+	border-radius: var(--radius);
+	cursor: pointer;
+	user-select: none;
+}
+.segmented span:hover { color: var(--ink); }
+.segmented input:checked + span {
+	color: var(--chord);
+	background: var(--chord-bg);
+	border-color: var(--accent);
+}
+.segmented input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+/* ---------- the songbook chooser ---------- */
+
+.booklayout { display: grid; gap: 1.5rem; align-items: start; }
+@media (min-width: 52rem) {
+	/* What to print, and how. Two questions, two columns. */
+	.booklayout { grid-template-columns: minmax(0, 1fr) 17rem; }
+	.bookopts { position: sticky; top: 4rem; }
+}
+
+.card {
+	padding: 1rem;
+	background: var(--paper-raised);
+	border: 1px solid var(--rule);
+	border-radius: 10px;
+}
+.card h2 { margin-top: 0; }
+.bookopts .choices { margin-bottom: 1rem; }
+.bookopts .withindex { display: flex; margin: 0 0 1rem; }
+.bookgo { width: 100%; justify-content: center; text-align: center; }
+.btn-primary {
+	color: var(--paper);
+	background: var(--accent);
+	border-color: var(--accent);
+	font-weight: 600;
+}
+.btn-primary:hover { background: var(--chord); border-color: var(--chord); }
+.wholesearch { margin: 0.75rem 0 0; font-size: 0.8125rem; }
+.linkish {
+	padding: 0;
+	font: inherit;
+	color: var(--chord);
+	background: none;
+	border: 0;
+	text-decoration: underline;
+	cursor: pointer;
+}
+
+/* The filter box, with the way to clear it inside it. */
+.searchbox { position: relative; display: flex; }
+.searchbox input[type="search"] {
+	flex: 1;
+	min-width: 0;
+	padding: 0.45rem 0.6rem;
+	font: inherit;
+	color: var(--ink);
+	background: var(--paper-raised);
+	border: 1px solid var(--rule);
+	border-radius: var(--radius);
+}
+.searchbox input.hasclear { padding-left: 2rem; }
+.clearfilter {
+	position: absolute;
+	left: 0.5rem;
+	top: 50%;
+	transform: translateY(-50%);
+	line-height: 1;
+	font-size: 1.1rem;
+	color: var(--ink-faint);
+	text-decoration: none;
+}
+.clearfilter:hover { color: var(--ink); }
+
+.bookcount { margin: 0.75rem 0 0.25rem; }
+.booklist li { margin: 0; }
+.bookrow {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.6rem;
+	padding: 0.5rem 0.5rem;
+	border-bottom: 1px solid var(--rule);
+	border-radius: var(--radius);
+	cursor: pointer;
+}
+.bookmeta { display: grid; gap: 0.1rem; }
+.bookrow:hover { background: var(--paper-raised); }
+/* A ticked song has to look ticked from across the list, not only at its box. */
+.bookrow:has(input:checked) { background: var(--chord-bg); }
+.bookrow:has(input:checked) .booktitle { color: var(--chord); }

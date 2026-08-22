@@ -62,13 +62,10 @@ var catalogue = map[Lang]map[string]string{
 		"settings.password.new":   "Contraseña nueva",
 		"settings.password.again": "Repite la nueva",
 		"settings.password.save":  "Cambiar",
-		"settings.sessions":       "Sesiones",
-		"settings.sessions.note":  "Cierra la sesión en los dispositivos que ya no uses.",
-		"settings.sessions.end":   "Cerrar sesión en todos los dispositivos",
-		"settings.look":           "Cómo se ve y cómo se lee",
+		"settings.sessions.end":   "Cerrar todas las sesiones",
+		"settings.look":           "Personalización",
 		"settings.language":       "Idioma",
 		"settings.notation":       "Notación",
-		"settings.notation.note":  "Con qué nombres se leen las notas.",
 		"settings.theme":          "Tema",
 		"settings.theme.system":   "Como el sistema",
 		"settings.theme.light":    "Claro",
@@ -136,9 +133,13 @@ var catalogue = map[Lang]map[string]string{
 
 		// The songbook.
 		"book.title": "Generar cancionero",
-		"book.explain": "Marca las canciones y elige el papel. Sale una sola página imprimible " +
-			"con todas, cada una en el tono que tengas recordado. La dirección resultante se " +
-			"puede guardar y volver a imprimir.",
+		"book.explain": "Elige las canciones y cómo quieres imprimirlas. Sale un solo " +
+			"documento listo para imprimir o guardar en PDF.",
+		"book.songs":            "Canciones",
+		"book.look":             "Cómo se imprime",
+		"book.selected":         "%d seleccionadas",
+		"book.selected.one":     "1 seleccionada",
+		"book.keys":             "Cada canción sale en el tono que le tengas recordado.",
 		"book.filter":           "Filtrar por título, artista o letra…",
 		"book.filter.label":     "Filtrar la lista",
 		"book.filter.do":        "Filtrar",
@@ -215,13 +216,10 @@ var catalogue = map[Lang]map[string]string{
 		"settings.password.new":   "New password",
 		"settings.password.again": "New password again",
 		"settings.password.save":  "Change it",
-		"settings.sessions":       "Signed-in devices",
-		"settings.sessions.note":  "Sign out anywhere you no longer use.",
-		"settings.sessions.end":   "Sign out on every device",
-		"settings.look":           "How it looks and reads",
+		"settings.sessions.end":   "Sign out everywhere",
+		"settings.look":           "Personalisation",
 		"settings.language":       "Language",
 		"settings.notation":       "Note names",
-		"settings.notation.note":  "What the notes are called.",
 		"settings.theme":          "Theme",
 		"settings.theme.system":   "Match the system",
 		"settings.theme.light":    "Light",
@@ -286,9 +284,13 @@ var catalogue = map[Lang]map[string]string{
 		"flash.close":               "Dismiss",
 
 		"book.title": "Make a songbook",
-		"book.explain": "Tick the songs and choose the paper. You get one printable document " +
-			"with all of them, each in the key you asked it to remember. Keep the address and " +
-			"you can print it again.",
+		"book.explain": "Choose the songs and how to print them. You get one document, ready " +
+			"to print or save as a PDF.",
+		"book.songs":            "Songs",
+		"book.look":             "How it prints",
+		"book.selected":         "%d chosen",
+		"book.selected.one":     "1 chosen",
+		"book.keys":             "Each song comes out in the key you asked it to remember.",
 		"book.filter":           "Filter by title, artist or lyrics…",
 		"book.filter.label":     "Filter the list",
 		"book.filter.do":        "Filter",

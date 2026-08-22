@@ -61,22 +61,16 @@ func TestTranslationsAreNotCopies(t *testing.T) {
 	}
 }
 
-func TestParse(t *testing.T) {
-	for _, tt := range []struct {
-		in   string
-		want Lang
-		ok   bool
-	}{
-		{"es", Spanish, true},
-		{"en", English, true},
-		{"", Default, false},
-		{"fr", Default, false},
-		{"EN", Default, false},
-	} {
-		got, ok := Parse(tt.in)
-		if got != tt.want || ok != tt.ok {
-			t.Errorf("Parse(%q) = %v, %v; want %v, %v", tt.in, got, ok, tt.want, tt.ok)
+// A language that is not one of ours is not one of ours, whatever it looks like.
+func TestValid(t *testing.T) {
+	for in, want := range map[Lang]bool{"es": true, "en": true, "": false, "fr": false, "EN": false} {
+		if got := in.Valid(); got != want {
+			t.Errorf("Lang(%q).Valid() = %v, want %v", in, got, want)
 		}
+	}
+	// An unknown one still renders, in the base language, rather than blank.
+	if got := For("fr").T("nav.songs"); got != "Canciones" {
+		t.Errorf("an unknown language gave %q", got)
 	}
 }
 

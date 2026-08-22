@@ -37,7 +37,7 @@
 			</form>
 
 			<h2>{{$.T "settings.password"}}</h2>
-			<form class="stack" method="post" action="/settings/password">
+			<form class="stack" id="passwordform" method="post" action="/settings/password">
 				<label for="current">{{$.T "settings.password.now"}}</label>
 				<input id="current" name="current" type="password"
 				       autocomplete="current-password" required>
@@ -47,51 +47,50 @@
 				<label for="repeat">{{$.T "settings.password.again"}}</label>
 				<input id="repeat" name="repeat" type="password"
 				       autocomplete="new-password" required>
-				<div class="row"><button class="btn" type="submit">{{$.T "settings.password.save"}}</button></div>
 			</form>
-
-			<h2>{{$.T "settings.sessions"}}</h2>
-			<p class="quiet">{{$.T "settings.sessions.note"}}</p>
-			<form method="post" action="/settings/sessions/revoke">
-				<button class="btn btn-quiet" type="submit">{{$.T "settings.sessions.end"}}</button>
-			</form>
+			{{/* Two forms, one row: changing a password and ending every session
+			     are the same errand, and the button for the second should not be
+			     a section of its own to find. */}}
+			<div class="row">
+				<button class="btn" type="submit" form="passwordform">{{$.T "settings.password.save"}}</button>
+				<form method="post" action="/settings/sessions/revoke">
+					<button class="btn btn-quiet" type="submit">{{$.T "settings.sessions.end"}}</button>
+				</form>
+			</div>
 
 			<h1 class="secondgroup">{{$.T "settings.look"}}</h1>
+			{{/* Language, note names, theme — in that order, and each the same
+			     shape, because they are the same kind of choice. */}}
 			<form class="stack" method="post" action="/settings/look">
 				<fieldset class="choices">
 					<legend>{{$.T "settings.language"}}</legend>
-					{{range .Languages}}
-						<label class="choice">
-							<input type="radio" name="lang" value="{{.Value}}" {{if .On}}checked{{end}}>
-							{{.Label}}
-						</label>
-					{{end}}
+					<div class="segmented">
+						{{range .Languages}}
+							<label><input type="radio" name="lang" value="{{.Value}}"
+							              {{if .On}}checked{{end}}><span>{{.Label}}</span></label>
+						{{end}}
+					</div>
+				</fieldset>
+				<fieldset class="choices">
+					<legend>{{$.T "settings.notation"}}</legend>
+					<div class="segmented">
+						{{range .Notations}}
+							<label><input type="radio" name="notation" value="{{.Value}}"
+							              {{if .On}}checked{{end}}><span>{{.Label}}</span></label>
+						{{end}}
+					</div>
 				</fieldset>
 				<fieldset class="choices">
 					<legend>{{$.T "settings.theme"}}</legend>
-					{{range .Themes}}
-						<label class="choice">
-							<input type="radio" name="theme" value="{{.Value}}" {{if .On}}checked{{end}}>
-							{{.Label}}
-						</label>
-					{{end}}
+					<div class="segmented">
+						{{range .Themes}}
+							<label><input type="radio" name="theme" value="{{.Value}}"
+							              {{if .On}}checked{{end}}><span>{{.Label}}</span></label>
+						{{end}}
+					</div>
 				</fieldset>
 				<div class="row"><button class="btn" type="submit">{{$.T "settings.account.save"}}</button></div>
 			</form>
-
-			{{if .IsAdmin}}
-				<h2>{{$.T "settings.notation"}}</h2>
-				<p class="quiet">{{$.T "settings.notation.note"}}</p>
-				<form class="row" method="post" action="/settings/notation">
-					{{range .Notations}}
-						<label class="choice">
-							<input type="radio" name="notation" value="{{.Value}}" {{if .On}}checked{{end}}>
-							{{.Label}}
-						</label>
-					{{end}}
-					<button class="btn btn-quiet" type="submit">{{$.T "settings.account.save"}}</button>
-				</form>
-			{{end}}
 		{{end}}
 	{{end}}
 </main>

@@ -212,30 +212,30 @@ func TestAnAdministratorsResetEndsTheOtherSessions(t *testing.T) {
 	}
 }
 
-// The default notation is a setting, and the settings page is its first caller.
-func TestTheDefaultNotationCanBeChanged(t *testing.T) {
+// Note names are a reading preference, so they belong to the person and follow
+// them from page to page.
+func TestNoteNamesAreAPersonalChoice(t *testing.T) {
 	ts := newTestServer(t, basicSongs())
 	ts.as(t, "jose", account.RoleAdmin)
 
-	if w := ts.post(t, "/settings/notation", url.Values{"notation": {"solfege"}}); w.Code != http.StatusSeeOther {
+	if w := ts.post(t, "/settings/look", url.Values{
+		"lang": {""}, "theme": {""}, "notation": {"solfege"},
+	}); w.Code != http.StatusSeeOther {
 		t.Fatalf("status = %d\n%s", w.Code, w.Body.String())
 	}
-	got, err := ts.lib.Notation(t.Context())
-	if err != nil {
-		t.Fatal(err)
-	}
-	if got != "solfege" {
-		t.Errorf("the stored notation is %q", got)
-	}
-	// A song now reads in solfege without anybody asking per page.
+	// Every song now reads in solfege, without asking per page.
 	mustHave(t, ts.get(t, "/songs/traditional-amazing-grace").Body.String(), "Sol")
+	// And a stranger still gets the instance's own default.
+	mustNotHave(t, ts.getAnon(t, "/songs/traditional-amazing-grace").Body.String(), ">Sol<")
 }
 
-func TestTheDefaultNotationRefusesNonsense(t *testing.T) {
+func TestAnUnknownNoteNamingIsRefused(t *testing.T) {
 	ts := newTestServer(t, basicSongs())
 	ts.as(t, "jose", account.RoleAdmin)
 
-	if got := ts.post(t, "/settings/notation", url.Values{"notation": {"klingon"}}).Code; got != http.StatusBadRequest {
+	if got := ts.post(t, "/settings/look", url.Values{
+		"lang": {""}, "theme": {""}, "notation": {"klingon"},
+	}).Code; got != http.StatusBadRequest {
 		t.Errorf("status = %d, want 400", got)
 	}
 }

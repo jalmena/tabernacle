@@ -145,17 +145,19 @@ func (s *Server) renderSettings(w http.ResponseWriter, r *http.Request, status i
 		if v.User.Lang == "" {
 			body.Languages[0].On = true
 		}
-	}
-	if body.IsAdmin {
-		current := s.cfg.Notation
-		if n, err := s.lib.Notation(r.Context()); err == nil && n != "" {
-			current = n
+		// Note names are a reading preference like the other two. What the
+		// instance is configured with is only the answer for somebody who has
+		// not chosen.
+		current := v.User.Notation
+		if current == "" {
+			current = s.cfg.Notation
 		}
 		body.Notations = []option{
 			{config.NotationEnglish, "A B C", current == config.NotationEnglish},
 			{config.NotationSolfege, "Do Re Mi", current == config.NotationSolfege},
 		}
 	}
+
 	s.render(w, r, status, "settings.html", s.page(r, p.T("settings.title"), body))
 }
 
@@ -220,6 +222,10 @@ func (s *Server) handleLook(w http.ResponseWriter, r *http.Request) {
 		s.renderSettings(w, r, http.StatusBadRequest, accountProblem(err))
 		return
 	}
+	if err := s.acc.SetNotation(v.User.ID, r.PostFormValue("notation")); err != nil {
+		s.renderSettings(w, r, http.StatusBadRequest, accountProblem(err))
+		return
+	}
 	s.redirect(w, r, "/settings", "language")
 }
 
@@ -270,21 +276,6 @@ func (s *Server) handleRevokeSessions(w http.ResponseWriter, r *http.Request) {
 		s.startSession(w, r, u)
 	}
 	s.redirect(w, r, "/settings", "logged-out")
-}
-
-func (s *Server) handleSetNotation(w http.ResponseWriter, r *http.Request) {
-	value := r.PostFormValue("notation")
-	switch value {
-	case config.NotationEnglish, config.NotationSolfege:
-	default:
-		s.renderSettings(w, r, http.StatusBadRequest, "Esa notación no existe.")
-		return
-	}
-	if err := s.lib.SetNotation(r.Context(), value); err != nil {
-		s.serverError(w, r, err)
-		return
-	}
-	s.redirect(w, r, "/settings", "notation")
 }
 
 // --- accounts ---
@@ -431,6 +422,8 @@ func accountProblem(err error) string {
 		return "Ese tema no existe."
 	case errors.Is(err, account.ErrLangInvalid):
 		return "Ese idioma no existe."
+	case errors.Is(err, account.ErrNotationInvalid):
+		return "Esa notación no existe."
 	case errors.Is(err, account.ErrLastAdmin):
 		return "No puedes dejar la instancia sin administrador."
 	case errors.Is(err, account.ErrSelfTarget):

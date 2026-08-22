@@ -43,7 +43,7 @@ func writeRoutes() []writeRoute {
 		{"/reindex", accessWriter, nil},
 		{"/import", accessWriter, nil},
 		{"/settings/profile", accessWriter, url.Values{"user": {"jose"}}},
-		{"/settings/look", accessWriter, url.Values{"theme": {"dark"}, "lang": {"en"}}},
+		{"/settings/look", accessWriter, url.Values{"theme": {"dark"}, "lang": {"en"}, "notation": {"solfege"}}},
 		{"/settings/password", accessWriter, url.Values{"current": {testPassword}, "password": {"otra contraseña larga"}, "repeat": {"otra contraseña larga"}}},
 		{"/settings/sessions/revoke", accessWriter, nil},
 
@@ -52,7 +52,6 @@ func writeRoutes() []writeRoute {
 		{"/settings/users/xyz/role", accessAdmin, url.Values{"role": {"admin"}}},
 		{"/settings/users/xyz/password", accessAdmin, url.Values{"password": {testPassword}}},
 		{"/settings/users/xyz/delete", accessAdmin, nil},
-		{"/settings/notation", accessAdmin, url.Values{"notation": {"solfege"}}},
 		{"/settings/registration", accessAdmin, url.Values{"open": {"1"}}},
 	}
 }

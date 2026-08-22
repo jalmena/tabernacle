@@ -39,16 +39,6 @@ var names = map[Lang]string{
 // All lists the languages, base first.
 func All() []Lang { return []Lang{Spanish, English} }
 
-// Parse reads a stored or submitted language, reporting whether it is one we
-// have.
-func Parse(s string) (Lang, bool) {
-	l := Lang(s)
-	if slices.Contains(All(), l) {
-		return l, true
-	}
-	return Default, false
-}
-
 // Name is what this language calls itself.
 func (l Lang) Name() string {
 	if n, ok := names[l]; ok {

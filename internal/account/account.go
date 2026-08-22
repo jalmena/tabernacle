@@ -60,6 +60,7 @@ var (
 	ErrPasswordTooShort = fmt.Errorf("account: a password needs at least %d characters", minPasswordRunes)
 	ErrThemeInvalid     = errors.New("account: no such theme")
 	ErrLangInvalid      = errors.New("account: no such language")
+	ErrNotationInvalid  = errors.New("account: no such notation")
 	ErrCorrupt          = errors.New("account: the accounts file cannot be read")
 
 	// ErrLastAdmin refuses the change that would leave nobody in charge.
@@ -77,7 +78,10 @@ type User struct {
 	Theme string
 	// Lang is empty when this person has not chosen one, which means the
 	// interface's own default.
-	Lang        string
+	Lang string
+	// Notation is empty when this person has not chosen how notes are named,
+	// which means the instance's default.
+	Notation    string
 	Epoch       int
 	CreatedAt   time.Time
 	LastLoginAt time.Time
@@ -492,6 +496,29 @@ func (s *Store) SetLang(id, lang string) error {
 	}
 	next := s.clone()
 	next.Users[i].Lang = lang
+	return s.commit(next)
+}
+
+// SetNotation records what this person calls the notes.
+//
+// A reading preference like the theme and the language, so it lives with them
+// rather than with the instance. What an instance sets is only the answer for
+// somebody who has not chosen.
+func (s *Store) SetNotation(id, notation string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	switch notation {
+	case "", "english", "solfege":
+	default:
+		return ErrNotationInvalid
+	}
+	i := s.indexOfID(id)
+	if i < 0 {
+		return ErrNotFound
+	}
+	next := s.clone()
+	next.Users[i].Notation = notation
 	return s.commit(next)
 }
 

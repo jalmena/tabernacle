@@ -45,6 +45,7 @@ type storedUser struct {
 	Hash        string    `json:"hash"`
 	Theme       string    `json:"theme,omitempty"`
 	Lang        string    `json:"lang,omitempty"`
+	Notation    string    `json:"notation,omitempty"`
 	Epoch       int       `json:"epoch"`
 	CreatedAt   time.Time `json:"created_at"`
 	LastLoginAt time.Time `json:"last_login_at,omitzero"`
@@ -57,6 +58,7 @@ func (u storedUser) view() User {
 		Role:        Role(u.Role),
 		Theme:       u.Theme,
 		Lang:        u.Lang,
+		Notation:    u.Notation,
 		Epoch:       u.Epoch,
 		CreatedAt:   u.CreatedAt,
 		LastLoginAt: u.LastLoginAt,
