@@ -19,6 +19,20 @@ Two ways to close it:
 
 There is no open registration. An administrator creates everyone else.
 
+## What an account carries
+
+A name, a password, a role, and two preferences that belong to the person rather
+than to the browser they happen to be using: the interface language and the
+theme. Both follow them from the phone to the laptop, which is why they are in the
+accounts file and not in a cookie.
+
+## Signing up
+
+Closed by default: an administrator creates the accounts. **Usuarios → Registro**
+opens it, and then the sign-in box offers a way to create one. Accounts made that
+way are always members, never administrators — opening the door lets people add
+songs, not decide who else may.
+
 ## Roles
 
 | | Read | Add and edit songs | Manage accounts and settings |
@@ -147,6 +161,6 @@ delete nor demote their own account, so no single mis-click can lock you out.
 
 ## Not here, on purpose
 
-No open registration. No email, and therefore no reset-by-email — a field whose
+No email, and therefore no reset-by-email — a field whose
 only effect would be to promise a recovery path that cannot exist. No avatars. No
 OIDC or LDAP. No per-song permissions. No audit log. No password expiry.

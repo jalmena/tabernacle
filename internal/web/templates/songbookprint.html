@@ -2,26 +2,24 @@
 {{/* One document, many songs. The same "sections" partial the screen and the
      single-song print use, so the three cannot drift apart. */}}
 <body class="printing paper-{{.Body.Theme}}">
-<nav class="paperbar noprint" aria-label="Papel">
-	<span class="quiet">Papel:</span>
-	{{range .Body.Papers}}
-		<a class="btn btn-quiet{{if .On}} on{{end}}" href="{{.URL}}">{{.Label}}</a>
-	{{end}}
+{{/* Only what a reader needs to leave or to print. The paper was chosen on the
+     way in; offering it again here would be a control on a document. */}}
+<nav class="paperbar noprint" aria-label="Cancionero">
+	<button class="btn" type="button" data-print>{{.T "book.printpdf"}}</button>
 	<span class="sep"></span>
-	<a class="btn btn-quiet" href="{{.Body.BackTo}}">Volver</a>
+	<a class="btn btn-quiet" href="{{.Body.BackTo}}">{{.T "book.back"}}</a>
 </nav>
 <main class="wrap">
 	{{with .Body}}
 		{{if .Skipped}}
 			<p class="transposed">
-				{{.Skipped}} {{plural .Skipped "canción" "canciones"}} ya no está en la
-				colección y no se ha impreso.
+				{{if eq .Skipped 1}}{{$.T "book.skipped.one"}}{{else}}{{$.T "book.skipped" .Skipped}}{{end}}
 			</p>
 		{{end}}
 
 		{{if .Index}}
 			<div class="songbook-index">
-				<h1>Cancionero</h1>
+				<h1>{{$.T "book.index.title"}}</h1>
 				<ol>
 					{{range .Songs}}
 						<li>{{.Sheet.Title}}{{if .Sheet.Artist}} · <span class="quiet">{{.Sheet.Artist}}</span>{{end}}</li>

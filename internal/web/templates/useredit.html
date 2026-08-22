@@ -1,0 +1,68 @@
+{{template "head" .}}
+{{template "bodyopen" .}}
+{{template "top" .}}
+<main class="wrap">
+	{{with .Body}}
+		{{template "settingsnav" .}}
+
+		{{if .Problem}}<p class="notice" role="alert">{{.Problem}}</p>{{end}}
+
+		<p class="count"><a href="/settings/users">← {{$.T "users.back"}}</a></p>
+		<h1>{{.User.Name}}{{if .User.Self}} <span class="quiet">{{$.T "users.you"}}</span>{{end}}</h1>
+		<p class="quiet">
+			{{$.T "users.created" .User.Created}}
+			{{if .User.LastSeen}}{{$.T "users.seen" .User.LastSeen}}{{else}}{{$.T "users.notseen"}}{{end}}
+		</p>
+
+		<h2>{{$.T "users.name"}}</h2>
+		<form class="stack" method="post" action="/settings/users/{{.User.ID}}/name">
+			<label for="user">{{$.T "login.user"}}</label>
+			<input id="user" name="user" value="{{.User.Name}}" autocomplete="off"
+			       autocapitalize="off" spellcheck="false" required>
+			<div class="row"><button class="btn" type="submit">{{$.T "settings.account.save"}}</button></div>
+		</form>
+
+		<h2>{{$.T "settings.password"}}</h2>
+		<p class="quiet">
+			{{$.T "users.reset.note"}}
+		</p>
+		<form class="stack" method="post" action="/settings/users/{{.User.ID}}/password">
+			<label for="password">{{$.T "users.newpassword"}}</label>
+			<input id="password" name="password" type="password"
+			       autocomplete="new-password" required>
+			<div class="row"><button class="btn" type="submit">{{$.T "users.reset"}}</button></div>
+		</form>
+
+		<h2>{{$.T "users.role"}}</h2>
+		{{if .User.Self}}
+			<p class="quiet">
+				{{$.T "users.role.self"}}
+			</p>
+		{{else}}
+			<form class="row" method="post" action="/settings/users/{{.User.ID}}/role">
+				<input type="hidden" name="role" value="{{if .User.Admin}}user{{else}}admin{{end}}">
+				<button class="btn btn-quiet" type="submit">
+					{{if .User.Admin}}{{$.T "users.role.demote"}}{{else}}{{$.T "users.role.promote"}}{{end}}
+				</button>
+				<span class="quiet">{{if .User.Admin}}{{$.T "users.admin"}}{{else}}{{$.T "users.user"}}{{end}}</span>
+			</form>
+		{{end}}
+
+		<h2>{{$.T "users.delete"}}</h2>
+		{{if .User.Self}}
+			<p class="quiet">
+				{{$.T "users.delete.self"}}
+			</p>
+		{{else}}
+			<p class="quiet">
+				{{$.T "users.delete.note"}}
+			</p>
+			<form method="post" action="/settings/users/{{.User.ID}}/delete">
+				<button class="btn btn-danger" type="submit">{{$.T "users.delete.one" .User.Name}}</button>
+			</form>
+		{{end}}
+	{{end}}
+</main>
+{{template "scripts" .}}
+</body>
+</html>

@@ -1,0 +1,27 @@
+{{template "head" .}}
+{{template "bodyopen" .}}
+{{template "top" .}}
+<main class="wrap wrap-narrow">
+	{{with .Body}}
+		<h1>{{$.T "register.title"}}</h1>
+		{{if .Problem}}<p class="notice" role="alert">{{.Problem}}</p>{{end}}
+		<form class="stack" method="post" action="/register">
+			<label for="user">{{$.T "login.user"}}</label>
+			<input id="user" name="user" value="{{.User}}" autocomplete="username"
+			       autocapitalize="off" spellcheck="false" autofocus required>
+			<label for="password">{{$.T "login.password"}}</label>
+			<input id="password" name="password" type="password"
+			       autocomplete="new-password" required>
+			<label for="repeat">{{$.T "register.repeat"}}</label>
+			<input id="repeat" name="repeat" type="password"
+			       autocomplete="new-password" required>
+			<div class="row">
+				<button class="btn" type="submit">{{$.T "register.submit"}}</button>
+				<a class="btn btn-quiet" href="/login">{{$.T "register.haveone"}}</a>
+			</div>
+		</form>
+	{{end}}
+</main>
+{{template "scripts" .}}
+</body>
+</html>

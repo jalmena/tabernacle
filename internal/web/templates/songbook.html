@@ -3,23 +3,26 @@
 {{template "top" .}}
 <main class="wrap">
 	{{with .Body}}
-		<h1>Generar cancionero</h1>
+		{{template "settingsnav" .}}
+		<h1>{{$.T "book.title"}}</h1>
 		<p class="quiet">
-			Marca las canciones y elige el papel. Sale una sola página imprimible con
-			todas, cada una en el tono que tengas recordado. La dirección resultante
-			se puede guardar y volver a imprimir.
+			{{$.T "book.explain"}}
 		</p>
 
 		<form class="searchagain" role="search" action="/songbook" method="get">
 			<input type="search" name="q" value="{{.Raw}}"
-			       placeholder="Filtrar por título, artista o letra…"
-			       aria-label="Filtrar la lista" autocomplete="off">
-			<button class="btn btn-quiet" type="submit">Filtrar</button>
+			       placeholder="{{$.T "book.filter"}}"
+			       aria-label="{{$.T "book.filter.label"}}" autocomplete="off">
+			<button class="btn btn-quiet" type="submit">{{$.T "book.filter.do"}}</button>
+			{{if .Raw}}
+				<a class="btn btn-quiet clearfilter" href="/songbook"
+				   aria-label="{{$.T "book.filter.clear"}}" title="{{$.T "book.filter.clear"}}">&times;</a>
+			{{end}}
 		</form>
 
 		<form action="/songbook/print" method="get" id="songbookform">
 			<div class="row bookopts">
-				<span class="quiet">Papel:</span>
+				<span class="quiet">{{$.T "book.paper"}}</span>
 				{{range .Papers}}
 					<label class="choice">
 						<input type="radio" name="theme" value="{{.ID}}" {{if .On}}checked{{end}}>
@@ -28,21 +31,27 @@
 				{{end}}
 			</div>
 			<div class="row bookopts">
+				<span class="quiet">{{$.T "settings.notation"}}</span>
 				<label class="choice">
-					<input type="checkbox" name="n" value="solfege" {{if .Solfege}}checked{{end}}>
-					Do Re Mi
+					<input type="radio" name="n" value="english" {{if not .Solfege}}checked{{end}}>
+					A B C
 				</label>
 				<label class="choice">
+					<input type="radio" name="n" value="solfege" {{if .Solfege}}checked{{end}}>
+					Do Re Mi
+				</label>
+				<span class="sep"></span>
+				<label class="choice">
 					<input type="checkbox" name="index" value="1" checked>
-					Con índice
+					{{$.T "book.index"}}
 				</label>
 			</div>
 
 			<div class="row bookopts" id="bookpick">
-				<button class="btn" type="submit">Imprimir las marcadas</button>
-				<button class="btn btn-quiet" type="button" data-pick="all">Marcar todo</button>
-				<button class="btn btn-quiet" type="button" data-pick="none">Ninguna</button>
-				<span class="quiet">{{.Total}} {{plural .Total "canción" "canciones"}}</span>
+				<button class="btn" type="submit">{{$.T "book.print"}}</button>
+				<button class="btn btn-quiet" type="button" data-pick="all">{{$.T "book.all"}}</button>
+				<button class="btn btn-quiet" type="button" data-pick="none">{{$.T "book.none"}}</button>
+				<span class="quiet">{{if eq .Total 1}}{{$.T "book.count.one"}}{{else}}{{$.T "book.count" .Total}}{{end}}</span>
 			</div>
 
 			{{if .Rows}}
@@ -59,7 +68,7 @@
 					{{end}}
 				</ul>
 			{{else}}
-				<p class="quiet">No hay canciones que encajen con ese filtro.</p>
+				<p class="quiet">{{$.T "book.empty"}}</p>
 			{{end}}
 		</form>
 
@@ -69,9 +78,9 @@
 				<input type="hidden" name="all" value="1">
 				<input type="hidden" name="index" value="1">
 				<button class="btn btn-quiet" type="submit">
-					Imprimir todas las de esta búsqueda
+					{{$.T "book.wholesearch"}}
 				</button>
-				<span class="quiet">hasta 200, sin marcarlas una a una</span>
+				<span class="quiet">{{$.T "book.wholesearch.note"}}</span>
 			</form>
 		{{end}}
 	{{end}}

@@ -32,6 +32,7 @@ func writeRoutes() []writeRoute {
 		{"/login", accessPublic, url.Values{"user": {"nobody"}, "password": {"x"}}},
 		{"/logout", accessPublic, nil},
 		{"/settings/claim", accessPublic, url.Values{"user": {"nuevo"}, "password": {testPassword}, "repeat": {testPassword}}},
+		{"/register", accessPublic, url.Values{"user": {"nuevo"}, "password": {testPassword}, "repeat": {testPassword}}},
 
 		{"/songs", accessWriter, url.Values{"text": {pasted}}},
 		{"/songs/new", accessWriter, nil},
@@ -41,15 +42,18 @@ func writeRoutes() []writeRoute {
 		{"/songs/" + slug + "/commit-transpose", accessWriter, url.Values{"t": {"2"}}},
 		{"/reindex", accessWriter, nil},
 		{"/import", accessWriter, nil},
-		{"/settings/profile", accessWriter, url.Values{"user": {"jose"}, "theme": {""}}},
+		{"/settings/profile", accessWriter, url.Values{"user": {"jose"}}},
+		{"/settings/look", accessWriter, url.Values{"theme": {"dark"}, "lang": {"en"}}},
 		{"/settings/password", accessWriter, url.Values{"current": {testPassword}, "password": {"otra contraseña larga"}, "repeat": {"otra contraseña larga"}}},
 		{"/settings/sessions/revoke", accessWriter, nil},
 
 		{"/settings/users", accessAdmin, url.Values{"user": {"otro"}, "password": {testPassword}, "role": {"user"}}},
+		{"/settings/users/xyz/name", accessAdmin, url.Values{"user": {"otronombre"}}},
 		{"/settings/users/xyz/role", accessAdmin, url.Values{"role": {"admin"}}},
 		{"/settings/users/xyz/password", accessAdmin, url.Values{"password": {testPassword}}},
 		{"/settings/users/xyz/delete", accessAdmin, nil},
 		{"/settings/notation", accessAdmin, url.Values{"notation": {"solfege"}}},
+		{"/settings/registration", accessAdmin, url.Values{"open": {"1"}}},
 	}
 }
 
@@ -88,6 +92,8 @@ func TestEveryWriteRouteHasADeclaredPrivilege(t *testing.T) {
 // table can hold real paths and still be compared against the routing table.
 func shape(path string) string {
 	switch {
+	case strings.HasPrefix(path, "/settings/users/") && strings.HasSuffix(path, "/name"):
+		return "/settings/users/{id}/name"
 	case strings.HasPrefix(path, "/settings/users/") && strings.HasSuffix(path, "/role"):
 		return "/settings/users/{id}/role"
 	case strings.HasPrefix(path, "/settings/users/") && strings.HasSuffix(path, "/password"):
@@ -417,8 +423,8 @@ func TestTheSettingsPagesCarryNoSectionRow(t *testing.T) {
 				t.Errorf("the section row is present: %v", got)
 			}
 			mustNotHave(t, body, `href="/artists"`, `href="/genres"`)
-			// But there is a way out.
-			mustHave(t, body, `href="/settings"`, "Cerrar sesión")
+			// But there is a way out, and leaving is one click from anywhere.
+			mustHave(t, body, `href="/settings"`, ">Salir<")
 		})
 	}
 }

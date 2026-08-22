@@ -140,9 +140,12 @@ func (s *Server) overTLS(r *http.Request) bool {
 // --- the login pages ---
 
 type loginBody struct {
-	Next    string
-	User    string
-	Problem string
+	Next string
+	User string
+	// Registration is whether to offer the way to make an account, which is off
+	// unless an administrator has opened it.
+	Registration bool
+	Problem      string
 }
 
 func (s *Server) handleLoginForm(w http.ResponseWriter, r *http.Request) {
@@ -150,7 +153,10 @@ func (s *Server) handleLoginForm(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
-	body := loginBody{Next: safeNext(r.URL.Query().Get("next"))}
+	body := loginBody{
+		Next:         safeNext(r.URL.Query().Get("next")),
+		Registration: s.acc.RegistrationOpen(),
+	}
 	s.render(w, r, http.StatusOK, "login.html", s.page(r, "Acceder", body))
 }
 
@@ -165,7 +171,12 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 	next := safeNext(r.PostFormValue("next"))
 
 	refuse := func(status int, problem string) {
-		body := loginBody{Next: next, User: name, Problem: problem}
+		body := loginBody{
+			Next:         next,
+			User:         name,
+			Registration: s.acc.RegistrationOpen(),
+			Problem:      problem,
+		}
 		s.render(w, r, status, "login.html", s.page(r, "Acceder", body))
 	}
 
@@ -186,6 +197,63 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 
 	s.startSession(w, r, u)
 	s.redirect(w, r, next, "welcome")
+}
+
+// handleRegisterForm offers to make an account, when an administrator has opened
+// the door.
+//
+// A 404 when it is closed rather than a 403: a route that is not open is not a
+// route, and saying "you may not" invites somebody to keep trying.
+func (s *Server) handleRegisterForm(w http.ResponseWriter, r *http.Request) {
+	if !s.acc.RegistrationOpen() {
+		s.handleNotFound(w, r)
+		return
+	}
+	if viewerOf(r).In {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+	s.render(w, r, http.StatusOK, "register.html",
+		s.page(r, "Crear una cuenta", loginBody{Registration: true}))
+}
+
+// handleRegister creates an ordinary account.
+//
+// Never an administrator: opening registration lets people add songs, not decide
+// who else may.
+func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
+	if !s.acc.RegistrationOpen() {
+		s.handleNotFound(w, r)
+		return
+	}
+	name := strings.TrimSpace(r.PostFormValue("user"))
+	password := r.PostFormValue("password")
+
+	refuse := func(problem string) {
+		s.render(w, r, http.StatusBadRequest, "register.html",
+			s.page(r, "Crear una cuenta", loginBody{User: name, Registration: true, Problem: problem}))
+	}
+	if password != r.PostFormValue("repeat") {
+		refuse("Las dos contraseñas no coinciden.")
+		return
+	}
+	// Rate limited like a login: the work is the same, and so is the lever.
+	if !s.logins.allowed(clientIP(r)) {
+		w.Header().Set("Retry-After", "60")
+		refuse("Demasiados intentos. Espera un minuto.")
+		return
+	}
+	u, err := s.hashSlot(func() (account.User, error) {
+		return s.acc.Create(name, password, account.RoleUser)
+	})
+	if err != nil {
+		s.logins.spend(clientIP(r))
+		refuse(accountProblem(err))
+		return
+	}
+	s.log.Info("a visitor created an account", "user", u.Name)
+	s.startSession(w, r, u)
+	s.redirect(w, r, "/", "registered")
 }
 
 func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {

@@ -16,13 +16,15 @@ import (
 const maxUploadMemory = 8 << 20
 
 func (s *Server) handleImportForm(w http.ResponseWriter, r *http.Request) {
-	s.render(w, r, http.StatusOK, "import.html", s.page(r, "Importar", importBody{
+	s.render(w, r, http.StatusOK, "import.html", s.page(r, "Importar y exportar", importBody{
+		Tabs:     s.settingsTabs(r, "import"),
 		MaxBytes: s.cfg.MaxUploadBytes,
 	}))
 }
 
 // importBody is what the import page receives, before and after an upload.
 type importBody struct {
+	Tabs     []navLink
 	MaxBytes int64
 	Report   *library.ImportReport
 	Problem  string
@@ -38,7 +40,8 @@ func (s *Server) handleImport(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, s.cfg.MaxUploadBytes)
 	if err := r.ParseMultipartForm(maxUploadMemory); err != nil {
 		s.render(w, r, http.StatusRequestEntityTooLarge, "import.html",
-			s.page(r, "Importar", importBody{
+			s.page(r, "Importar y exportar", importBody{
+				Tabs:     s.settingsTabs(r, "import"),
 				MaxBytes: s.cfg.MaxUploadBytes,
 				Problem: "El envío es demasiado grande o no se ha podido leer. " +
 					"Prueba con menos archivos o con un zip más pequeño.",
@@ -54,7 +57,8 @@ func (s *Server) handleImport(w http.ResponseWriter, r *http.Request) {
 	var combined library.ImportReport
 	files := r.MultipartForm.File["files"]
 	if len(files) == 0 {
-		s.render(w, r, http.StatusBadRequest, "import.html", s.page(r, "Importar", importBody{
+		s.render(w, r, http.StatusBadRequest, "import.html", s.page(r, "Importar y exportar", importBody{
+			Tabs:     s.settingsTabs(r, "import"),
 			MaxBytes: s.cfg.MaxUploadBytes,
 			Problem:  "No se ha seleccionado ningún archivo.",
 		}))
@@ -90,7 +94,8 @@ func (s *Server) handleImport(w http.ResponseWriter, r *http.Request) {
 		merge(&combined, s.lib.ImportSong(r.Context(), name, data))
 	}
 
-	s.render(w, r, http.StatusOK, "import.html", s.page(r, "Importar", importBody{
+	s.render(w, r, http.StatusOK, "import.html", s.page(r, "Importar y exportar", importBody{
+		Tabs:     s.settingsTabs(r, "import"),
 		MaxBytes: s.cfg.MaxUploadBytes,
 		Report:   &combined,
 	}))

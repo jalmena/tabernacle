@@ -1,5 +1,5 @@
 {{define "head"}}<!DOCTYPE html>
-<html lang="es">
+<html lang="{{.Lang}}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -20,9 +20,9 @@
 <header class="top noprint">
 	<a class="brand" href="/">Taber<span>nacle</span></a>
 	<form class="search" role="search" action="/" method="get">
-		<input type="search" name="q" value="{{.Nav.Query}}" placeholder="Buscar canciones, artistas, letras…"
-		       aria-label="Buscar en la biblioteca" autocomplete="off">
-		<button class="btn search-go" type="submit">Buscar</button>
+		<input type="search" name="q" value="{{.Nav.Query}}" placeholder="{{.T "nav.search.placeholder"}}"
+		       aria-label="{{.T "nav.search.label"}}" autocomplete="off">
+		<button class="btn search-go" type="submit">{{.T "nav.search"}}</button>
 	</form>
 	{{with .Nav.Add}}
 		<a class="btn add{{if .On}} on{{end}}" href="{{.URL}}"
@@ -33,6 +33,13 @@
 		   {{if $.Nav.LoginBox}}data-login="loginpop"{{end}}
 		   {{if .On}}aria-current="page"{{end}}>{{.Label}}</a>
 	{{end}}
+	{{/* Leaving is always one click away, and it is a POST: a GET that ends a
+	     session is exactly what SameSite=Lax does not protect. */}}
+	{{if .Nav.UserName}}
+		<form class="signout" method="post" action="/logout">
+			<button class="btn account" type="submit">{{$.T "nav.signout"}}</button>
+		</form>
+	{{end}}
 </header>
 
 {{/* The login box. A native popover, opened by app.js; with no scripting the
@@ -41,24 +48,31 @@
 <div id="loginpop" class="loginpop noprint" popover="auto">
 	<form class="loginform" method="post" action="/login">
 		<input type="hidden" name="next" value="{{.Nav.LoginNext}}">
-		<label for="loginuser">Usuario</label>
+		<label for="loginuser">{{$.T "login.user"}}</label>
 		<input id="loginuser" name="user" autocomplete="username" autocapitalize="off"
 		       spellcheck="false" required>
-		<label for="loginpass">Contraseña</label>
+		<label for="loginpass">{{$.T "login.password"}}</label>
 		<input id="loginpass" name="password" type="password" autocomplete="current-password" required>
-		<button class="btn" type="submit">Entrar</button>
+		<button class="btn" type="submit">{{$.T "login.submit"}}</button>
 	</form>
+	{{if .Nav.Registration}}
+		<p class="quiet loginalt"><a href="/register">{{$.T "login.register"}}</a></p>
+	{{end}}
 </div>
 {{end}}
 
 {{if .Nav.Unclaimed}}
 <p class="banner noprint">
-	Esta instancia no tiene ninguna cuenta, así que cualquiera que llegue a ella
-	puede cambiar la colección.
-	<a href="/settings">Crea una cuenta de administrador</a>.
+	{{.T "claim.banner"}}
+	<a href="/settings">{{.T "claim.banner.link"}}</a>.
 </p>
 {{end}}
-{{if .Nav.Flash}}<p class="flash noprint" role="status">{{.Nav.Flash}}</p>{{end}}
+{{if .Nav.Flash}}
+<p class="flash noprint" role="status">
+	<span>{{.Nav.Flash}}</span>
+	<button class="flash-close" type="button" data-dismiss aria-label="{{.T "flash.close"}}">&times;</button>
+</p>
+{{end}}
 {{end}}
 
 {{/* The settings pages leave the section row out — Canciones, Artistas and
@@ -70,10 +84,6 @@
 		<a class="btn btn-quiet{{if .On}} on{{end}}" href="{{.URL}}"
 		   {{if .On}}aria-current="page"{{end}}>{{.Label}}</a>
 	{{end}}
-	<span class="sep"></span>
-	<form method="post" action="/logout">
-		<button class="btn btn-quiet" type="submit">Cerrar sesión</button>
-	</form>
 </div>
 {{end}}
 
@@ -190,7 +200,7 @@
 					<div class="block">
 						{{range .Lines}}
 							{{if .HasChord}}
-								<p class="line line-chords">{{range .Words}}<span class="word">{{range .Cells}}<span class="cell"><span class="chord">{{.Chord}}</span><span>{{if .Annotation}}<span class="annotation">[{{.Annotation}}]</span>{{else}}{{.Text}}{{end}}</span></span>{{end}}</span>{{.Sep}}{{end}}</p>
+								<p class="line line-chords">{{range .Words}}<span class="word">{{range .Cells}}<span class="cell">{{if .Chord}}<a class="chord" href="#acorde-{{.ChordID}}" data-chord="{{.ChordID}}" title="Ver la posición de {{.Chord}}">{{.Chord}}</a>{{else}}<span class="chord"></span>{{end}}<span>{{if .Annotation}}<span class="annotation">[{{.Annotation}}]</span>{{else}}{{.Text}}{{end}}</span></span>{{end}}</span>{{.Sep}}{{end}}</p>
 							{{else}}
 								<p class="line">{{range .Words}}{{range .Cells}}{{if .Annotation}}<span class="annotation">[{{.Annotation}}]</span>{{else}}{{.Text}}{{end}}{{end}}{{.Sep}}{{end}}</p>
 							{{end}}

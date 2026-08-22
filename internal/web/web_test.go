@@ -4,11 +4,13 @@ import (
 	"context"
 	"io"
 	"log/slog"
+	"maps"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -154,6 +156,33 @@ func (ts *testServer) get(t *testing.T, target string) *httptest.ResponseRecorde
 	w := httptest.NewRecorder()
 	ts.h.ServeHTTP(w, r)
 	return w
+}
+
+// carry applies whatever a response did to the cookies, the way a browser would:
+// a cookie set is kept, and one cleared is forgotten. A one-shot notice depends
+// on the second half, so ignoring it would make the test pass for the wrong
+// reason.
+func (ts *testServer) carry(w *httptest.ResponseRecorder) {
+	held := map[string]string{}
+	for _, pair := range strings.Split(ts.session, "; ") {
+		if name, value, ok := strings.Cut(pair, "="); ok {
+			held[name] = value
+		}
+	}
+	for _, c := range w.Result().Cookies() {
+		if c.MaxAge < 0 || c.Value == "" {
+			delete(held, c.Name)
+			continue
+		}
+		held[c.Name] = c.Value
+	}
+
+	names := slices.Sorted(maps.Keys(held))
+	parts := make([]string, 0, len(names))
+	for _, n := range names {
+		parts = append(parts, n+"="+held[n])
+	}
+	ts.session = strings.Join(parts, "; ")
 }
 
 // getAnon is the same request with no session, for asking what a stranger sees.

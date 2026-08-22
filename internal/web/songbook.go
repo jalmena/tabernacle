@@ -25,6 +25,7 @@ var errTooManySongs = errors.New("web: too many songs for one book")
 
 // songbookBody is the page where a book is chosen.
 type songbookBody struct {
+	Tabs     []navLink
 	Rows     []songbookRow
 	Total    int
 	Raw      string
@@ -43,7 +44,6 @@ type songbookRow struct {
 // songbookPrintBody is the book itself.
 type songbookPrintBody struct {
 	Theme  string
-	Papers []themeChoice
 	Index  bool
 	Songs  []songbookSheet
 	BackTo string
@@ -73,6 +73,7 @@ func (s *Server) handleSongbook(w http.ResponseWriter, r *http.Request) {
 	}
 
 	body := songbookBody{
+		Tabs:     s.settingsTabs(r, "songbook"),
 		Total:    res.Total,
 		Raw:      raw,
 		Papers:   paperChoices(printThemeFor(r)),
@@ -100,7 +101,7 @@ func (s *Server) handleSongbookPrint(w http.ResponseWriter, r *http.Request) {
 		s.serverError(w, r, err)
 		return
 	case len(slugs) == 0:
-		s.redirect(w, r, "/songbook", "")
+		s.redirect(w, r, songbookBackURL(r), "none-picked")
 		return
 	}
 
@@ -111,7 +112,6 @@ func (s *Server) handleSongbookPrint(w http.ResponseWriter, r *http.Request) {
 
 	body := songbookPrintBody{
 		Theme:  printThemeFor(r),
-		Papers: paperLinks(r),
 		Index:  r.URL.Query().Get("index") == "1",
 		BackTo: songbookBackURL(r),
 	}
@@ -190,27 +190,6 @@ func paperChoices(current string) []themeChoice {
 	out := make([]themeChoice, 0, len(printThemeList))
 	for _, t := range printThemeList {
 		out = append(out, themeChoice{ID: t.id, Label: t.label, On: t.id == current})
-	}
-	return out
-}
-
-// paperLinks offers the paper choices as links that keep the rest of the address,
-// which is what the single-song print view does too.
-func paperLinks(r *http.Request) []themeChoice {
-	current := printThemeFor(r)
-	out := make([]themeChoice, 0, len(printThemeList))
-	for _, t := range printThemeList {
-		qs := url.Values{}
-		for k, v := range r.URL.Query() {
-			qs[k] = append([]string(nil), v...)
-		}
-		qs.Set("theme", t.id)
-		out = append(out, themeChoice{
-			ID:    t.id,
-			Label: t.label,
-			URL:   "/songbook/print?" + qs.Encode(),
-			On:    t.id == current,
-		})
 	}
 	return out
 }

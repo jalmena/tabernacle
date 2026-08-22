@@ -2,9 +2,11 @@
 {{template "bodyopen" .}}
 {{template "top" .}}
 <main class="wrap">
-	{{template "nav" .}}
 	{{with .Body}}
-		<h1>Importar canciones</h1>
+		{{template "settingsnav" .}}
+		<h1>{{$.T "transfer.title"}}</h1>
+
+		<h2>{{$.T "transfer.import"}}</h2>
 
 		{{if .Problem}}<p class="notice">{{.Problem}}</p>{{end}}
 
@@ -52,14 +54,15 @@
 		</p>
 
 		<form method="post" action="/import" enctype="multipart/form-data" class="editor">
-			<input class="btn" type="file" name="files" multiple accept=".song,.zip,text/plain,application/zip">
+			<input class="filepick" type="file" name="files" multiple
+			       accept=".song,.zip,text/plain,application/zip">
 			<div class="filters">
 				<button class="btn" type="submit">Importar</button>
 				<a class="btn btn-quiet" href="/">Cancelar</a>
 			</div>
 		</form>
 
-		<h2>Exportar</h2>
+		<h2>{{$.T "transfer.export"}}</h2>
 		<p class="count">
 			Descarga toda la colección como <code>.zip</code>. Dentro están tus
 			archivos <code>.song</code> tal cual, así que restaurar es

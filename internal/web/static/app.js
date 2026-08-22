@@ -355,3 +355,32 @@
 		for (var i = 0; i < boxes.length; i++) boxes[i].checked = want;
 	});
 })();
+
+/* Closing a notice.
+ *
+ * The message is one-shot anyway — the server clears it as it renders — so
+ * without scripting it simply goes away on the next page. This is for the reader
+ * who wants it gone now. */
+(function () {
+	"use strict";
+
+	document.addEventListener("click", function (e) {
+		var button = e.target.closest("[data-dismiss]");
+		if (!button) return;
+		var notice = button.closest(".flash");
+		if (notice) notice.remove();
+	});
+})();
+
+/* Printing the songbook.
+ *
+ * The keyboard shortcut does the same thing; this is a visible way to reach it,
+ * and on every browser worth naming "print" includes saving as a PDF. */
+(function () {
+	"use strict";
+
+	document.addEventListener("click", function (e) {
+		if (!e.target.closest("[data-print]")) return;
+		window.print();
+	});
+})();

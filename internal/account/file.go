@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/jalmena/tabernacle/internal/i18n"
 )
 
 // fileVersion is the shape of what is on disk. A file from the future is refused
@@ -22,9 +24,16 @@ const fileVersion = 1
 const fileMode fs.FileMode = 0o600
 
 type fileData struct {
-	Version int          `json:"version"`
-	Secret  string       `json:"secret"`
-	Users   []storedUser `json:"users"`
+	Version int    `json:"version"`
+	Secret  string `json:"secret"`
+	// Registration, when true, lets a visitor create their own account. Off
+	// unless an administrator turns it on.
+	//
+	// It lives here rather than in the settings table because it decides who may
+	// write, and the index is disposable: losing it must not quietly change the
+	// answer.
+	Registration bool         `json:"registration,omitempty"`
+	Users        []storedUser `json:"users"`
 }
 
 // storedUser is a user as written. It is separate from User because User is what
@@ -35,6 +44,7 @@ type storedUser struct {
 	Role        string    `json:"role"`
 	Hash        string    `json:"hash"`
 	Theme       string    `json:"theme,omitempty"`
+	Lang        string    `json:"lang,omitempty"`
 	Epoch       int       `json:"epoch"`
 	CreatedAt   time.Time `json:"created_at"`
 	LastLoginAt time.Time `json:"last_login_at,omitzero"`
@@ -46,6 +56,7 @@ func (u storedUser) view() User {
 		Name:        u.Name,
 		Role:        Role(u.Role),
 		Theme:       u.Theme,
+		Lang:        u.Lang,
 		Epoch:       u.Epoch,
 		CreatedAt:   u.CreatedAt,
 		LastLoginAt: u.LastLoginAt,
@@ -92,6 +103,8 @@ func readFile(root *os.Root, name string) (fileData, error) {
 			return fileData{}, fmt.Errorf("%w: %q has epoch %d", ErrCorrupt, u.Name, u.Epoch)
 		case !validTheme(u.Theme):
 			return fileData{}, fmt.Errorf("%w: %q has the unknown theme %q", ErrCorrupt, u.Name, u.Theme)
+		case u.Lang != "" && !i18n.Lang(u.Lang).Valid():
+			return fileData{}, fmt.Errorf("%w: %q has the unknown language %q", ErrCorrupt, u.Name, u.Lang)
 		case seen[fold(u.Name)], seen[u.ID]:
 			return fileData{}, fmt.Errorf("%w: %q appears twice", ErrCorrupt, u.Name)
 		}

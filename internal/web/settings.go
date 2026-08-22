@@ -7,6 +7,7 @@ import (
 
 	"github.com/jalmena/tabernacle/internal/account"
 	"github.com/jalmena/tabernacle/internal/config"
+	"github.com/jalmena/tabernacle/internal/i18n"
 )
 
 // themeClass maps a stored preference onto the class that carries it.
@@ -31,25 +32,40 @@ type settingsBody struct {
 	// is nobody to have one yet.
 	Claim bool
 
-	Name     string
-	Theme    string
-	Themes   []themeOption
-	IsAdmin  bool
-	Notation string
+	Name string
+	// The three personalisation choices, each as its options so the template
+	// only lays them out.
+	Themes    []option
+	Languages []option
+	Notations []option
+	IsAdmin   bool
 
 	Problem string
 }
 
-type themeOption struct {
+// option is one choice in a group of radios.
+type option struct {
 	Value string
 	Label string
 	On    bool
 }
 
-// usersBody is the account table.
+// usersBody is the list of accounts.
 type usersBody struct {
+	Tabs         []navLink
+	Users        []userRow
+	Registration bool
+	Problem      string
+}
+
+// userEditBody is one account, with everything that can be done to it.
+//
+// A page rather than a row of controls in a table: four actions per account is
+// more than a row can hold without turning into something you have to scroll
+// sideways to read.
+type userEditBody struct {
 	Tabs    []navLink
-	Users   []userRow
+	User    userRow
 	Problem string
 }
 
@@ -69,14 +85,18 @@ type userRow struct {
 // replaces it, because a page whose only way out is the brand link strands the
 // reader.
 func (s *Server) settingsTabs(r *http.Request, current string) []navLink {
-	tabs := []navLink{{Label: "Perfil", URL: "/settings", On: current == "profile"}}
+	t := i18n.For(i18n.Lang(viewerOf(r).User.Lang))
+
+	tabs := []navLink{{Label: t.T("settings.tab.account"), URL: "/settings", On: current == "profile"}}
 	if viewerOf(r).MayAdmin() {
-		tabs = append(tabs, navLink{Label: "Usuarios", URL: "/settings/users", On: current == "users"})
+		tabs = append(tabs, navLink{Label: t.T("settings.tab.users"), URL: "/settings/users",
+			On: current == "users"})
 	}
 	if !s.cfg.ReadOnly {
-		tabs = append(tabs, navLink{Label: "Importar y exportar", URL: "/import"})
+		tabs = append(tabs, navLink{Label: t.T("settings.tab.transfer"), URL: "/import",
+			On: current == "import"})
 	}
-	tabs = append(tabs, navLink{Label: "Generar cancionero", URL: "/songbook",
+	tabs = append(tabs, navLink{Label: t.T("settings.tab.songbook"), URL: "/songbook",
 		On: current == "songbook"})
 	return tabs
 }
@@ -101,30 +121,42 @@ func (s *Server) handleSettings(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) renderSettings(w http.ResponseWriter, r *http.Request, status int, problem string) {
 	v := viewerOf(r)
+	p := s.page(r, "", nil)
 	body := settingsBody{
 		Tabs:    s.settingsTabs(r, "profile"),
 		Claim:   !v.In,
 		Name:    v.User.Name,
-		Theme:   v.User.Theme,
 		IsAdmin: v.User.IsAdmin(),
 		Problem: problem,
 	}
 	if !body.Claim {
-		body.Themes = []themeOption{
-			{account.ThemeSystem, "Como el sistema", v.User.Theme == account.ThemeSystem},
-			{account.ThemeLight, "Claro", v.User.Theme == account.ThemeLight},
-			{account.ThemeDark, "Oscuro", v.User.Theme == account.ThemeDark},
+		body.Themes = []option{
+			{account.ThemeSystem, p.T("settings.theme.system"), v.User.Theme == account.ThemeSystem},
+			{account.ThemeLight, p.T("settings.theme.light"), v.User.Theme == account.ThemeLight},
+			{account.ThemeDark, p.T("settings.theme.dark"), v.User.Theme == account.ThemeDark},
+		}
+		// A language names itself, so somebody looking for their own recognises
+		// it however the rest of the page reads.
+		for _, l := range i18n.All() {
+			body.Languages = append(body.Languages, option{
+				Value: string(l), Label: l.Name(), On: string(l) == v.User.Lang,
+			})
+		}
+		if v.User.Lang == "" {
+			body.Languages[0].On = true
 		}
 	}
 	if body.IsAdmin {
-		if n, err := s.lib.Notation(r.Context()); err == nil {
-			body.Notation = n
+		current := s.cfg.Notation
+		if n, err := s.lib.Notation(r.Context()); err == nil && n != "" {
+			current = n
 		}
-		if body.Notation == "" {
-			body.Notation = s.cfg.Notation
+		body.Notations = []option{
+			{config.NotationEnglish, "A B C", current == config.NotationEnglish},
+			{config.NotationSolfege, "Do Re Mi", current == config.NotationSolfege},
 		}
 	}
-	s.render(w, r, status, "settings.html", s.page(r, "Ajustes", body))
+	s.render(w, r, status, "settings.html", s.page(r, p.T("settings.title"), body))
 }
 
 // handleClaim creates the first administrator of an instance that has none.
@@ -167,11 +199,28 @@ func (s *Server) handleProfile(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	s.redirect(w, r, "/settings", "profile")
+}
+
+// handleLook saves the three choices about how the interface reads.
+//
+// One form, because they are one decision from the reader's side: what this
+// looks like to me.
+func (s *Server) handleLook(w http.ResponseWriter, r *http.Request) {
+	v := viewerOf(r)
+	if !v.In {
+		s.refusePrivilege(w, r, accessWriter)
+		return
+	}
 	if err := s.acc.SetTheme(v.User.ID, r.PostFormValue("theme")); err != nil {
 		s.renderSettings(w, r, http.StatusBadRequest, accountProblem(err))
 		return
 	}
-	s.redirect(w, r, "/settings", "profile")
+	if err := s.acc.SetLang(v.User.ID, r.PostFormValue("lang")); err != nil {
+		s.renderSettings(w, r, http.StatusBadRequest, accountProblem(err))
+		return
+	}
+	s.redirect(w, r, "/settings", "language")
 }
 
 func (s *Server) handlePassword(w http.ResponseWriter, r *http.Request) {
@@ -249,21 +298,50 @@ func (s *Server) handleUsers(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) renderUsers(w http.ResponseWriter, r *http.Request, status int, problem string) {
 	me := viewerOf(r).User.ID
-	body := usersBody{Tabs: s.settingsTabs(r, "users"), Problem: problem}
+	body := usersBody{
+		Tabs:         s.settingsTabs(r, "users"),
+		Registration: s.acc.RegistrationOpen(),
+		Problem:      problem,
+	}
 	for _, u := range s.acc.List() {
-		row := userRow{
-			ID:      u.ID,
-			Name:    u.Name,
-			Admin:   u.IsAdmin(),
-			Self:    u.ID == me,
-			Created: u.CreatedAt.Format("2006-01-02"),
-		}
-		if !u.LastLoginAt.IsZero() {
-			row.LastSeen = u.LastLoginAt.Format("2006-01-02")
-		}
-		body.Users = append(body.Users, row)
+		body.Users = append(body.Users, rowFor(u, me))
 	}
 	s.render(w, r, status, "users.html", s.page(r, "Usuarios", body))
+}
+
+// handleUserEdit is one account's own page.
+func (s *Server) handleUserEdit(w http.ResponseWriter, r *http.Request) {
+	if !s.requireAccess(w, r, accessAdmin) {
+		return
+	}
+	s.renderUserEdit(w, r, http.StatusOK, "")
+}
+
+func (s *Server) renderUserEdit(w http.ResponseWriter, r *http.Request, status int, problem string) {
+	u, ok := s.acc.ByID(r.PathValue("id"))
+	if !ok {
+		s.fail(w, r, http.StatusNotFound, "No existe", "Esa cuenta ya no está.")
+		return
+	}
+	body := userEditBody{
+		Tabs:    s.settingsTabs(r, "users"),
+		User:    rowFor(u, viewerOf(r).User.ID),
+		Problem: problem,
+	}
+	s.render(w, r, status, "useredit.html", s.page(r, u.Name, body))
+}
+
+// handleSetRegistration opens or closes self-service registration.
+func (s *Server) handleSetRegistration(w http.ResponseWriter, r *http.Request) {
+	if err := s.acc.SetRegistrationOpen(r.PostFormValue("open") == "1"); err != nil {
+		s.serverError(w, r, err)
+		return
+	}
+	code := "registration-closed"
+	if s.acc.RegistrationOpen() {
+		code = "registration-open"
+	}
+	s.redirect(w, r, "/settings/users", code)
 }
 
 func (s *Server) handleCreateUser(w http.ResponseWriter, r *http.Request) {
@@ -287,10 +365,18 @@ func (s *Server) handleSetRole(w http.ResponseWriter, r *http.Request) {
 		role = account.RoleAdmin
 	}
 	if err := s.acc.SetRole(viewerOf(r).User.ID, r.PathValue("id"), role); err != nil {
-		s.renderUsers(w, r, statusFor(err), accountProblem(err))
+		s.renderUserEdit(w, r, statusFor(err), accountProblem(err))
 		return
 	}
-	s.redirect(w, r, "/settings/users", "role-changed")
+	s.redirect(w, r, "/settings/users/"+r.PathValue("id"), "role-changed")
+}
+
+func (s *Server) handleRenameUser(w http.ResponseWriter, r *http.Request) {
+	if err := s.acc.Rename(r.PathValue("id"), strings.TrimSpace(r.PostFormValue("user"))); err != nil {
+		s.renderUserEdit(w, r, statusFor(err), accountProblem(err))
+		return
+	}
+	s.redirect(w, r, "/settings/users/"+r.PathValue("id"), "profile")
 }
 
 func (s *Server) handleResetPassword(w http.ResponseWriter, r *http.Request) {
@@ -298,15 +384,15 @@ func (s *Server) handleResetPassword(w http.ResponseWriter, r *http.Request) {
 		return account.User{}, s.acc.SetPassword(r.PathValue("id"), r.PostFormValue("password"))
 	})
 	if err != nil {
-		s.renderUsers(w, r, statusFor(err), accountProblem(err))
+		s.renderUserEdit(w, r, statusFor(err), accountProblem(err))
 		return
 	}
-	s.redirect(w, r, "/settings/users", "user-reset")
+	s.redirect(w, r, "/settings/users/"+r.PathValue("id"), "user-reset")
 }
 
 func (s *Server) handleDeleteUser(w http.ResponseWriter, r *http.Request) {
 	if err := s.acc.Delete(viewerOf(r).User.ID, r.PathValue("id")); err != nil {
-		s.renderUsers(w, r, statusFor(err), accountProblem(err))
+		s.renderUserEdit(w, r, statusFor(err), accountProblem(err))
 		return
 	}
 	s.redirect(w, r, "/settings/users", "user-deleted")
@@ -317,6 +403,20 @@ func (s *Server) handleDeleteUser(w http.ResponseWriter, r *http.Request) {
 // The mapping is exhaustive over the errors the domain declares, and anything
 // unrecognised becomes a generic sentence rather than leaking a Go error into the
 // page.
+func rowFor(u account.User, me string) userRow {
+	row := userRow{
+		ID:      u.ID,
+		Name:    u.Name,
+		Admin:   u.IsAdmin(),
+		Self:    u.ID == me,
+		Created: u.CreatedAt.Format("2006-01-02"),
+	}
+	if !u.LastLoginAt.IsZero() {
+		row.LastSeen = u.LastLoginAt.Format("2006-01-02")
+	}
+	return row
+}
+
 func accountProblem(err error) string {
 	switch {
 	case errors.Is(err, account.ErrNameTaken):
@@ -329,6 +429,8 @@ func accountProblem(err error) string {
 		return "La contraseña actual no es correcta."
 	case errors.Is(err, account.ErrThemeInvalid):
 		return "Ese tema no existe."
+	case errors.Is(err, account.ErrLangInvalid):
+		return "Ese idioma no existe."
 	case errors.Is(err, account.ErrLastAdmin):
 		return "No puedes dejar la instancia sin administrador."
 	case errors.Is(err, account.ErrSelfTarget):

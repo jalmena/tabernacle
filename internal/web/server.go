@@ -26,6 +26,7 @@ import (
 	"github.com/jalmena/tabernacle/internal/account"
 	"github.com/jalmena/tabernacle/internal/chord"
 	"github.com/jalmena/tabernacle/internal/config"
+	"github.com/jalmena/tabernacle/internal/i18n"
 	"github.com/jalmena/tabernacle/internal/library"
 	"github.com/jalmena/tabernacle/internal/render"
 )
@@ -177,16 +178,22 @@ func (s *Server) Handler() http.Handler {
 	// No GET /logout: a GET that changes state is exactly what SameSite=Lax does
 	// not protect.
 	mux.HandleFunc("POST /logout", s.openPost(s.handleLogout))
+	mux.HandleFunc("GET /register", s.handleRegisterForm)
+	mux.HandleFunc("POST /register", s.openPost(s.handleRegister))
 
 	mux.HandleFunc("GET /settings", s.handleSettings)
 	mux.HandleFunc("POST /settings/profile", s.authedPost(s.handleProfile))
 	mux.HandleFunc("POST /settings/password", s.authedPost(s.handlePassword))
+	mux.HandleFunc("POST /settings/look", s.authedPost(s.handleLook))
 	mux.HandleFunc("POST /settings/sessions/revoke", s.authedPost(s.handleRevokeSessions))
 	mux.HandleFunc("POST /settings/claim", s.openPost(s.handleClaim))
 	mux.HandleFunc("POST /settings/notation", s.adminPost(s.handleSetNotation))
 
 	mux.HandleFunc("GET /settings/users", s.handleUsers)
 	mux.HandleFunc("POST /settings/users", s.adminPost(s.handleCreateUser))
+	mux.HandleFunc("POST /settings/registration", s.adminPost(s.handleSetRegistration))
+	mux.HandleFunc("GET /settings/users/{id}", s.handleUserEdit)
+	mux.HandleFunc("POST /settings/users/{id}/name", s.adminPost(s.handleRenameUser))
 	mux.HandleFunc("POST /settings/users/{id}/role", s.adminPost(s.handleSetRole))
 	mux.HandleFunc("POST /settings/users/{id}/password", s.adminPost(s.handleResetPassword))
 	mux.HandleFunc("POST /settings/users/{id}/delete", s.adminPost(s.handleDeleteUser))
@@ -216,6 +223,10 @@ func (s *Server) Handler() http.Handler {
 
 // page is the common shell every template receives.
 type page struct {
+	// Print renders the interface's own words. Templates reach it as $.T, so a
+	// page in the middle of a {{with}} can still ask for one.
+	Print *i18n.Printer
+
 	Title        string
 	AssetVersion string
 	Nav          navState
@@ -254,6 +265,9 @@ type navState struct {
 	// which is the form already.
 	LoginBox  bool
 	LoginNext string
+	// Registration mirrors the setting, so the login box can offer the way to
+	// make an account when there is one.
+	Registration bool
 }
 
 // navLink is one entry in the header.
@@ -272,6 +286,12 @@ type navLink struct {
 // link, but a row of orderings beside a row of sections was two vocabularies
 // competing for the same glance, and the collection is alphabetical by default —
 // which is what somebody looking for a song by name actually wants.
+// T renders one of the interface's messages.
+func (p page) T(key string, args ...any) string { return p.Print.T(key, args...) }
+
+// Lang is the language this page is in, for the html element and the chooser.
+func (p page) Lang() string { return string(p.Print.Lang()) }
+
 func (s *Server) page(r *http.Request, title string, body any) page {
 	qs := r.URL.Query()
 	path := r.URL.Path
@@ -291,6 +311,7 @@ func (s *Server) page(r *http.Request, title string, body any) page {
 	}
 
 	v := viewerOf(r)
+	t := i18n.For(i18n.Lang(v.User.Lang))
 
 	// Three sections and nothing else: these are the three ways to walk the
 	// collection. Anything more and two labels start to look like each other,
@@ -299,26 +320,27 @@ func (s *Server) page(r *http.Request, title string, body any) page {
 		Query:   qs.Get("q"),
 		Section: section,
 		Sections: []navLink{
-			{Label: "Canciones", URL: "/", On: section == "songs"},
-			{Label: "Artistas", URL: "/artists", On: section == "artists"},
-			{Label: "Géneros", URL: "/genres", On: section == "genres"},
+			{Label: t.T("nav.songs"), URL: "/", On: section == "songs"},
+			{Label: t.T("nav.artists"), URL: "/artists", On: section == "artists"},
+			{Label: t.T("nav.genres"), URL: "/genres", On: section == "genres"},
 		},
 	}
 	if !s.cfg.ReadOnly && v.MayWrite() {
-		nav.Add = &navLink{Label: "Añadir", URL: "/songs/new", On: section == "add"}
+		nav.Add = &navLink{Label: t.T("nav.add"), URL: "/songs/new", On: section == "add"}
 	}
 	if v.In {
-		nav.Account = &navLink{Label: "Ajustes", URL: "/settings", On: section == "settings"}
+		nav.Account = &navLink{Label: t.T("nav.settings"), URL: "/settings", On: section == "settings"}
 		nav.UserName = v.User.Name
 		nav.IsAdmin = v.User.IsAdmin()
 		nav.BodyClass = themeClass(v.User.Theme)
 	} else {
-		nav.Account = &navLink{Label: "Acceder", URL: "/login", On: path == "/login"}
-		nav.LoginBox = path != "/login"
+		nav.Account = &navLink{Label: t.T("nav.signin"), URL: "/login", On: path == "/login"}
+		nav.LoginBox = path != "/login" && path != "/register"
 		nav.LoginNext = safeNext(path)
+		nav.Registration = s.acc.RegistrationOpen()
 	}
 	nav.Unclaimed = v.Unclaimed
-	return page{Title: title, Nav: nav, Body: body}
+	return page{Print: t, Title: title, Nav: nav, Body: body}
 }
 
 // render executes a template into a buffer before writing anything.
@@ -334,7 +356,9 @@ func (s *Server) render(w http.ResponseWriter, r *http.Request, status int, name
 	p.AssetVersion = s.assetVersion
 	p.Nav.ReadOnly = s.cfg.ReadOnly
 	if p.Nav.Flash == "" {
-		p.Nav.Flash = flashFor(r)
+		if code := s.takeFlash(w, r); code != "" {
+			p.Nav.Flash = p.T("flash." + code)
+		}
 	}
 
 	var buf bytes.Buffer

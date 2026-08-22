@@ -38,7 +38,6 @@ func TestTheSectionRowIsOnEveryPlaceInTheLibrary(t *testing.T) {
 		"/",
 		"/artists",
 		"/genres",
-		"/import",
 		"/songs/traditional-amazing-grace",
 		"/nope",
 	} {
@@ -70,7 +69,12 @@ func TestTheSectionRowIsAbsentWhereItWouldNotBelong(t *testing.T) {
 		"/songs/traditional-amazing-grace/delete": true,
 		"/settings":                               true,
 		"/settings/users":                         true,
-		"/login":                                  false,
+		// Import, export and the songbook are settings pages: they carry the
+		// settings row instead, because the library's vocabulary is not what
+		// somebody needs while looking at them.
+		"/import":   true,
+		"/songbook": true,
+		"/login":    false,
 	}
 	for target, signedIn := range pages {
 		body := ts.get(t, target).Body.String()

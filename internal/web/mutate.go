@@ -19,31 +19,69 @@ import (
 // a mistake or an attack.
 const maxFormBytes = 2 << 20
 
-// flash codes. A message is chosen from this fixed set and looked up
-// server-side, so nothing from a query string is ever rendered back to the page.
-var flashes = map[string]string{
-	"created":   "Canción guardada.",
-	"saved":     "Cambios guardados.",
-	"deleted":   "Canción movida a la papelera.",
-	"committed": "Tono guardado en el archivo.",
-	"reindexed": "Biblioteca revisada.",
-	"scanning":  "Ya hay una revisión en curso.",
+// flashCodes is every notice the application can leave for the next page. The
+// words live in the message catalogue; this is only the list of what may be
+// asked for, so nothing a browser sends can reach the page.
+var flashCodes = map[string]bool{
+	"created": true, "saved": true, "deleted": true, "committed": true,
+	"reindexed": true, "scanning": true,
 
-	"welcome":      "Sesión iniciada.",
-	"bye":          "Sesión cerrada.",
-	"claimed":      "Instancia reclamada. Ya tienes una cuenta de administrador.",
-	"profile":      "Perfil actualizado.",
-	"password":     "Contraseña cambiada.",
-	"logged-out":   "Se han cerrado las sesiones en todos los dispositivos.",
-	"user-created": "Cuenta creada.",
-	"user-deleted": "Cuenta eliminada.",
-	"role-changed": "Permisos actualizados.",
-	"user-reset":   "Contraseña restablecida.",
-	"notation":     "Notación por defecto actualizada.",
+	"welcome": true, "bye": true, "claimed": true, "registered": true,
+	"profile": true, "password": true, "logged-out": true, "language": true,
+
+	"user-created": true, "user-deleted": true, "role-changed": true,
+	"user-reset": true, "notation": true,
+	"registration-open": true, "registration-closed": true,
+
+	"none-picked": true,
 }
 
-// flashFor resolves a message code, ignoring anything not in the list.
-func flashFor(r *http.Request) string { return flashes[r.URL.Query().Get("msg")] }
+// flashCookie carries a one-shot message across a redirect.
+//
+// A query parameter would do the same job and put "?msg=logged-out" in the
+// address bar, where it stays in the history, in a shared link and in a
+// bookmark. A cookie that is read once and cleared leaves the address alone.
+const flashCookie = "tabernacle_flash"
+
+// setFlash remembers a message for the next page this browser asks for.
+func (s *Server) setFlash(w http.ResponseWriter, r *http.Request, code string) {
+	if !flashCodes[code] {
+		return
+	}
+	http.SetCookie(w, &http.Cookie{
+		Name:     flashCookie,
+		Value:    code,
+		Path:     "/",
+		MaxAge:   60,
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+		Secure:   s.overTLS(r),
+	})
+}
+
+// takeFlash reads the notice's code and clears it, so a reload does not repeat
+// it.
+func (s *Server) takeFlash(w http.ResponseWriter, r *http.Request) string {
+	c, err := r.Cookie(flashCookie)
+	if err != nil || c.Value == "" {
+		return ""
+	}
+	http.SetCookie(w, &http.Cookie{
+		Name:     flashCookie,
+		Value:    "",
+		Path:     "/",
+		MaxAge:   -1,
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+		Secure:   s.overTLS(r),
+	})
+	// Only ever a code from the fixed list above; nothing a browser sent is
+	// rendered back to the page.
+	if !flashCodes[c.Value] {
+		return ""
+	}
+	return c.Value
+}
 
 // requireSameOrigin refuses a state-changing request that did not come from this
 // site.
@@ -267,13 +305,7 @@ func (s *Server) openPost(h func(http.ResponseWriter, *http.Request)) http.Handl
 }
 
 func (s *Server) redirect(w http.ResponseWriter, r *http.Request, target, msg string) {
-	if msg != "" {
-		sep := "?"
-		if strings.Contains(target, "?") {
-			sep = "&"
-		}
-		target += sep + "msg=" + url.QueryEscape(msg)
-	}
+	s.setFlash(w, r, msg)
 	http.Redirect(w, r, target, http.StatusSeeOther)
 }
 

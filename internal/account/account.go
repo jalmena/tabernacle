@@ -24,6 +24,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/jalmena/tabernacle/internal/i18n"
 )
 
 // Role is what an account is allowed to do.
@@ -57,6 +59,7 @@ var (
 	ErrNameInvalid      = errors.New("account: that name cannot be used")
 	ErrPasswordTooShort = fmt.Errorf("account: a password needs at least %d characters", minPasswordRunes)
 	ErrThemeInvalid     = errors.New("account: no such theme")
+	ErrLangInvalid      = errors.New("account: no such language")
 	ErrCorrupt          = errors.New("account: the accounts file cannot be read")
 
 	// ErrLastAdmin refuses the change that would leave nobody in charge.
@@ -68,10 +71,13 @@ var (
 
 // User is an account as everything outside this package sees it. No hash.
 type User struct {
-	ID          string
-	Name        string
-	Role        Role
-	Theme       string
+	ID    string
+	Name  string
+	Role  Role
+	Theme string
+	// Lang is empty when this person has not chosen one, which means the
+	// interface's own default.
+	Lang        string
 	Epoch       int
 	CreatedAt   time.Time
 	LastLoginAt time.Time
@@ -155,6 +161,25 @@ func (s *Store) Secret() []byte {
 	defer s.mu.RUnlock()
 	b, _ := decodeSecret(s.data.Secret)
 	return b
+}
+
+// RegistrationOpen reports whether a visitor may create their own account.
+func (s *Store) RegistrationOpen() bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.data.Registration
+}
+
+// SetRegistrationOpen opens or closes registration.
+//
+// Closed unless an administrator says otherwise: a songbook on a home network
+// that anybody can sign up to is not what most people mean by one.
+func (s *Store) SetRegistrationOpen(open bool) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	next := s.clone()
+	next.Registration = open
+	return s.commit(next)
 }
 
 // Count is how many accounts exist. Zero means unclaimed.
@@ -447,6 +472,26 @@ func (s *Store) SetTheme(id, theme string) error {
 	}
 	next := s.clone()
 	next.Users[i].Theme = theme
+	return s.commit(next)
+}
+
+// SetLang records which language this person reads the interface in.
+//
+// Beside the theme rather than in a cookie, for the same reason: it belongs to
+// the person, so it follows them from the phone to the laptop.
+func (s *Store) SetLang(id, lang string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if lang != "" && !i18n.Lang(lang).Valid() {
+		return ErrLangInvalid
+	}
+	i := s.indexOfID(id)
+	if i < 0 {
+		return ErrNotFound
+	}
+	next := s.clone()
+	next.Users[i].Lang = lang
 	return s.commit(next)
 }
 

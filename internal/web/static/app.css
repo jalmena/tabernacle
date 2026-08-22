@@ -301,6 +301,12 @@ a:hover { text-decoration-thickness: 2px; }
 .word { display: inline-flex; white-space: pre; vertical-align: bottom; }
 .cell { display: inline-flex; flex-direction: column; align-items: flex-start; }
 
+/* A chord above a syllable is a link to its own diagram, and has to look like
+ * the chord it replaced: no underline, no link colour, and the same block that
+ * reserves the row's height whether or not there is a chord in it. */
+a.chord { text-decoration: none; }
+a.chord:hover { text-decoration: underline; text-underline-offset: 2px; }
+
 .cell .chord {
 	display: block;
 	font-size: 0.8125em;
@@ -560,6 +566,7 @@ body.paper-contrast .cell .chord { font-weight: 800; }
 /* On paper the chords are bold rather than coloured, so a black-and-white
  * printer still distinguishes them from the words. */
 body.printing .cell .chord { font-weight: 750; }
+body.printing a.chord, body.printing a.chord:hover { text-decoration: none; }
 body.printing .transposed {
 	display: inline-block;
 	margin: 0.5rem 0 0;
@@ -649,6 +656,7 @@ body.theme-dark {
 }
 
 .top .account { flex: 0 0 auto; white-space: nowrap; }
+.signout { flex: 0 0 auto; display: flex; }
 
 /* The banner an unclaimed instance carries: informative, not alarming. */
 .banner {
@@ -778,3 +786,76 @@ body.theme-dark {
 .songbook-index { break-after: page; }
 .songbook-index ol { margin: 0.5rem 0 0; padding-left: 1.4rem; }
 .songbook-index li { margin: 0.15rem 0; }
+
+/* A notice and its close button. */
+.flash {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+.flash span { flex: 1; }
+.flash-close {
+	flex: 0 0 auto;
+	padding: 0 0.35rem;
+	font: inherit;
+	font-size: 1.1rem;
+	line-height: 1;
+	color: inherit;
+	background: none;
+	border: 0;
+	border-radius: 4px;
+	cursor: pointer;
+	opacity: 0.7;
+}
+.flash-close:hover { opacity: 1; }
+.flash-close:focus-visible { outline: 2px solid currentColor; outline-offset: 1px; }
+
+/* A file chooser. It is not a .btn: the button padding applies to the whole
+ * control, which pushes the browser's own text to the top of the box. */
+input[type="file"].filepick {
+	display: block;
+	width: 100%;
+	max-width: 32rem;
+	margin: 0 0 0.75rem;
+	padding: 0.5rem 0.6rem;
+	font: inherit;
+	color: var(--ink);
+	background: var(--paper-raised);
+	border: 1px solid var(--rule);
+	border-radius: var(--radius);
+}
+input[type="file"].filepick::file-selector-button {
+	margin-right: 0.6rem;
+	padding: 0.3rem 0.7rem;
+	font: inherit;
+	color: var(--ink);
+	background: var(--paper);
+	border: 1px solid var(--rule);
+	border-radius: var(--radius);
+	cursor: pointer;
+}
+input[type="file"].filepick::file-selector-button:hover { border-color: var(--accent); }
+input[type="file"].filepick:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* The account list. A row per person, not a table: four things to do with an
+ * account is more than a row can hold without scrolling sideways. */
+.userlist { list-style: none; margin: 0.5rem 0 1.5rem; padding: 0; }
+.userlist li {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 0.6rem;
+	padding: 0.5rem 0.2rem;
+	border-bottom: 1px solid var(--rule);
+}
+.username { font-weight: 600; min-width: 8rem; }
+.userrole { min-width: 8rem; }
+.userseen { flex: 1; }
+.loginalt { margin: 0.5rem 0 0; font-size: 0.8125rem; }
+.clearfilter { line-height: 1; }
+
+/* The second group of settings starts a new block rather than continuing the
+ * first, because they answer a different question. */
+.secondgroup { margin-top: 2.5rem; }
+.choices { border: 0; margin: 0.5rem 0 0; padding: 0; display: grid; gap: 0.25rem; }
+.choices legend { padding: 0; font-size: 0.8125rem; color: var(--ink-soft); }

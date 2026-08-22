@@ -7,76 +7,49 @@
 
 		{{if .Problem}}<p class="notice" role="alert">{{.Problem}}</p>{{end}}
 
-		<h1>Usuarios</h1>
-		<div class="tablewrap">
-			<table class="usertable">
-				<thead>
-					<tr>
-						<th scope="col">Usuario</th>
-						<th scope="col">Permisos</th>
-						<th scope="col">Creada</th>
-						<th scope="col">Último acceso</th>
-						<th scope="col"><span class="shapedesc">Acciones</span></th>
-					</tr>
-				</thead>
-				<tbody>
-					{{range .Users}}
-						<tr>
-							<th scope="row">{{.Name}}{{if .Self}} <span class="quiet">(tú)</span>{{end}}</th>
-							<td>{{if .Admin}}Administrador{{else}}Usuario{{end}}</td>
-							<td>{{.Created}}</td>
-							<td>{{if .LastSeen}}{{.LastSeen}}{{else}}<span class="quiet">nunca</span>{{end}}</td>
-							<td class="rowactions">
-								{{if not .Self}}
-									<form method="post" action="/settings/users/{{.ID}}/role">
-										<input type="hidden" name="role"
-										       value="{{if .Admin}}user{{else}}admin{{end}}">
-										<button class="btn btn-quiet" type="submit">
-											{{if .Admin}}Quitar administrador{{else}}Hacer administrador{{end}}
-										</button>
-									</form>
-									<form method="post" action="/settings/users/{{.ID}}/delete">
-										<button class="btn btn-quiet" type="submit">Eliminar</button>
-									</form>
-								{{end}}
-							</td>
-						</tr>
-						<tr class="resetrow">
-							<td colspan="5">
-								<form class="row" method="post" action="/settings/users/{{.ID}}/password">
-									<label for="pw-{{.ID}}" class="quiet">Nueva contraseña para {{.Name}}</label>
-									<input id="pw-{{.ID}}" name="password" type="password"
-									       autocomplete="new-password" required>
-									<button class="btn btn-quiet" type="submit">Restablecer</button>
-								</form>
-							</td>
-						</tr>
-					{{end}}
-				</tbody>
-			</table>
-		</div>
+		<h1>{{$.T "users.title"}}</h1>
+		<ul class="userlist">
+			{{range .Users}}
+				<li>
+					<span class="username">{{.Name}}{{if .Self}} <span class="quiet">{{$.T "users.you"}}</span>{{end}}</span>
+					<span class="quiet userrole">{{if .Admin}}{{$.T "users.admin"}}{{else}}{{$.T "users.user"}}{{end}}</span>
+					<span class="quiet userseen">
+						{{if .LastSeen}}{{$.T "users.lastseen" .LastSeen}}{{else}}{{$.T "users.never"}}{{end}}
+					</span>
+					<a class="btn btn-quiet" href="/settings/users/{{.ID}}">{{$.T "users.edit"}}</a>
+				</li>
+			{{end}}
+		</ul>
 
-		<h2>Crear una cuenta</h2>
-		<p class="quiet">
-			No hay registro abierto: las cuentas las crea un administrador. Eliminar una
-			cuenta no toca ninguna canción.
-		</p>
+		<h2>{{$.T "users.create"}}</h2>
+		<p class="quiet">{{$.T "users.create.note"}}</p>
 		<form class="stack" method="post" action="/settings/users">
-			<label for="newuser">Usuario</label>
+			<label for="newuser">{{$.T "login.user"}}</label>
 			<input id="newuser" name="user" autocomplete="off" autocapitalize="off"
 			       spellcheck="false" required>
-			<label for="newpassword">Contraseña</label>
+			<label for="newpassword">{{$.T "login.password"}}</label>
 			<input id="newpassword" name="password" type="password"
 			       autocomplete="new-password" required>
 			<div class="row">
 				<label class="choice">
-					<input type="radio" name="role" value="user" checked> Usuario
+					<input type="radio" name="role" value="user" checked> {{$.T "users.user"}}
 				</label>
 				<label class="choice">
-					<input type="radio" name="role" value="admin"> Administrador
+					<input type="radio" name="role" value="admin"> {{$.T "users.admin"}}
 				</label>
-				<button class="btn" type="submit">Crear</button>
+				<button class="btn" type="submit">{{$.T "users.create.submit"}}</button>
 			</div>
+		</form>
+
+		<h2>{{$.T "users.registration"}}</h2>
+		<p class="quiet">
+			{{if .Registration}}{{$.T "users.registration.open"}}{{else}}{{$.T "users.registration.closed"}}{{end}}
+		</p>
+		<form class="row" method="post" action="/settings/registration">
+			<input type="hidden" name="open" value="{{if .Registration}}0{{else}}1{{end}}">
+			<button class="btn btn-quiet" type="submit">
+				{{if .Registration}}{{$.T "users.registration.disable"}}{{else}}{{$.T "users.registration.enable"}}{{end}}
+			</button>
 		</form>
 	{{end}}
 </main>

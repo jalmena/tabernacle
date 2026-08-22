@@ -427,19 +427,57 @@ func TestOversizeFormIsRefused(t *testing.T) {
 	}
 }
 
-// Flash messages come from a fixed list, so a query string can never put text on
-// the page.
-func TestFlashMessagesAreNotEchoed(t *testing.T) {
+// A notice comes from a fixed list, and it travels in a cookie rather than in the
+// address, so nothing a browser sends can put text on the page and nothing is
+// left in the history or in a shared link.
+func TestANoticeIsShownOnceAndNeverEchoed(t *testing.T) {
 	ts := newTestServer(t, basicSongs())
-	body := ts.get(t, "/?msg=%3Cscript%3Ealert(1)%3C/script%3E").Body.String()
-	if strings.Contains(body, "alert(1)") {
-		t.Error("a message from the query string was rendered")
+
+	// Saving a song redirects with a notice, and the address it redirects to
+	// carries no trace of it.
+	w := ts.post(t, "/songs", url.Values{"text": {pasted}})
+	if w.Code != http.StatusSeeOther {
+		t.Fatalf("creating a song = %d", w.Code)
 	}
-	if !strings.Contains(ts.get(t, "/?msg=saved").Body.String(), "Cambios guardados") {
-		t.Error("a known message code was not shown")
+	if loc := w.Header().Get("Location"); strings.Contains(loc, "msg") {
+		t.Errorf("the redirect went to %q, which names the notice", loc)
 	}
-	if strings.Contains(ts.get(t, "/?msg=nonsense").Body.String(), "nonsense") {
-		t.Error("an unknown message code was echoed")
+	ts.carry(w)
+
+	// Shown once...
+	first := ts.get(t, "/")
+	if !strings.Contains(first.Body.String(), "Canción guardada") {
+		t.Error("the notice was not shown")
+	}
+	if !strings.Contains(first.Body.String(), "data-dismiss") {
+		t.Error("the notice cannot be closed")
+	}
+	ts.carry(first)
+
+	// ...and not again on a reload.
+	if strings.Contains(ts.get(t, "/").Body.String(), "Canción guardada") {
+		t.Error("the notice came back on the next page")
+	}
+}
+
+// Whatever a browser puts in that cookie, only a code from the fixed list can
+// reach the page.
+func TestANoticeCannotBeForged(t *testing.T) {
+	ts := newTestServer(t, basicSongs())
+
+	for _, value := range []string{
+		"<script>alert(1)</script>", "nonsense", "", "saved<b>",
+	} {
+		ts.session = flashCookie + "=" + url.QueryEscape(value)
+		body := ts.get(t, "/").Body.String()
+		if strings.Contains(body, "alert(1)") || strings.Contains(body, "nonsense") {
+			t.Errorf("the cookie value %q reached the page", value)
+		}
+	}
+	// And a real code does work, so the test above is not passing vacuously.
+	ts.session = flashCookie + "=saved"
+	if !strings.Contains(ts.get(t, "/").Body.String(), "Cambios guardados") {
+		t.Error("a known code was not shown")
 	}
 }
 
