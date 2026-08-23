@@ -9,9 +9,13 @@ package i18n
 // shows a Spanish sentence rather than a blank or a key. A test asserts none is
 // missing, which is what keeps that fallback a safety net rather than a habit.
 var catalogue = map[Lang]map[string]string{
-	Spanish:  spanish,
-	English:  english,
-	Catalan:  catalan,
-	Galician: galician,
-	Basque:   basque,
+	Spanish:    spanish,
+	English:    english,
+	Catalan:    catalan,
+	Galician:   galician,
+	Basque:     basque,
+	Portuguese: portuguese,
+	French:     french,
+	Italian:    italian,
+	German:     german,
 }

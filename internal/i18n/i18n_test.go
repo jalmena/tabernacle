@@ -77,7 +77,7 @@ func TestValid(t *testing.T) {
 		}
 	}
 	// An unknown one still renders, in the base language, rather than blank.
-	if got := For("fr").T("nav.songs"); got != "Canciones" {
+	if got := For("xx").T("nav.songs"); got != "Canciones" {
 		t.Errorf("an unknown language gave %q", got)
 	}
 }

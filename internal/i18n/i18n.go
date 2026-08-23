@@ -79,7 +79,11 @@ var rtl = map[Lang]bool{Arabic: true}
 // down this list, and alphabetical order by code would put Arabic above Spanish
 // for no reason anybody could see.
 func All() []Lang {
-	return []Lang{Spanish, English, Catalan, Galician, Basque}
+	return []Lang{
+		Spanish, English,
+		Catalan, Galician, Basque,
+		Portuguese, French, Italian, German,
+	}
 }
 
 // Dir is the direction this language is written in, as an HTML dir attribute.
