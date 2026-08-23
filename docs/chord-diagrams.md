@@ -350,8 +350,16 @@ the one they can share, and it does not turn into a log of every dot they tried.
 Every control underneath is still a link or a GET form that works on its own, and
 a test asserts the fragment and the page produce identical markup.
 
-`TestTheScriptLooksForThingsThatExist` reads the selectors out of `app.js` and
-checks each one against the rendered pages. What breaks in a progressive
+Three tests guard the join, because the join is what breaks and nothing else
+looks at it. `TestTheScriptLooksForThingsThatExist` reads the selectors out of
+`app.js` and checks each one against the rendered pages.
+`TestTheClassesTheScriptAddsAreStyled` does the reverse for the classes it puts
+on things — a class nothing styles leaves the controls it was meant to hide
+sitting on the page. `TestEveryLinkOnTheChordPageIsHandled` requires every link
+inside the editor to carry the mark that says the script takes it over: a link
+that navigates reloads the page, throws away what was drawn, and writes the
+reader's fumbling into the address bar. Each of those failures looks like the
+page working slightly worse rather than like a bug. What breaks in a progressive
 enhancement is the join between the markup and the script, and nothing else looks
 at it: splitting the neck into one radio group per string left the script
 listening for `input[name="s"]`, and renaming the region it swaps left it looking

@@ -514,6 +514,16 @@
 			return;
 		}
 
+		/* One of the other names for what is drawn. The neck does not change —
+		 * the notes are the same notes — so only the chord travels, and the
+		 * shape on the board goes with the request untouched. */
+		var reading = e.target.closest(".readings [data-c]");
+		if (reading) {
+			e.preventDefault();
+			show(fromBoard({ c: reading.dataset.c }), ".readings li:first-child a");
+			return;
+		}
+
 		var pick = e.target.closest("[data-c]");
 		if (pick) {
 			e.preventDefault();
@@ -521,7 +531,7 @@
 			return;
 		}
 
-		var more = e.target.closest(".labmore a");
+		var more = e.target.closest("[data-more]");
 		if (more) {
 			e.preventDefault();
 			show(fromBoard({ all: "1" }), ".labmore a");

@@ -66,9 +66,10 @@ type FretboardView struct {
 
 // ReadingView is one name for the notes drawn on the board.
 type ReadingView struct {
-	Name string
-	URL  string
-	Note string // "sin la quinta", "con Mi en el bajo"
+	Name  string
+	Value string // the symbol as this package writes it, for a link to ask for
+	URL   string
+	Note  string // "sin la quinta", "con Mi en el bajo"
 }
 
 // LabShape is one diagram in the list of ways to hold a chord.
@@ -168,10 +169,12 @@ func Lab(o LabOptions) LabView {
 	v.Board = boardFor(drawn, start, o)
 
 	for _, r := range voicing.Identify(frets, voicing.Standard()) {
+		sym := r.Chord.Format(chord.English)
 		v.Readings = append(v.Readings, ReadingView{
-			Name: r.Chord.Format(o.Notation),
-			URL:  labURL(r.Chord.Format(chord.English), drawn.Grip(), start, o.All),
-			Note: readingNote(r, o.Notation),
+			Name:  r.Chord.Format(o.Notation),
+			Value: sym,
+			URL:   labURL(sym, drawn.Grip(), start, o.All),
+			Note:  readingNote(r, o.Notation),
 		})
 	}
 	if len(v.Readings) == 0 {

@@ -177,3 +177,45 @@ func flashPage(t *testing.T, ts *testServer) string {
 	ts.carry(w)
 	return ts.get(t, "/").Body.String()
 }
+
+// handledLink is the mark that says the script takes a link over.
+//
+// Every link inside the chord page carries one. The page is an editor: a link
+// that navigates reloads it, throws away what was drawn, and writes the reader's
+// fumbling into the address bar. Adding a link and forgetting the script is the
+// easiest mistake here, and it looks like the page working slightly worse rather
+// than like a bug.
+var handledLink = regexp.MustCompile(`\bdata-(?:grip|c|start|more)\b`)
+
+func TestEveryLinkOnTheChordPageIsHandled(t *testing.T) {
+	ts := newTestServer(t, basicSongs())
+	anchor := regexp.MustCompile(`<a\s[^>]*href="[^"]*"[^>]*>`)
+
+	checked := 0
+	for _, path := range []string{
+		"/chords", "/chords?c=C", "/chords?c=Am7&all=1",
+		"/chords?grip=0-3-2-2-1-0", "/chords?c=F&start=5",
+	} {
+		lab := labRegion(t, ts.get(t, path).Body.String())
+		for _, tag := range anchor.FindAllString(lab, -1) {
+			checked++
+			if !handledLink.MatchString(tag) {
+				t.Errorf("%s: this link navigates away instead of being handled: %s", path, tag)
+			}
+		}
+	}
+	if checked < 20 {
+		t.Fatalf("only %d links were checked; the chord page has more than that", checked)
+	}
+}
+
+var labBlock = regexp.MustCompile(`(?s)<div id="chordlab">(.*)</div>\s*</main>`)
+
+func labRegion(t *testing.T, body string) string {
+	t.Helper()
+	m := labBlock.FindStringSubmatch(body)
+	if m == nil {
+		t.Fatal("the page has no #chordlab region")
+	}
+	return m[1]
+}
