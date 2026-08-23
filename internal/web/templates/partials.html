@@ -324,9 +324,11 @@
 			</div>
 
 			<div class="boardfoot">
-				<button class="btn btn-primary" type="submit">Identificar</button>
+				{{/* Identifying happens as the neck is edited, so this button is
+				     only ever pressed when there is no script to do it. */}}
+				<button class="btn btn-primary fallback" type="submit">Identificar</button>
 				<a class="btn btn-quiet boardclear" href="/chords?c={{.Symbol}}&amp;grip=0-0-0-0-0-0"
-					data-grip="0-0-0-0-0-0" data-start="1">Al aire</a>
+					data-grip="0-0-0-0-0-0" data-start="1">Vaciar</a>
 			</div>
 		</form>
 
@@ -363,7 +365,7 @@
 			<select id="cqual" name="c">
 				{{range .Qualities}}<option value="{{.Value}}" {{if .On}}selected{{end}}>{{.Label}}</option>{{end}}
 			</select>
-			<button class="btn" type="submit">Ver</button>
+			<button class="btn fallback" type="submit">Ver</button>
 		</form>
 		{{with .Inversions}}
 			<h3 class="invhead">Con otra nota en el bajo</h3>

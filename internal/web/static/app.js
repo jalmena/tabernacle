@@ -399,6 +399,13 @@
 	var lab = document.getElementById("chordlab");
 	if (!lab || !window.fetch || !window.AbortController) return;
 
+	/* Some controls only exist for the reader who has no script: a button to
+	 * identify what is already identified, a button to apply a choice already
+	 * applied. Saying so here rather than leaving them out of the markup is what
+	 * keeps the page whole without one. The class outlives every swap, because
+	 * only the contents of #chordlab are replaced. */
+	lab.classList.add("live");
+
 	var pending = null;
 	var timer = null;
 	/* What each string was set to before the current click, which is the only way

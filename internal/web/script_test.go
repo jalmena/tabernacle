@@ -26,11 +26,7 @@ var selectorLiteral = regexp.MustCompile(
 // It reads the selectors out of app.js rather than repeating them, so a renamed
 // class cannot be fixed in one place and forgotten in the other.
 func TestTheScriptLooksForThingsThatExist(t *testing.T) {
-	raw, err := staticFS.ReadFile("static/app.js")
-	if err != nil {
-		t.Fatal(err)
-	}
-	script := string(raw)
+	script := asset(t, "static/app.js")
 
 	// Enough of the application that every state the script reaches into is
 	// rendered somewhere: the chord page, a song, both print views, the login
@@ -134,6 +130,39 @@ func tokensOf(sel string) []string {
 		}
 		part = strings.TrimPrefix(rest[end:], "]")
 	}
+}
+
+// classAdd finds the classes the script puts on things.
+var classAdd = regexp.MustCompile(`classList\.add\(\s*["']([^"']+)["']`)
+
+// A class the script adds has to mean something to the stylesheet.
+//
+// The other half of the same join: a selector that matches nothing is one way to
+// break a progressive enhancement, and a class nothing styles is the other. The
+// script hides the controls it has made redundant by adding one, and if the rule
+// it relies on is renamed the buttons simply stay on the page.
+func TestTheClassesTheScriptAddsAreStyled(t *testing.T) {
+	script, sheet := asset(t, "static/app.js"), asset(t, "static/app.css")
+
+	found := 0
+	for _, m := range classAdd.FindAllStringSubmatch(script, -1) {
+		found++
+		if !strings.Contains(sheet, "."+m[1]) {
+			t.Errorf("the script adds the class %q and no rule mentions it", m[1])
+		}
+	}
+	if found == 0 {
+		t.Fatal("no added classes came out of the script; the regex has stopped working")
+	}
+}
+
+func asset(t *testing.T, name string) string {
+	t.Helper()
+	b, err := staticFS.ReadFile(name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(b)
 }
 
 // flashPage is the library with a notice on it, which is the only state the

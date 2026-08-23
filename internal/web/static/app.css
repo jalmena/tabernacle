@@ -1192,6 +1192,10 @@ input[type="file"].filepick:focus-visible { outline: 2px solid var(--accent); ou
 
 .boardfoot { display: flex; gap: 0.5rem; justify-content: center; }
 
+/* A control that exists only for the reader without a script. The script hides
+ * it as it starts, because by then it does nothing the page has not done. */
+#chordlab.live .fallback { display: none; }
+
 .labread { margin: 1.25rem 0 0; border-top: 1px solid var(--rule); padding-top: 0.9rem; }
 .labread h3, .invhead {
 	margin: 0 0 0.5rem;

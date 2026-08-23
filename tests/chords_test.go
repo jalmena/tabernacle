@@ -49,6 +49,17 @@ func TestTheChordPageWorksWithoutScripting(t *testing.T) {
 		t.Error("the page carries inline script")
 	}
 
+	// The controls that only a reader without a script needs are there, and are
+	// marked so the script can take them away once it has made them pointless.
+	for _, want := range []string{
+		`<button class="btn btn-primary fallback" type="submit">Identificar</button>`,
+		`<button class="btn fallback" type="submit">Ver</button>`,
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("the page is missing its fallback control: %s", want)
+		}
+	}
+
 	// And submitting that form by hand identifies the shape.
 	got := in.page("/chords?s0=x&s1=3&s2=2&s3=0&s4=1&s5=0")
 	if !strings.Contains(got, `<span class="rname">C</span>`) {
