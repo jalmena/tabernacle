@@ -82,7 +82,8 @@ func All() []Lang {
 	return []Lang{
 		Spanish, English,
 		Catalan, Galician, Basque,
-		Portuguese, French, Italian, German,
+		Portuguese, French, Italian, German, Dutch, Polish, Russian,
+		Turkish, Indonesian, Chinese, Japanese, Korean, Hindi, Arabic,
 	}
 }
 
