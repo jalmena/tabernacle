@@ -24,9 +24,10 @@ telemetry. Reading needs no account; changing anything does.
 | **Authoring** | paste a song in, or edit the file directly |
 | **Songbook** | pick any set of songs and print them as one document |
 | **Accounts** | optional; two roles, and reading stays public |
-| **Language** | Spanish or English, per person |
+| **Language** | 19 languages, per person; right-to-left where it belongs |
 
-Interface in Spanish or English, chosen per account. Note names switch either way.
+Interface in any of 19 languages, chosen per account. Note names are a separate
+setting and switch either way — see [docs/languages.md](docs/languages.md).
 
 ## Screenshots
 
