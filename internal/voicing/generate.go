@@ -78,7 +78,12 @@ func shapesFor(r Requirement, opts GenerateOptions) []Voicing {
 					return
 				}
 				v := Voicing{Tuning: t, Frets: slices.Clone(frets)}
-				if v.Span() > maxSpan || mutedInside(v.Frets) > 1 {
+				// A silent string between two ringing ones has to be damped
+				// deliberately, with a fingertip leaning off a note that is
+				// already being held. It is a real technique and not a shape to
+				// hand somebody learning a chord, and no one of the fifty
+				// hand-written shapes does it.
+				if v.Span() > maxSpan || mutedInside(v.Frets) > 0 {
 					return
 				}
 				if ok, _ := r.Satisfies(v); !ok {
@@ -142,7 +147,6 @@ func shapesFor(r Requirement, opts GenerateOptions) []Voicing {
 			return cmp.Compare(ka, kb)
 		}
 		for _, d := range []int{
-			cmp.Compare(mutedInside(a.Frets), mutedInside(b.Frets)),
 			cmp.Compare(full(b), full(a)),
 			cmp.Compare(a.Cost, b.Cost),
 			cmp.Compare(ka, kb),

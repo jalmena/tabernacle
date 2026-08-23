@@ -103,8 +103,9 @@ func TestGeneratedShapesArePlayable(t *testing.T) {
 				if v.Span() > maxSpan {
 					t.Errorf("%s: spans %d frets", what, v.Span())
 				}
-				if mutedInside(v.Frets) > 1 {
-					t.Errorf("%s: %d muted strings inside", what, mutedInside(v.Frets))
+				if mutedInside(v.Frets) > 0 {
+					t.Errorf("%s: %d muted strings inside, which nobody is going to damp",
+						what, mutedInside(v.Frets))
 				}
 				// A finger may lie across two strings at the same fret; it may
 				// not be on two different frets unless it is the barre.
@@ -169,9 +170,9 @@ func TestTheWrittenShapeLeadsAndTheRestAreFullestFirst(t *testing.T) {
 		full := fullness(req)
 		order := func(v Voicing) []int {
 			if written[fretKey(v.Frets)] {
-				return []int{0, 0, 0, v.Cost}
+				return []int{0, 0, v.Cost}
 			}
-			return []int{1, mutedInside(v.Frets), -full(v), v.Cost}
+			return []int{1, -full(v), v.Cost}
 		}
 		for i := 1; i < len(got); i++ {
 			if slices.Compare(order(got[i-1]), order(got[i])) > 0 {

@@ -225,6 +225,15 @@ Four frets and not the five a diagram draws: a shape spans at most four, so
 walking windows of four is already exhaustive and a wider one would only
 rediscover the same shapes.
 
+**Nothing silent in the middle.** A muted string between two ringing ones has to
+be damped deliberately, with a fingertip leaning off a note already being held.
+It is a real technique and not a shape to hand somebody learning a chord, so the
+search throws those away rather than ranking them low. None of the fifty
+hand-written shapes does it either, which is the check that the rule is a real
+one and not a preference. It is also what cuts the search's output roughly in
+half: Am7 goes from 370 grips to 168, and every one that is left is something a
+hand can simply hold.
+
 ### Fingering
 
 Deterministic and without the thumb. Fingers go on in order of fret and then of
@@ -254,8 +263,7 @@ than a set of categories.
 1. **A shape written down for this exact chord**, easiest of those first. A
    curated entry names a chord and a grip together — somebody decided that this
    is how this chord is held — and there is nothing to weigh that against.
-2. **Everything else**: fewest muted strings inside the shape, then fullest, then
-   easiest.
+2. **Everything else**: fullest, then easiest.
 
 The distinction in the first rule is between the dataset's two kinds of entry,
 and it matters. A movable template slid until its root lands on the right note is
