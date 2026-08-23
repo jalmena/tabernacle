@@ -166,6 +166,42 @@ type CellView struct {
 	Text       string
 }
 
+// PrintedLines estimates how many lines of type a sheet takes.
+//
+// A chord line and the words under it are two lines of type, which is why a
+// sheet with chords runs to roughly twice the length of its lyrics. Verbatim
+// blocks count their own newlines, headings count one, and a blank line between
+// stanzas counts one.
+//
+// It is an estimate and cannot be anything else: how many lines fit depends on
+// the paper, the font and how far each line wraps. It is used for one decision —
+// whether a song is long enough to be worth setting in two columns — where being
+// a line or two out changes nothing.
+func (v SheetView) PrintedLines() int {
+	n := 0
+	for _, sec := range v.Sections {
+		if sec.Label != "" {
+			n++
+		}
+		for i, b := range sec.Blocks {
+			if i > 0 {
+				n++ // the blank line between stanzas
+			}
+			if b.Verbatim {
+				n += strings.Count(b.Text, "\n") + 1
+				continue
+			}
+			for _, ln := range b.Lines {
+				n++
+				if ln.HasChord {
+					n++
+				}
+			}
+		}
+	}
+	return n
+}
+
 // Sheet renders a song.
 func Sheet(s song.Song, o Options) SheetView {
 	o.Transpose = NormalizeTranspose(o.Transpose)

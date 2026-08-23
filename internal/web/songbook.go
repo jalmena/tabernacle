@@ -56,7 +56,19 @@ type songbookSheet struct {
 	Sheet   render.SheetView
 	OrigKey string
 	Step    string
+	// TwoColumns is set for a song too long to fit one side of paper. Two
+	// columns hold about twice as much, which is the difference between a song
+	// you can see whole and one you have to turn over mid-verse.
+	TwoColumns bool
 }
+
+// linesPerPage is how many lines of type one side of A4 holds at the printed
+// size, once the song's own heading is out of the way.
+//
+// It decides one thing: whether a song is set in one column or two. A little
+// generous on purpose — a song that spills by two lines is better turned over
+// than squeezed into columns it does not need.
+const linesPerPage = 46
 
 // handleSongbook offers the collection with a checkbox on each row.
 //
@@ -132,9 +144,10 @@ func (s *Server) handleSongbookPrint(w http.ResponseWriter, r *http.Request) {
 			Print:     true,
 		})
 		body.Songs = append(body.Songs, songbookSheet{
-			Sheet:   sheet,
-			OrigKey: sheet.OrigKey,
-			Step:    stepShort(view.State.Transpose),
+			Sheet:      sheet,
+			OrigKey:    sheet.OrigKey,
+			Step:       stepShort(view.State.Transpose),
+			TwoColumns: sheet.PrintedLines() > linesPerPage,
 		})
 	}
 	if len(body.Songs) == 0 {

@@ -11,7 +11,8 @@
 		{{/* One form for the whole thing. What to print is on the left and how to
 		     print it on the right, because those are the two questions and they
 		     are not the same question. On a phone the second follows the first. */}}
-		<form action="/songbook/print" method="get" id="songbookform" class="booklayout">
+		<form action="/songbook/print" method="get" id="songbookform" class="booklayout"
+		      target="_blank" rel="noopener">
 
 			<section class="bookpick">
 				<h2>{{$.T "book.songs"}}</h2>

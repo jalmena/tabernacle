@@ -29,7 +29,7 @@
 		{{end}}
 
 		{{range .Songs}}
-			<section class="songbook-song">
+			<section class="songbook-song{{if .TwoColumns}} twocol{{end}}">
 				<div class="songhead">
 					<h1>{{.Sheet.Title}}</h1>
 					{{if .Sheet.Artist}}<p class="by">{{.Sheet.Artist}}</p>{{end}}
@@ -45,7 +45,7 @@
 					{{end}}
 					{{if .Sheet.TabNote}}<p class="transposed">{{.Sheet.TabNote}}</p>{{end}}
 				</div>
-				{{template "sections" .Sheet}}
+				<div class="songbody">{{template "sections" .Sheet}}</div>
 			</section>
 		{{end}}
 	{{end}}

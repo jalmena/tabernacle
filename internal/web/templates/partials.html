@@ -126,7 +126,7 @@
 		   rel="nofollow">Simplificar</a>
 	{{end}}
 
-	<a class="btn btn-quiet" href="{{.PrintURL}}">Imprimir</a>
+	<a class="btn btn-quiet" href="{{.PrintURL}}" target="_blank" rel="noopener">Imprimir</a>
 </div>
 
 <div id="sheet">
@@ -192,25 +192,39 @@
 <div class="sheet">
 	{{range .Sections}}
 		<section class="section section-{{.Kind}}" id="{{.Anchor}}">
-			{{if .Label}}<h2>{{.Label}}</h2>{{end}}
-			{{range .Blocks}}
-				{{if .Verbatim}}
-					<pre class="tab" {{if .Info}}data-kind="{{.Info}}"{{end}}>{{.Text}}</pre>
-				{{else}}
-					<div class="block">
-						{{range .Lines}}
-							{{if .HasChord}}
-								<p class="line line-chords">{{range .Words}}<span class="word">{{range .Cells}}<span class="cell">{{if .Chord}}<a class="chord" href="#acorde-{{.ChordID}}" data-chord="{{.ChordID}}" title="Ver la posición de {{.Chord}}">{{.Chord}}</a>{{else}}<span class="chord"></span>{{end}}<span>{{if .Annotation}}<span class="annotation">[{{.Annotation}}]</span>{{else}}{{.Text}}{{end}}</span></span>{{end}}</span>{{.Sep}}{{end}}</p>
-							{{else}}
-								<p class="line">{{range .Words}}{{range .Cells}}{{if .Annotation}}<span class="annotation">[{{.Annotation}}]</span>{{else}}{{.Text}}{{end}}{{end}}{{.Sep}}{{end}}</p>
-							{{end}}
-						{{end}}
-					</div>
-				{{end}}
+			{{if and .Label .Blocks}}
+				{{/* A heading and the stanza under it are one piece that a page or
+				     a column break may not come between. Saying so in the markup
+				     rather than with break-after: avoid, which engines honour
+				     unevenly and hardly at all inside columns. */}}
+				<div class="opening">
+					<h2>{{.Label}}</h2>
+					{{template "songblock" index .Blocks 0}}
+				</div>
+				{{range slice .Blocks 1}}{{template "songblock" .}}{{end}}
+			{{else}}
+				{{if .Label}}<h2>{{.Label}}</h2>{{end}}
+				{{range .Blocks}}{{template "songblock" .}}{{end}}
 			{{end}}
 		</section>
 	{{end}}
 </div>
+{{end}}
+
+{{define "songblock"}}
+	{{if .Verbatim}}
+		<pre class="tab" {{if .Info}}data-kind="{{.Info}}"{{end}}>{{.Text}}</pre>
+	{{else}}
+		<div class="block">
+			{{range .Lines}}
+				{{if .HasChord}}
+					<p class="line line-chords">{{range .Words}}<span class="word">{{range .Cells}}<span class="cell">{{if .Chord}}<a class="chord" href="#acorde-{{.ChordID}}" data-chord="{{.ChordID}}" title="Ver la posición de {{.Chord}}">{{.Chord}}</a>{{else}}<span class="chord"></span>{{end}}<span>{{if .Annotation}}<span class="annotation">[{{.Annotation}}]</span>{{else}}{{.Text}}{{end}}</span></span>{{end}}</span>{{.Sep}}{{end}}</p>
+				{{else}}
+					<p class="line">{{range .Words}}{{range .Cells}}{{if .Annotation}}<span class="annotation">[{{.Annotation}}]</span>{{else}}{{.Text}}{{end}}{{end}}{{.Sep}}{{end}}</p>
+				{{end}}
+			{{end}}
+		</div>
+	{{end}}
 {{end}}
 
 {{define "songfacts"}}

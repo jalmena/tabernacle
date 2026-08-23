@@ -284,9 +284,14 @@ a:hover { text-decoration-thickness: 2px; }
 .section-chorus h2 { color: var(--chord); }
 .section-chorus .block { border-left: 2px solid var(--chord-bg); padding-left: 0.6rem; margin-left: -0.6rem; }
 
-/* A stanza is the unit that must not be split across a printed page. */
+/* A stanza is the unit that must not be split across a printed page, and a
+ * heading travels with the stanza it introduces. */
 .block { margin: 0 0 0.7rem; }
-.block:last-child { margin-bottom: 0; }
+.section > .block:last-child,
+.section > .opening:last-child .block:last-child { margin-bottom: 0; }
+/* Everywhere, not only on paper: the songbook's two-column preview breaks
+ * across columns on screen too, and the preview is meant to be what prints. */
+.opening { break-inside: avoid; page-break-inside: avoid; }
 
 .line {
 	/* Preserves the spacing the writer put in the file, and still lets the line
@@ -611,6 +616,12 @@ body.printing .transposed {
 	/* Keep a stanza whole and never leave a heading alone at the foot of a page.
 	 * Both are what separate a printout from a song sheet worth filing. */
 	.block, .tab { break-inside: avoid; page-break-inside: avoid; }
+
+	/* On paper the column fills to the foot of the page before the next one
+	 * starts, so the sheet reads down and then across. Balancing is right on
+	 * screen, where a preview sheet has no fixed height, and wrong here: it
+	 * would leave two half-empty columns on a song's last page. */
+	.songbook-song.twocol .songbody { column-gap: 10mm; column-fill: auto; }
 	.section h2 { break-after: avoid; page-break-after: avoid; }
 
 	.tab { border: 1px solid #999; background: transparent; }
@@ -800,6 +811,16 @@ html { accent-color: var(--accent); }
 }
 .songbook-index ol { margin: 0.5rem 0 0; padding-left: 1.4rem; }
 .songbook-index li { margin: 0.15rem 0; }
+
+/* A songbook is a document rather than a screen, and a document centres what it
+ * is about. */
+.songbook-song .songhead, .songbook-index h1 { text-align: center; }
+.songbook-song .facts { justify-content: center; }
+
+/* A song too long for one side is set in two columns, which hold about twice as
+ * much. A section may now break across a column; a stanza still may not. */
+.songbook-song.twocol .songbody { columns: 2; column-gap: 2rem; }
+.songbook-song.twocol .section { break-inside: auto; }
 
 /* A notice and its close button. */
 .flash {

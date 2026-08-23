@@ -21,7 +21,7 @@ func threeSongs() map[string]string {
 	}
 }
 
-var songbookSection = regexp.MustCompile(`class="songbook-song"`)
+var songbookSection = regexp.MustCompile(`class="songbook-song[^"]*"`)
 
 func bookSongs(body string) int { return len(songbookSection.FindAllString(body, -1)) }
 
@@ -176,5 +176,87 @@ func TestTheSongbookChooserWorksWithoutScripting(t *testing.T) {
 	// The script is loaded by file, never inline.
 	if strings.Contains(body, "<script>") {
 		t.Error("the page carries an inline script")
+	}
+}
+
+// longSong is a song no one side of paper will hold.
+func longSong() string {
+	var b strings.Builder
+	b.WriteString("---\ntitle: Larga\nartist: Otro\nkey: C\n---\n")
+	for v := 1; v <= 8; v++ {
+		b.WriteString("\n## Estrofa " + strconv.Itoa(v) + "\n")
+		for i := 0; i < 4; i++ {
+			b.WriteString("[C]una linea con acordes y bastante texto encima\n")
+			b.WriteString("[F]y otra linea igual de larga para hacer bulto\n")
+		}
+	}
+	return b.String()
+}
+
+// A song too long for one side is set in two columns; a short one is not.
+//
+// Two columns hold about twice as much, which is the difference between a song
+// you can see whole and one you have to turn over in the middle of a verse.
+func TestALongSongIsSetInTwoColumns(t *testing.T) {
+	ts := newTestServer(t, map[string]string{
+		"Traditional/Amazing Grace.song": graceSong,
+		"Otro/Larga.song":                longSong(),
+	})
+
+	short := ts.get(t, "/songbook/print?s=traditional-amazing-grace").Body.String()
+	if strings.Contains(short, "twocol") {
+		t.Error("a song that fits one side was set in two columns")
+	}
+
+	long := ts.get(t, "/songbook/print?s=otro-larga").Body.String()
+	if !strings.Contains(long, `class="songbook-song twocol"`) {
+		t.Error("a song too long for one side was not set in two columns")
+	}
+}
+
+// A heading never leaves its stanza behind.
+//
+// Asserted on the markup rather than on a stylesheet rule, because the rule that
+// would express it — break-after: avoid — is honoured unevenly by print engines
+// and hardly at all inside columns. Wrapping the two in one box is the guarantee.
+func TestAHeadingTravelsWithItsStanza(t *testing.T) {
+	ts := newTestServer(t, threeSongs())
+	body := ts.get(t, "/songbook/print?s=otro-segunda").Body.String()
+
+	opening := regexp.MustCompile(`(?s)<div class="opening">(.*?)</div>\s*</section>`)
+	m := opening.FindStringSubmatch(body)
+	if m == nil {
+		t.Fatal("the heading and its stanza are not wrapped together")
+	}
+	if !strings.Contains(m[1], "<h2>Estrofa 1</h2>") {
+		t.Error("the wrapper does not hold the heading")
+	}
+	if !strings.Contains(m[1], `class="block"`) {
+		t.Error("the wrapper does not hold the stanza")
+	}
+}
+
+// Printing opens a document beside the page rather than replacing it: a reader
+// who prints has not finished with the song they were looking at.
+func TestPrintingOpensInANewTab(t *testing.T) {
+	ts := newTestServer(t, threeSongs())
+
+	song := ts.get(t, "/songs/traditional-amazing-grace").Body.String()
+	printLink := regexp.MustCompile(`<a[^>]*href="[^"]*/print[^"]*"[^>]*>`)
+	m := printLink.FindString(song)
+	if m == "" {
+		t.Fatal("the song page offers no way to print")
+	}
+	if !strings.Contains(m, `target="_blank"`) || !strings.Contains(m, `rel="noopener"`) {
+		t.Errorf("the print link does not open a new tab safely: %s", m)
+	}
+
+	book := ts.get(t, "/songbook").Body.String()
+	form := regexp.MustCompile(`<form[^>]*action="/songbook/print"[^>]*>`).FindString(book)
+	if form == "" {
+		t.Fatal("the songbook has no print form")
+	}
+	if !strings.Contains(form, `target="_blank"`) {
+		t.Errorf("the songbook does not print into a new tab: %s", form)
 	}
 }
