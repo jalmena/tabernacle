@@ -510,6 +510,9 @@
 			 * strings must not also be sent: the server prefers them. */
 			for (var i = 0; i < 8; i++) p.delete("s" + i);
 			p.set("grip", shape.dataset.grip);
+			/* A near miss carries a chord as well as a shape: it is both the
+			 * answer and the way to hold it. */
+			if (shape.dataset.c) p.set("c", shape.dataset.c);
 			show(p, shape.classList.contains("labshape") ? ".labshape.on" : ".boardclear");
 			return;
 		}

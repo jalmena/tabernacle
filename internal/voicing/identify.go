@@ -112,3 +112,132 @@ func Identify(frets []Fret, t Tuning) []Reading {
 	})
 	return out
 }
+
+// worthFollowing reports whether stopping a string actually improves the reading.
+//
+// A reading with the root underneath always does: it turns an inversion into the
+// chord itself, which is what somebody learning is reaching for. An inverted one
+// only does if the strings being stopped were sounding a note the chord does not
+// have — otherwise it is the same chord, thinner, over a different bass.
+func worthFollowing(r Reading, drawn []int) bool {
+	if !r.Inverted {
+		return true
+	}
+	allowed := Requirement{Root: r.Root, Quality: r.Quality, Bass: -1}.Allowed()
+	for _, pc := range drawn {
+		if !slices.Contains(allowed, pc) {
+			return true
+		}
+	}
+	return false
+}
+
+// Suggestion is a chord a shape would play if some of its ringing strings were
+// stopped.
+type Suggestion struct {
+	Reading
+	// Silence is the strings to stop, lowest first.
+	Silence []int
+}
+
+// maxSilence is how many ringing strings a suggestion may ask to be stopped.
+//
+// Two, because two is the number a beginner leaves ringing by accident: the pair
+// of thick strings above a D or a Dm. Allowing three would start naming chords
+// that have little to do with what is on the neck.
+const maxSilence = 2
+
+// Suggest names the chords a shape nearly plays, best first.
+//
+// Somebody learning does not reliably hear the difference between a string they
+// have stopped and one they have left open, so a D drawn on an untouched neck
+// comes out as three right notes over two wrong ones and gets no name at all.
+// This is what turns that into "D, if you stop the sixth and the fifth" — which
+// is both the answer and the lesson.
+//
+// Only open strings may be stopped. A fretted note was put there on purpose and
+// is not a mistake to correct. A shape that would need a string silenced between
+// two ringing ones is refused for the same reason the generator refuses to make
+// one: nobody is going to damp it.
+//
+// And a suggestion has to be worth following. Stopping a string that belongs to
+// the chord only thins it out — the plain D would otherwise be told it could be
+// D/A, which corrects nothing. So a suggestion either takes away a note the
+// chord does not have, or it puts the root underneath where it was not.
+func Suggest(frets []Fret, t Tuning) []Suggestion {
+	if t.IsZero() {
+		t = Standard()
+	}
+	exact := make(map[string]bool)
+	for _, r := range Identify(frets, t) {
+		exact[r.Chord.String()] = true
+	}
+
+	drawn := Voicing{Tuning: t, Frets: frets}.PitchClasses()
+
+	var open []int
+	for i, f := range frets {
+		if f == Open {
+			open = append(open, i)
+		}
+	}
+	if len(open) == 0 {
+		return nil
+	}
+
+	best := make(map[string]Suggestion)
+	for mask := 1; mask < 1<<len(open); mask++ {
+		var pick []int
+		for i, s := range open {
+			if mask&(1<<i) != 0 {
+				pick = append(pick, s)
+			}
+		}
+		if len(pick) > maxSilence {
+			continue
+		}
+		cand := slices.Clone(frets)
+		for _, i := range pick {
+			cand[i] = Muted
+		}
+		v := Voicing{Tuning: t, Frets: cand}
+		if mutedInside(cand) > 0 || sounded(v) < 3 {
+			continue
+		}
+		for _, r := range Identify(cand, t) {
+			name := r.Chord.String()
+			if exact[name] || !worthFollowing(r, drawn) {
+				continue
+			}
+			// The cheapest way to reach a chord is the one worth suggesting.
+			if had, ok := best[name]; ok && len(had.Silence) <= len(pick) {
+				continue
+			}
+			best[name] = Suggestion{Reading: r, Silence: pick}
+		}
+	}
+
+	out := make([]Suggestion, 0, len(best))
+	for _, sg := range best {
+		out = append(out, sg)
+	}
+	slices.SortFunc(out, func(a, b Suggestion) int {
+		if d := cmp.Compare(len(a.Silence), len(b.Silence)); d != 0 {
+			return d
+		}
+		if d := cmp.Compare(len(a.Omitted), len(b.Omitted)); d != 0 {
+			return d
+		}
+		if a.Inverted != b.Inverted {
+			if a.Inverted {
+				return 1
+			}
+			return -1
+		}
+		if d := cmp.Compare(rank[a.Quality], rank[b.Quality]); d != 0 {
+			return d
+		}
+		return cmp.Compare(a.Root, b.Root)
+	})
+	return out
+}

@@ -291,3 +291,48 @@ func TestTheChosenReadingIsMarked(t *testing.T) {
 		t.Errorf("%d readings are marked at once", n)
 	}
 }
+
+// Drawing a chord on an untouched neck leaves the thick strings ringing, which
+// is the commonest mistake there is. The page names the chord anyway and says
+// what to stop, and following it silences those strings.
+func TestANearMissIsNamedAndCanBeFollowed(t *testing.T) {
+	in := start(t, nil)
+
+	body := in.page("/chords?grip=0-0-0-2-3-2") // D, with the sixth and fifth still open
+	if !strings.Contains(body, "Casi") {
+		t.Fatal("the page does not offer the near miss at all")
+	}
+	for _, want := range []string{
+		`<span class="rname">D/A</span>`, "sin la 6ª",
+		`<span class="rname">D</span>`, "sin la 6ª y la 5ª",
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("the near miss is missing %q", want)
+		}
+	}
+
+	// Following the second one puts the real D on the neck and names it exactly.
+	nearly := regexp.MustCompile(`data-c="D" data-grip="([x0-9-]+)"`).FindStringSubmatch(body)
+	if nearly == nil {
+		t.Fatal("the suggestion carries no shape to follow")
+	}
+	if nearly[1] != "x-x-0-2-3-2" {
+		t.Fatalf("following D would draw %s, want x-x-0-2-3-2", nearly[1])
+	}
+	after := in.page("/chords?c=D&grip=" + nearly[1])
+	if !strings.Contains(after, `<a class="on" href="/chords?c=D&amp;grip=x-x-0-2-3-2" data-c="D"`) {
+		t.Error("after following it, D is not the reading the page is about")
+	}
+	if strings.Contains(after, "Casi") {
+		t.Error("the near miss is still offered once the shape is exact")
+	}
+}
+
+// An untouched neck is not handed a list of everything six open strings could
+// almost be.
+func TestAnUntouchedNeckSuggestsNothing(t *testing.T) {
+	in := start(t, nil)
+	if strings.Contains(in.page("/chords"), "Casi") {
+		t.Error("the opening page offers near misses before anything is drawn")
+	}
+}

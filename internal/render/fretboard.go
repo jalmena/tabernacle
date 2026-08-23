@@ -84,6 +84,20 @@ type LabShape struct {
 	On    bool // this is the shape currently on the neck
 }
 
+// SuggestionView is a chord the drawn shape would play if some of its ringing
+// strings were stopped, together with the shape that would do it.
+//
+// Following one applies the stopping as well as naming the chord, because seeing
+// the neck turn into the real shape is the part that teaches.
+type SuggestionView struct {
+	Name  string
+	Value string
+	Grip  string
+	Start int
+	Note  string // "sin la 6ª y la 5ª"
+	URL   string
+}
+
 // InversionView points at the same chord over a different bass, which is a
 // different chord and gets its own page rather than being piled onto this one.
 type InversionView struct {
@@ -101,6 +115,10 @@ type LabView struct {
 	Board    FretboardView
 	Readings []ReadingView
 	Sounds   []string // the notes drawn, when none of them make a chord
+	// Nearly are the chords the shape would play with a ringing string or two
+	// stopped. Somebody learning does not reliably hear the difference between a
+	// string they stopped and one they left open.
+	Nearly []SuggestionView
 	// Shapes is every way of holding the chord, easiest first and undivided:
 	// somebody learning a chord wants the one they can play today and then the
 	// next one, which is an order rather than a set of categories.
@@ -185,6 +203,30 @@ func Lab(o LabOptions) LabView {
 		}
 	}
 
+	// An untouched neck has nothing to nearly play, so it is not offered six
+	// strings' worth of guesses before the reader has done anything.
+	if drawn.Reach() > 0 {
+		for _, sg := range voicing.Suggest(frets, voicing.Standard()) {
+			if len(v.Nearly) == howManyNearly {
+				break
+			}
+			quiet := slices.Clone(frets)
+			for _, i := range sg.Silence {
+				quiet[i] = voicing.Muted
+			}
+			hushed := voicing.Voicing{Tuning: voicing.Standard(), Frets: quiet}
+			sym := sg.Chord.Format(chord.English)
+			v.Nearly = append(v.Nearly, SuggestionView{
+				Name:  sg.Chord.Format(o.Notation),
+				Value: sym,
+				Grip:  hushed.Grip(),
+				Start: start,
+				Note:  withoutStrings(sg.Silence),
+				URL:   labURL(sym, hushed.Grip(), start, o.All),
+			})
+		}
+	}
+
 	// The reading the page is currently about is the one the shapes below belong
 	// to, and it says so. Failing that, the first: it is the likeliest name for
 	// what is drawn, which is a thing worth pointing at even before anybody has
@@ -240,6 +282,25 @@ func boardFor(v voicing.Voicing, start int, o LabOptions) FretboardView {
 		b.Strings = append(b.Strings, row)
 	}
 	return b
+}
+
+// howManyNearly is how many near misses are worth offering. More than a handful
+// stops being a hint and becomes a list of everything the six strings could
+// almost be.
+const howManyNearly = 4
+
+// withoutStrings names the strings a suggestion asks to be stopped.
+func withoutStrings(at []int) string {
+	parts := make([]string, 0, len(at))
+	for _, i := range at {
+		if i < len(stringNames) {
+			parts = append(parts, "la "+stringNames[i])
+		}
+	}
+	if len(parts) == 0 {
+		return ""
+	}
+	return "sin " + joinWords(parts)
 }
 
 // readingNote says what is unusual about a reading, so that "Do7 sin la quinta"

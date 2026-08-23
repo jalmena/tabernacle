@@ -347,6 +347,22 @@
 			{{else}}
 				<p class="empty-inline">Marca algunas cuerdas y se te dirá qué acorde forman.</p>
 			{{end}}
+
+			{{with .Nearly}}
+				{{/* A ringing string that does not belong is the commonest mistake
+				     there is, so the near miss is named rather than left to be
+				     guessed at. Following one silences those strings as well as
+				     naming the chord: seeing the neck turn into the real shape is
+				     the part that teaches. */}}
+				<h3 class="nearlyhead">Casi</h3>
+				<ul class="readings nearly">
+					{{range .}}
+						<li><a href="{{.URL}}" data-c="{{.Value}}" data-grip="{{.Grip}}" data-start="{{.Start}}">
+							<span class="rname">{{.Name}}</span>
+							<span class="rnote">{{.Note}}</span></a></li>
+					{{end}}
+				</ul>
+			{{end}}
 		</div>
 	</div>
 

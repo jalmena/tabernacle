@@ -312,6 +312,31 @@ adding a twenty-first is a decision rather than an accident.
 If nothing fits, the page says which notes are sounding and that they are not a
 chord we can name. It never invents one.
 
+### Near misses
+
+`voicing.Suggest` names the chords a shape *nearly* plays. Somebody learning does
+not reliably hear the difference between a string they have stopped and one they
+have left open, so a D drawn on an untouched neck comes out as three right notes
+over two wrong ones and gets no name at all. This turns that into "D/A, without
+the sixth" and "D, without the sixth and the fifth" — which is both the answer
+and the lesson. Following one silences those strings as well as naming the chord,
+because seeing the neck turn into the real shape is the part that teaches.
+
+Three rules keep it a hint rather than a guessing game:
+
+- **Only open strings may be stopped.** A fretted note was put there on purpose
+  and is not a mistake to correct.
+- **At most two**, because two is the number a beginner leaves ringing by
+  accident: the pair of thick strings above a D or a Dm. Three would start naming
+  chords with little to do with what is on the neck.
+- **It has to be an improvement.** Stopping a string that belongs to the chord
+  only thins it out — the plain `x x 0 2 3 2` would otherwise be told it could be
+  D/A. So a suggestion either takes away a note the chord does not have, or it
+  puts the root underneath where it was not.
+
+Nothing is suggested for a shape that already plays a chord exactly, or for an
+untouched neck: six open strings are not a near miss, they are a starting point.
+
 ## The editable neck
 
 The neck on the chord page is a form of radio buttons, one group per string, and

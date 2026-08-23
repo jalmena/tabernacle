@@ -1224,6 +1224,19 @@ input[type="file"].filepick:focus-visible { outline: 2px solid var(--accent); ou
 /* The reading the rest of the page is about. */
 .readings a.on { border-color: var(--accent); background: var(--chord-bg); }
 
+/* A near miss is a suggestion and not a reading, so it is quieter: dashed, and
+ * the chord in the ordinary ink rather than the chord colour. */
+.nearlyhead {
+	margin: 1rem 0 0.5rem;
+	font-size: 0.8125rem;
+	font-weight: 650;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var(--ink-faint);
+}
+.readings.nearly a { border-style: dashed; }
+.readings.nearly .rname { color: var(--ink); font-weight: 500; }
+
 .pickform { display: flex; gap: 0.4rem; margin: 0 0 0.6rem; flex-wrap: wrap; }
 .pickform input[type="text"], .pickform select {
 	flex: 1 1 8rem;
