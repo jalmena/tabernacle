@@ -273,14 +273,19 @@ func (l *Library) indexBroken(ctx context.Context, e songfs.Entry, slug string) 
 	return nil
 }
 
-// describeParseError reduces an error to a message and a line number.
+// describeParseError reduces an error to a message and a line number, for the
+// index and the log.
+//
+// English, deliberately: this is a stored diagnostic and a log line, not
+// something a reader is shown. The song page translates the live error instead,
+// which is where the reader's language is known.
 func describeParseError(err error) (string, int) {
 	if err == nil {
 		return "", 0
 	}
 	var se *song.SyntaxError
 	if errors.As(err, &se) {
-		return se.Msg, se.Line
+		return se.Msg(), se.Line
 	}
 	return err.Error(), 0
 }

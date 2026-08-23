@@ -145,8 +145,13 @@ const DefaultMax = 4
 type Result struct {
 	Quality  harmony.Quality
 	Voicings []Voicing
-	// Warning explains an empty result in Spanish, ready to show.
+	// Warning explains an empty result, as a catalogue key. Tuning names the
+	// tuning when the key needs one.
+	//
+	// A key and not a sentence: this package is asked about guitar shapes by
+	// callers who know who is reading, and it is not one of them.
 	Warning string
+	Tuning  string
 }
 
 // Found reports whether there is anything to draw.

@@ -53,6 +53,8 @@ func TestTranslationsAreNotCopies(t *testing.T) {
 		"notation.abc":    true, // note names, not words
 		"notation.doremi": true, // the same, in the other naming
 		"sheet.reset":     true, // "Original" is borrowed as it stands in most of these
+		"parse.field":     true, // a passthrough for a message from elsewhere
+		"why.other":       true, // the same
 	}
 	for _, l := range All() {
 		if l == Spanish {

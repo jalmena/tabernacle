@@ -280,7 +280,7 @@ func Sheet(s song.Song, o Options) SheetView {
 			// sheet-wide control is the way out, so name it here rather than
 			// leaving the reader to guess that the button at the top is related.
 			if len(ref.Voicings) == 0 && v.CanSimplify {
-				ref.Warning += " Simplificar propone una que se pueda tocar."
+				ref.Warning += " " + say.T("warn.trysimplify")
 			}
 		}
 		v.Chords = append(v.Chords, ref)

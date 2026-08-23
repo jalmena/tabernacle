@@ -383,7 +383,7 @@ func For(c chord.Chord, opts Options) Result {
 
 	ds, err := load()
 	if err != nil {
-		res.Warning = "No se ha podido cargar la base de acordes."
+		res.Warning = "warn.dataset"
 		return res
 	}
 
@@ -392,7 +392,7 @@ func For(c chord.Chord, opts Options) Result {
 	// C7's shape would play the chord that was not written.
 	q, red, ok := harmony.Of(c)
 	if !ok || !red.Exact() {
-		res.Warning = warningForNothing(tuning)
+		res.Warning, res.Tuning = warningForNothing(tuning)
 		return res
 	}
 	res.Quality = q
@@ -404,7 +404,7 @@ func For(c chord.Chord, opts Options) Result {
 
 	found := dedupe(gather(ds, k, tuning))
 	if len(found) == 0 {
-		res.Warning = warningForNothing(tuning)
+		res.Warning, res.Tuning = warningForNothing(tuning)
 		return res
 	}
 	sort.SliceStable(found, func(i, j int) bool {
@@ -581,9 +581,9 @@ func mutedInside(frets []Fret) int {
 	return n
 }
 
-func warningForNothing(tuning Tuning) string {
-	if !tuning.Equal(Standard()) {
-		return "No hay posiciones para la afinación " + tuning.Name + "."
+func warningForNothing(tuning Tuning) (string, string) {
+	if !tuning.IsZero() && !tuning.Equal(Standard()) {
+		return "warn.notuning", tuning.Name
 	}
-	return "No hay una posición conocida para este acorde."
+	return "warn.noshape", ""
 }

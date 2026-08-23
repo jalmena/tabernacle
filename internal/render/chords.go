@@ -15,7 +15,7 @@ import (
 // package's own types, so that a template and the diagram renderer need not know
 // anything about how chords are modelled.
 type VoicingView struct {
-	Name      string // "Posición abierta", "Cejilla en el traste 5"
+	Name      string // where the shape sits, in the reader's language
 	Frets     []int  // lowest string first; -1 muted, 0 open
 	Fingers   []int
 	Barres    []BarreView
@@ -65,7 +65,11 @@ func chordVoicings(say *i18n.Printer, c chord.Chord, text string, opts voicing.O
 		vv.Fingering = describeShape(say, text, v)
 		out = append(out, vv)
 	}
-	return out, res.Warning
+	warning := ""
+	if res.Warning != "" {
+		warning = say.T(res.Warning, res.Tuning)
+	}
+	return out, warning
 }
 
 // windowFrets is how many frets a diagram draws.

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/jalmena/tabernacle/internal/config"
+	"github.com/jalmena/tabernacle/internal/i18n"
 	"github.com/jalmena/tabernacle/internal/library"
 	"github.com/jalmena/tabernacle/internal/render"
 	"github.com/jalmena/tabernacle/internal/song"
@@ -181,7 +182,7 @@ func (s *Server) loadSong(r *http.Request) (songBody, songView, error) {
 
 	if view.ParseError != nil {
 		body.Broken = true
-		body.ParseMsg, body.ParseAt = describeSyntax(view.ParseError)
+		body.ParseMsg, body.ParseAt = describeSyntax(i18n.For(s.langFor(r)), view.ParseError)
 	}
 	return body, cur, nil
 }
@@ -240,10 +241,13 @@ func notationLabel(current string) string {
 
 // describeSyntax pulls a message and a line number out of a parse failure, so
 // the page can point at the line to fix rather than just saying "broken".
-func describeSyntax(err error) (string, int) {
+//
+// The parser carries its complaint as a key, so this is where it becomes a
+// sentence in the reader's own language.
+func describeSyntax(say *i18n.Printer, err error) (string, int) {
 	var se *song.SyntaxError
 	if errors.As(err, &se) {
-		return se.Msg, se.Line
+		return say.T(se.Key, se.Args...), se.Line
 	}
 	return err.Error(), 0
 }

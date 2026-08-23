@@ -3,6 +3,8 @@ package song
 import (
 	"fmt"
 	"strings"
+
+	"github.com/jalmena/tabernacle/internal/i18n"
 )
 
 // frontMatterDelim opens and closes the metadata block of a song file.
@@ -10,15 +12,27 @@ const frontMatterDelim = "---"
 
 // SyntaxError reports a problem at a specific line of a song file. Line
 // numbers are one-based so that they match what an editor shows.
+//
+// The complaint is carried as a catalogue key and its arguments rather than as a
+// finished sentence, because the person who has to act on it is reading the
+// interface in their own language. Error() renders it in English, which is what
+// a log wants and what the error contract expects.
 type SyntaxError struct {
 	Line int
-	Msg  string
+	Key  string
+	Args []any
 }
 
-func (e *SyntaxError) Error() string { return fmt.Sprintf("line %d: %s", e.Line, e.Msg) }
+// Msg is the complaint in English, kept as a method so that the error reads the
+// same in a log wherever it is printed.
+func (e *SyntaxError) Msg() string { return i18n.For(i18n.English).T(e.Key, e.Args...) }
+
+func (e *SyntaxError) Error() string { return fmt.Sprintf("line %d: %s", e.Line, e.Msg()) }
 
 // lineErr builds a SyntaxError from a zero-based line index.
-func lineErr(i int, msg string) error { return &SyntaxError{Line: i + 1, Msg: msg} }
+func lineErr(i int, key string, args ...any) error {
+	return &SyntaxError{Line: i + 1, Key: key, Args: args}
+}
 
 // entry is one front-matter field as it was read from the file.
 type entry struct {
@@ -41,7 +55,7 @@ type entry struct {
 // format break.
 func parseFrontMatter(lines []string) ([]entry, int, error) {
 	if len(lines) == 0 || strings.TrimRight(lines[0], " \t") != frontMatterDelim {
-		return nil, 0, &SyntaxError{Line: 1, Msg: "a song file must start with a line containing only ---"}
+		return nil, 0, &SyntaxError{Line: 1, Key: "parse.start"}
 	}
 
 	var entries []entry
@@ -59,25 +73,25 @@ func parseFrontMatter(lines []string) ([]entry, int, error) {
 			continue
 		}
 		if strings.HasPrefix(raw, "\t") {
-			return nil, 0, lineErr(i, "indent front matter with spaces, not tabs")
+			return nil, 0, lineErr(i, "parse.tabsfront")
 		}
 		if raw[0] == ' ' {
-			return nil, 0, lineErr(i, "unexpected indentation: front matter fields are not nested")
+			return nil, 0, lineErr(i, "parse.indent")
 		}
 		if raw[0] == '-' {
-			return nil, 0, lineErr(i, "list item does not belong to any field")
+			return nil, 0, lineErr(i, "parse.orphanitem")
 		}
 
 		colon := strings.IndexByte(raw, ':')
 		if colon < 0 {
-			return nil, 0, lineErr(i, "expected a field of the form key: value")
+			return nil, 0, lineErr(i, "parse.fieldform")
 		}
 		key := raw[:colon]
 		if !validFieldName(key) {
-			return nil, 0, lineErr(i, fmt.Sprintf("invalid field name %q: use lowercase letters, digits and underscores", key))
+			return nil, 0, lineErr(i, "parse.fieldname", key)
 		}
 		if prev, dup := seen[key]; dup {
-			return nil, 0, lineErr(i, fmt.Sprintf("field %q was already set on line %d", key, prev+1))
+			return nil, 0, lineErr(i, "parse.fieldtwice", key, prev+1)
 		}
 		seen[key] = i
 
@@ -93,7 +107,7 @@ func parseFrontMatter(lines []string) ([]entry, int, error) {
 			}
 			e.scalar, next = text, after
 		case strings.HasPrefix(rest, ">"):
-			return nil, 0, lineErr(i, "folded block scalars (>) are not supported; use | for multi-line text")
+			return nil, 0, lineErr(i, "parse.folded")
 		case strings.HasPrefix(rest, "["):
 			items, err := parseFlowList(rest, i)
 			if err != nil {
@@ -122,7 +136,7 @@ func parseFrontMatter(lines []string) ([]entry, int, error) {
 	}
 	// Point at the opening delimiter rather than at the end of the file: the
 	// question the user needs answered is which block was never closed.
-	return nil, 0, &SyntaxError{Line: 1, Msg: "unterminated front matter: expected a closing ---"}
+	return nil, 0, &SyntaxError{Line: 1, Key: "parse.frontopen"}
 }
 
 func validFieldName(s string) bool {
@@ -154,7 +168,7 @@ func readBlockScalar(lines []string, start int) (string, int, error) {
 			continue
 		}
 		if strings.HasPrefix(raw, "\t") {
-			return "", 0, lineErr(i, "indent block text with spaces, not tabs")
+			return "", 0, lineErr(i, "parse.tabsblock")
 		}
 		if raw[0] != ' ' {
 			break
@@ -199,7 +213,7 @@ func readBlockList(lines []string, start int) ([]string, int, error) {
 			break
 		}
 		if trimmed == "-" {
-			return nil, 0, lineErr(i, "empty list item")
+			return nil, 0, lineErr(i, "parse.emptyitem")
 		}
 		v, err := parseScalar(strings.TrimSpace(trimmed[2:]), i)
 		if err != nil {
@@ -213,11 +227,11 @@ func readBlockList(lines []string, start int) ([]string, int, error) {
 // parseFlowList reads an inline list such as [hymn, public-domain].
 func parseFlowList(s string, line int) ([]string, error) {
 	if !strings.HasSuffix(s, "]") {
-		return nil, lineErr(line, "unterminated list: expected a closing ]")
+		return nil, lineErr(line, "parse.listopen")
 	}
 	inner := strings.TrimSpace(s[1 : len(s)-1])
 	if strings.ContainsAny(inner, "[]{}") {
-		return nil, lineErr(line, "nested lists and maps are not supported in front matter")
+		return nil, lineErr(line, "parse.nested")
 	}
 	if inner == "" {
 		return nil, nil
@@ -229,7 +243,7 @@ func parseFlowList(s string, line int) ([]string, error) {
 			return nil, err
 		}
 		if v == "" {
-			return nil, lineErr(line, "empty list item")
+			return nil, lineErr(line, "parse.emptyitem")
 		}
 		items = append(items, v)
 	}
@@ -277,7 +291,7 @@ func parseScalar(s string, line int) (string, error) {
 	case '"':
 		end := findClosing(s, '"')
 		if end < 0 {
-			return "", lineErr(line, "unterminated double-quoted value")
+			return "", lineErr(line, "parse.dquote")
 		}
 		if err := checkTrailer(s[end+1:], line); err != nil {
 			return "", err
@@ -286,7 +300,7 @@ func parseScalar(s string, line int) (string, error) {
 	case '\'':
 		end := findClosing(s, '\'')
 		if end < 0 {
-			return "", lineErr(line, "unterminated single-quoted value")
+			return "", lineErr(line, "parse.squote")
 		}
 		if err := checkTrailer(s[end+1:], line); err != nil {
 			return "", err
@@ -298,10 +312,10 @@ func parseScalar(s string, line int) (string, error) {
 		s = strings.TrimSpace(s[:i])
 	}
 	if strings.ContainsAny(s[:1], "&*!%@`{}|>,") {
-		return "", lineErr(line, fmt.Sprintf("value starting with %q must be quoted", s[:1]))
+		return "", lineErr(line, "parse.needquote", s[:1])
 	}
 	if strings.Contains(s, ": ") {
-		return "", lineErr(line, "value containing \": \" must be quoted")
+		return "", lineErr(line, "parse.colonquote")
 	}
 	return s, nil
 }
@@ -330,7 +344,7 @@ func checkTrailer(s string, line int) error {
 	if s == "" || strings.HasPrefix(s, "#") {
 		return nil
 	}
-	return lineErr(line, "unexpected text after a quoted value")
+	return lineErr(line, "parse.afterquote")
 }
 
 func unescapeDouble(s string) string {

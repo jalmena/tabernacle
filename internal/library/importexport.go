@@ -29,11 +29,15 @@ const (
 
 // ImportResult is what happened to one file in an import.
 type ImportResult struct {
-	Name   string // the name inside the archive, for the report only
-	Title  string // the parsed title, when it parsed
-	Slug   string // where it ended up
-	Reason string // why it was skipped or rejected
-	Line   int    // the line of a syntax error, when there is one
+	Name  string // the name inside the archive, for the report only
+	Title string // the parsed title, when it parsed
+	Slug  string // where it ended up
+	// Key and Args say why it was skipped or rejected, as a catalogue key and
+	// what to put in it. A finished sentence would be this package deciding what
+	// language the person reading the report speaks, which it cannot know.
+	Key  string
+	Args []any
+	Line int // the line of a syntax error, when there is one
 }
 
 // ImportReport summarises an import.
@@ -87,26 +91,26 @@ func (l *Library) ImportZip(ctx context.Context, r io.ReaderAt, size int64) (Imp
 		name := f.Name
 
 		if reason := rejectZipEntry(f); reason != "" {
-			rep.Skipped = append(rep.Skipped, ImportResult{Name: name, Reason: reason})
+			rep.Skipped = append(rep.Skipped, ImportResult{Name: name, Key: reason})
 			continue
 		}
 		// The declared size is attacker-controlled and may lie, so it is used
 		// only as a cheap first filter; the real limit is enforced while reading.
 		if f.UncompressedSize64 > maxImportSongBytes {
 			rep.Skipped = append(rep.Skipped, ImportResult{
-				Name: name, Reason: "el archivo es demasiado grande"})
+				Name: name, Key: "why.toobig"})
 			continue
 		}
 
 		data, err := readZipEntry(f, min64(budget, maxImportSongBytes))
 		if err != nil {
-			rep.Failed = append(rep.Failed, ImportResult{Name: name, Reason: err.Error()})
+			rep.Failed = append(rep.Failed, ImportResult{Name: name, Key: "why.other", Args: []any{err.Error()}})
 			continue
 		}
 		budget -= int64(len(data))
 		if budget <= 0 {
 			rep.Failed = append(rep.Failed, ImportResult{
-				Name: name, Reason: "se ha alcanzado el límite total de descompresión"})
+				Name: name, Key: "why.unzipcap"})
 			break
 		}
 		l.importOne(ctx, &rep, name, data)
@@ -129,28 +133,28 @@ func rejectZipEntry(f *zip.File) string {
 	case strings.HasSuffix(name, "/"):
 		return "" // a directory entry; silently ignored below
 	case !isPrintableUTF8(name):
-		return "el nombre no es texto válido"
+		return "why.badname"
 	case strings.ContainsRune(name, 0):
-		return "el nombre contiene un byte nulo"
+		return "why.nullbyte"
 	}
 	if strings.HasSuffix(name, "/") {
-		return "es un directorio"
+		return "why.directory"
 	}
 
 	slash := filepath.ToSlash(name)
 	if slash == "" || strings.HasPrefix(slash, "/") || !fs.ValidPath(strings.TrimPrefix(slash, "./")) {
-		return "la ruta sale del archivo"
+		return "why.escapes"
 	}
 	if len(slash) > 1 && slash[1] == ':' {
-		return "la ruta tiene letra de unidad"
+		return "why.driveletter"
 	}
 	for _, seg := range strings.Split(slash, "/") {
 		if seg == ".." {
-			return "la ruta sale del archivo"
+			return "why.escapes"
 		}
 	}
 	if strings.Contains(name, `\`) {
-		return "la ruta usa barras invertidas"
+		return "why.backslash"
 	}
 
 	// Only regular files. A symlink entry is the classic way an archive tries to
@@ -158,19 +162,19 @@ func rejectZipEntry(f *zip.File) string {
 	// honoured in any case.
 	mode := f.Mode()
 	if mode&fs.ModeSymlink != 0 {
-		return "es un enlace simbólico"
+		return "why.symlink"
 	}
 	if !mode.IsRegular() {
-		return "no es un archivo normal"
+		return "why.notregular"
 	}
 	if mode&(fs.ModeSetuid|fs.ModeSetgid|fs.ModeSticky) != 0 {
 		return "tiene permisos especiales"
 	}
 	if !strings.EqualFold(path.Ext(slash), songfs.Ext) {
-		return "no es un archivo .song"
+		return "why.notsong"
 	}
 	if base := path.Base(slash); base == songfs.Ext {
-		return "no tiene nombre"
+		return "why.noname"
 	}
 	return ""
 }
@@ -181,16 +185,16 @@ func rejectZipEntry(f *zip.File) string {
 func readZipEntry(f *zip.File, limit int64) ([]byte, error) {
 	rc, err := f.Open()
 	if err != nil {
-		return nil, fmt.Errorf("no se ha podido leer: %w", err)
+		return nil, fmt.Errorf("why.unreadable: %w", err)
 	}
 	defer rc.Close()
 
 	data, err := io.ReadAll(io.LimitReader(rc, limit+1))
 	if err != nil {
-		return nil, fmt.Errorf("no se ha podido leer: %w", err)
+		return nil, fmt.Errorf("why.unreadable: %w", err)
 	}
 	if int64(len(data)) > limit {
-		return nil, errors.New("el archivo es más grande de lo que declaraba")
+		return nil, errors.New("why.biggerthansaid")
 	}
 	return data, nil
 }
@@ -199,7 +203,7 @@ func readZipEntry(f *zip.File, limit int64) ([]byte, error) {
 func (l *Library) importOne(ctx context.Context, rep *ImportReport, name string, data []byte) {
 	if int64(len(data)) > maxImportSongBytes {
 		rep.Skipped = append(rep.Skipped, ImportResult{
-			Name: name, Reason: "el archivo es demasiado grande"})
+			Name: name, Key: "why.toobig"})
 		return
 	}
 	// Nothing is written until it parses. Imported files are untrusted input,
@@ -207,10 +211,10 @@ func (l *Library) importOne(ctx context.Context, rep *ImportReport, name string,
 	normalized := normalizeText(string(data))
 	s, err := song.Parse(normalized)
 	if err != nil {
-		res := ImportResult{Name: name, Reason: err.Error()}
+		res := ImportResult{Name: name, Key: "why.other", Args: []any{err.Error()}}
 		var se *song.SyntaxError
 		if errors.As(err, &se) {
-			res.Reason = se.Msg
+			res.Key, res.Args = se.Key, se.Args
 			res.Line = se.Line
 		}
 		rep.Failed = append(rep.Failed, res)
@@ -218,7 +222,7 @@ func (l *Library) importOne(ctx context.Context, rep *ImportReport, name string,
 	}
 	canonical, err := song.Marshal(s)
 	if err != nil {
-		rep.Failed = append(rep.Failed, ImportResult{Name: name, Reason: err.Error()})
+		rep.Failed = append(rep.Failed, ImportResult{Name: name, Key: "why.other", Args: []any{err.Error()}})
 		return
 	}
 
@@ -228,15 +232,15 @@ func (l *Library) importOne(ctx context.Context, rep *ImportReport, name string,
 	for _, candidate := range [][]byte{normalized, canonical} {
 		existing, found, err := l.idx.ByHash(ctx, hashBytes(candidate))
 		if err != nil {
-			rep.Failed = append(rep.Failed, ImportResult{Name: name, Reason: err.Error()})
+			rep.Failed = append(rep.Failed, ImportResult{Name: name, Key: "why.other", Args: []any{err.Error()}})
 			return
 		}
 		if found {
 			rep.Skipped = append(rep.Skipped, ImportResult{
-				Name:   name,
-				Title:  s.Title,
-				Slug:   existing.Slug,
-				Reason: "ya está en la colección",
+				Name:  name,
+				Title: s.Title,
+				Slug:  existing.Slug,
+				Key:   "why.already",
 			})
 			return
 		}
@@ -245,7 +249,7 @@ func (l *Library) importOne(ctx context.Context, rep *ImportReport, name string,
 	rel, err := l.fs.Create(s.Artist, s.Title, canonical)
 	if err != nil {
 		rep.Failed = append(rep.Failed, ImportResult{
-			Name: name, Title: s.Title, Reason: err.Error()})
+			Name: name, Title: s.Title, Key: "why.other", Args: []any{err.Error()}})
 		return
 	}
 	rep.Added = append(rep.Added, ImportResult{

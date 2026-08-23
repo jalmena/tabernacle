@@ -7,6 +7,7 @@ import (
 	"path"
 	"strings"
 
+	"github.com/jalmena/tabernacle/internal/i18n"
 	"github.com/jalmena/tabernacle/internal/index"
 	"github.com/jalmena/tabernacle/internal/library"
 )
@@ -26,8 +27,51 @@ func (s *Server) handleImportForm(w http.ResponseWriter, r *http.Request) {
 type importBody struct {
 	Tabs     []navLink
 	MaxBytes int64
-	Report   *library.ImportReport
+	Report   *importView
 	Problem  string
+}
+
+// importView is the report with its reasons put into words.
+//
+// The library reports in codes, because it cannot know who is reading; this is
+// where they become sentences. It is also the only place that knows, so the
+// template is handed finished text and does no lookups of its own.
+type importView struct {
+	Added, Failed, Skipped []importRow
+	Total                  int
+}
+
+type importRow struct {
+	Name   string
+	Title  string
+	Slug   string
+	Reason string
+	Line   int
+}
+
+func viewOf(say *i18n.Printer, rep *library.ImportReport) *importView {
+	if rep == nil {
+		return nil
+	}
+	rows := func(in []library.ImportResult) []importRow {
+		out := make([]importRow, 0, len(in))
+		for _, r := range in {
+			reason := ""
+			if r.Key != "" {
+				reason = say.T(r.Key, r.Args...)
+			}
+			out = append(out, importRow{
+				Name: r.Name, Title: r.Title, Slug: r.Slug, Reason: reason, Line: r.Line,
+			})
+		}
+		return out
+	}
+	return &importView{
+		Added:   rows(rep.Added),
+		Failed:  rows(rep.Failed),
+		Skipped: rows(rep.Skipped),
+		Total:   rep.Total(),
+	}
 }
 
 // handleImport takes uploaded .song files and zip archives.
@@ -43,8 +87,7 @@ func (s *Server) handleImport(w http.ResponseWriter, r *http.Request) {
 			s.page(r, "transfer.title", importBody{
 				Tabs:     s.settingsTabs(r, "import"),
 				MaxBytes: s.cfg.MaxUploadBytes,
-				Problem: "El envío es demasiado grande o no se ha podido leer. " +
-					"Prueba con menos archivos o con un zip más pequeño.",
+				Problem:  i18n.For(s.langFor(r)).T("import.toobig"),
 			}))
 		return
 	}
@@ -60,7 +103,7 @@ func (s *Server) handleImport(w http.ResponseWriter, r *http.Request) {
 		s.render(w, r, http.StatusBadRequest, "import.html", s.page(r, "transfer.title", importBody{
 			Tabs:     s.settingsTabs(r, "import"),
 			MaxBytes: s.cfg.MaxUploadBytes,
-			Problem:  "No se ha seleccionado ningún archivo.",
+			Problem:  i18n.For(s.langFor(r)).T("editor.nofile"),
 		}))
 		return
 	}
@@ -69,14 +112,14 @@ func (s *Server) handleImport(w http.ResponseWriter, r *http.Request) {
 		f, err := fh.Open()
 		if err != nil {
 			combined.Failed = append(combined.Failed, library.ImportResult{
-				Name: safeName(fh.Filename), Reason: "no se ha podido leer"})
+				Name: safeName(fh.Filename), Key: "why.unreadable"})
 			continue
 		}
 		data, err := io.ReadAll(io.LimitReader(f, s.cfg.MaxUploadBytes+1))
 		f.Close()
 		if err != nil || int64(len(data)) > s.cfg.MaxUploadBytes {
 			combined.Failed = append(combined.Failed, library.ImportResult{
-				Name: safeName(fh.Filename), Reason: "el archivo es demasiado grande"})
+				Name: safeName(fh.Filename), Key: "why.toobig"})
 			continue
 		}
 
@@ -85,7 +128,7 @@ func (s *Server) handleImport(w http.ResponseWriter, r *http.Request) {
 			rep, err := s.lib.ImportZip(r.Context(), bytes.NewReader(data), int64(len(data)))
 			if err != nil {
 				combined.Failed = append(combined.Failed, library.ImportResult{
-					Name: name, Reason: err.Error()})
+					Name: name, Key: "why.other", Args: []any{err.Error()}})
 				continue
 			}
 			merge(&combined, rep)
@@ -97,7 +140,7 @@ func (s *Server) handleImport(w http.ResponseWriter, r *http.Request) {
 	s.render(w, r, http.StatusOK, "import.html", s.page(r, "transfer.title", importBody{
 		Tabs:     s.settingsTabs(r, "import"),
 		MaxBytes: s.cfg.MaxUploadBytes,
-		Report:   &combined,
+		Report:   viewOf(i18n.For(s.langFor(r)), &combined),
 	}))
 }
 

@@ -451,7 +451,7 @@ func (s *Server) handleLoadIntoEditor(w http.ResponseWriter, r *http.Request) {
 	if _, err := song.Parse([]byte(body.Text)); err != nil {
 		var se *song.SyntaxError
 		if errors.As(err, &se) {
-			body.ErrMessage = se.Msg
+			body.ErrMessage = say.T(se.Key, se.Args...)
 			body.ErrLine = se.Line
 		} else {
 			body.ErrMessage = err.Error()
@@ -497,8 +497,7 @@ func (s *Server) handleSaveSong(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, library.ErrConflict) {
 			// Both versions matter here, so the user is told rather than having
 			// one of them quietly discarded.
-			body.ErrMessage = "El archivo ha cambiado desde que abriste el editor. " +
-				"Copia tu texto, vuelve a abrir la canción y aplica los cambios de nuevo."
+			body.ErrMessage = i18n.For(s.langFor(r)).T("editor.conflict")
 			s.render(w, r, http.StatusConflict, "editor.html", s.page(r, "title.conflict", body))
 			return
 		}
@@ -511,13 +510,7 @@ func (s *Server) handleSaveSong(w http.ResponseWriter, r *http.Request) {
 // renderEditorError re-renders the form with the user's text intact and the
 // line number of the mistake, which is the whole point of having a raw editor.
 func (s *Server) renderEditorError(w http.ResponseWriter, r *http.Request, body editorBody, err error) {
-	var se *song.SyntaxError
-	if errors.As(err, &se) {
-		body.ErrMessage = se.Msg
-		body.ErrLine = se.Line
-	} else {
-		body.ErrMessage = err.Error()
-	}
+	body.ErrMessage, body.ErrLine = describeSyntax(i18n.For(s.langFor(r)), err)
 	s.render(w, r, http.StatusUnprocessableEntity, "editor.html",
 		s.page(r, body.Title, body))
 }
@@ -537,6 +530,7 @@ type confirmBody struct {
 // rules out inline handlers and because a real page works with scripting off. It
 // also gives room to say where the file is going, which is the reassuring part.
 func (s *Server) handleDeleteForm(w http.ResponseWriter, r *http.Request) {
+	say := i18n.For(s.langFor(r))
 	slug := r.PathValue("slug")
 	view, err := s.lib.Get(r.Context(), slug)
 	if err != nil {
@@ -548,11 +542,10 @@ func (s *Server) handleDeleteForm(w http.ResponseWriter, r *http.Request) {
 		name += " · " + view.Record.Artist
 	}
 	s.render(w, r, http.StatusOK, "confirm.html", s.page(r, "song.delete", confirmBody{
-		Heading: "¿Eliminar " + name + "?",
-		Detail: "El archivo se mueve a la carpeta de la papelera, dentro del directorio " +
-			"de datos. Puedes recuperarlo desde ahí con el gestor de archivos.",
+		Heading:   say.T("delete.heading", name),
+		Detail:    say.T("delete.detail"),
 		Action:    "/songs/" + slug + "/delete",
-		Confirm:   "Sí, eliminar",
+		Confirm:   say.T("delete.confirm"),
 		CancelURL: "/songs/" + slug,
 	}))
 }

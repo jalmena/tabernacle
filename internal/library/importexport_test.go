@@ -91,7 +91,7 @@ func TestImportZip(t *testing.T) {
 	if len(rep.Added) != 3 {
 		t.Errorf("added %d songs, want 3: %+v", len(rep.Added), rep.Added)
 	}
-	if len(rep.Skipped) != 1 || !strings.Contains(rep.Skipped[0].Reason, ".song") {
+	if len(rep.Skipped) != 1 || rep.Skipped[0].Key != "why.notsong" {
 		t.Errorf("skipped = %+v, want the .txt file", rep.Skipped)
 	}
 	if len(rep.Failed) != 1 || rep.Failed[0].Line == 0 {

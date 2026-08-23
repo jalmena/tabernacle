@@ -79,7 +79,7 @@ func decodeFrontMatter(entries []entry, s *Song) error {
 			// somebody for having older files.
 		}
 		if err != nil {
-			return lineErr(e.line, err.Error())
+			return lineErr(e.line, "parse.field", err.Error())
 		}
 	}
 	return nil
@@ -125,7 +125,7 @@ func parseBody(lines []string, start int) ([]Section, error) {
 			marker := len(raw) - len(strings.TrimLeft(raw, "`"))
 			info := strings.TrimSpace(raw[marker:])
 			if strings.ContainsAny(info, "`") {
-				return nil, lineErr(i, "a fence tag cannot contain a backtick")
+				return nil, lineErr(i, "parse.fencetick")
 			}
 			var body []string
 			closed := false
@@ -137,7 +137,7 @@ func parseBody(lines []string, start int) ([]Section, error) {
 				body = append(body, lines[j])
 			}
 			if !closed {
-				return nil, lineErr(i, "unterminated fenced block")
+				return nil, lineErr(i, "parse.fenceopen")
 			}
 			ensure()
 			sections[cur].Lines = append(sections[cur].Lines, Line{
@@ -149,16 +149,16 @@ func parseBody(lines []string, start int) ([]Section, error) {
 		case strings.HasPrefix(raw, "## "):
 			label := strings.TrimSpace(raw[3:])
 			if label == "" {
-				return nil, lineErr(i, "section heading needs a label")
+				return nil, lineErr(i, "parse.headinglabel")
 			}
 			sections = append(sections, Section{Kind: KindForLabel(label), Label: label})
 			cur = len(sections) - 1
 
 		case strings.HasPrefix(raw, "##"):
-			return nil, lineErr(i, `section headings are written as "## Label"`)
+			return nil, lineErr(i, "parse.headingform")
 
 		case strings.HasPrefix(raw, "#"):
-			return nil, lineErr(i, `a body line starting with "#" is reserved; write \# for a literal #`)
+			return nil, lineErr(i, "parse.hashreserved")
 
 		case strings.TrimSpace(raw) == "":
 			if cur >= 0 {
@@ -226,7 +226,7 @@ func tokenizeLine(text string, line int) ([]Token, error) {
 		case '[':
 			end := strings.IndexByte(text[i:], ']')
 			if end < 0 {
-				return nil, lineErr(line, `unclosed "["; write \[ for a literal bracket`)
+				return nil, lineErr(line, "parse.bracket")
 			}
 			inner := text[i+1 : i+end]
 			flush()

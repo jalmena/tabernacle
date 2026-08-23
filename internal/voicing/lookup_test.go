@@ -2,7 +2,6 @@ package voicing
 
 import (
 	"strconv"
-	"strings"
 	"testing"
 
 	"github.com/jalmena/tabernacle/internal/chord"
@@ -375,8 +374,10 @@ func TestUnsupportedTuningWarnsInsteadOfLying(t *testing.T) {
 	if !res.Found() && res.Warning == "" {
 		t.Error("an empty result for an exotic tuning must explain itself")
 	}
-	if !res.Found() && !strings.Contains(res.Warning, "DADGAD") {
-		t.Errorf("the warning %q should name the tuning", res.Warning)
+	// The warning is a key; the tuning it names travels beside it, so that
+	// whoever renders it can say so in their own language.
+	if !res.Found() && res.Tuning != "DADGAD" {
+		t.Errorf("the warning %q names the tuning %q, want DADGAD", res.Warning, res.Tuning)
 	}
 }
 
