@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/jalmena/tabernacle/internal/account"
+	"github.com/jalmena/tabernacle/internal/i18n"
 )
 
 // sessionCookie is where the signed token lives.
@@ -157,7 +158,7 @@ func (s *Server) handleLoginForm(w http.ResponseWriter, r *http.Request) {
 		Next:         safeNext(r.URL.Query().Get("next")),
 		Registration: s.acc.RegistrationOpen(),
 	}
-	s.render(w, r, http.StatusOK, "login.html", s.page(r, "Acceder", body))
+	s.render(w, r, http.StatusOK, "login.html", s.page(r, "login.title", body))
 }
 
 // handleLogin checks a name and password.
@@ -166,6 +167,7 @@ func (s *Server) handleLoginForm(w http.ResponseWriter, r *http.Request) {
 // from "wrong password" tells an attacker which names are worth attacking, and
 // account.Authenticate already spends the same work on both.
 func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
+	say := i18n.For(s.langFor(r))
 	name := strings.TrimSpace(r.PostFormValue("user"))
 	password := r.PostFormValue("password")
 	next := safeNext(r.PostFormValue("next"))
@@ -177,12 +179,12 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 			Registration: s.acc.RegistrationOpen(),
 			Problem:      problem,
 		}
-		s.render(w, r, status, "login.html", s.page(r, "Acceder", body))
+		s.render(w, r, status, "login.html", s.page(r, "login.title", body))
 	}
 
 	if !s.logins.allowed(strings.ToLower(name)) || !s.logins.allowed(clientIP(r)) {
 		w.Header().Set("Retry-After", "60")
-		refuse(http.StatusTooManyRequests, "Demasiados intentos. Espera un minuto.")
+		refuse(http.StatusTooManyRequests, say.T("login.throttled"))
 		return
 	}
 
@@ -191,7 +193,7 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		s.logins.spend(strings.ToLower(name))
 		s.logins.spend(clientIP(r))
 		s.log.Warn("refused a login", "remote", clientIP(r))
-		refuse(http.StatusUnauthorized, "Usuario o contraseña incorrectos.")
+		refuse(http.StatusUnauthorized, say.T("login.wrong"))
 		return
 	}
 
@@ -214,7 +216,7 @@ func (s *Server) handleRegisterForm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.render(w, r, http.StatusOK, "register.html",
-		s.page(r, "Crear una cuenta", loginBody{Registration: true}))
+		s.page(r, "register.title", loginBody{Registration: true}))
 }
 
 // handleRegister creates an ordinary account.
@@ -226,21 +228,22 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 		s.handleNotFound(w, r)
 		return
 	}
+	say := i18n.For(s.langFor(r))
 	name := strings.TrimSpace(r.PostFormValue("user"))
 	password := r.PostFormValue("password")
 
 	refuse := func(problem string) {
 		s.render(w, r, http.StatusBadRequest, "register.html",
-			s.page(r, "Crear una cuenta", loginBody{User: name, Registration: true, Problem: problem}))
+			s.page(r, "register.title", loginBody{User: name, Registration: true, Problem: problem}))
 	}
 	if password != r.PostFormValue("repeat") {
-		refuse("Las dos contraseñas no coinciden.")
+		refuse(say.T("register.mismatch"))
 		return
 	}
 	// Rate limited like a login: the work is the same, and so is the lever.
 	if !s.logins.allowed(clientIP(r)) {
 		w.Header().Set("Retry-After", "60")
-		refuse("Demasiados intentos. Espera un minuto.")
+		refuse(say.T("login.throttled"))
 		return
 	}
 	u, err := s.hashSlot(func() (account.User, error) {
@@ -248,7 +251,7 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		s.logins.spend(clientIP(r))
-		refuse(accountProblem(err))
+		refuse(accountProblem(i18n.For(s.langFor(r)), err))
 		return
 	}
 	s.log.Info("a visitor created an account", "user", u.Name)

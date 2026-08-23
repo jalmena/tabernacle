@@ -44,19 +44,27 @@ func TestPlaceholdersMatchAcrossLanguages(t *testing.T) {
 }
 
 // A translation that is the same string as the base is usually a key somebody
-// copied and forgot. Not always — "Tabernacle" is "Tabernacle" — so this reports
-// rather than fails, and the exceptions are named.
+// copied and forgot. Not always, so the ones that genuinely coincide are named
+// here and the rest are a failure.
 func TestTranslationsAreNotCopies(t *testing.T) {
+	// Keys whose value is allowed to be the same in any language, and why.
 	same := map[string]bool{
-		// Words English and Spanish genuinely share here.
-		"settings.theme": true,
+		"settings.theme":  true, // "tema" and "theme" are the same word often enough
+		"notation.abc":    true, // note names, not words
+		"notation.doremi": true, // the same, in the other naming
+		"sheet.reset":     true, // "Original" is borrowed as it stands in most of these
 	}
-	for _, key := range Keys() {
-		if same[key] {
+	for _, l := range All() {
+		if l == Spanish {
 			continue
 		}
-		if catalogue[English][key] == catalogue[Spanish][key] {
-			t.Errorf("%q is identical in both languages: %q", key, catalogue[Spanish][key])
+		for _, key := range Keys() {
+			if same[key] {
+				continue
+			}
+			if catalogue[l][key] == catalogue[Spanish][key] {
+				t.Errorf("%s: %q is word for word the Spanish: %q", l, key, catalogue[Spanish][key])
+			}
 		}
 	}
 }

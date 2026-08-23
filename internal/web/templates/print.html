@@ -2,13 +2,13 @@
 {{/* The print view is always on light paper. A dark sheet costs a cartridge and
      reads worse than the white one, so the only choice offered is how light. */}}
 <body class="printing paper-{{.Body.Theme}}">
-<nav class="paperbar noprint" aria-label="Papel">
-	<span class="quiet">Papel:</span>
+<nav class="paperbar noprint" aria-label="{{.T `paper.label`}}">
+	<span class="quiet">{{.T "paper.label"}}</span>
 	{{range .Body.Themes}}
 		<a class="btn btn-quiet{{if .On}} on{{end}}" href="{{.URL}}">{{.Label}}</a>
 	{{end}}
 	<span class="sep"></span>
-	<a class="btn btn-quiet" href="/songs/{{.Body.Slug}}">Volver</a>
+	<a class="btn btn-quiet" href="/songs/{{.Body.Slug}}">{{.T "action.back"}}</a>
 </nav>
 <main class="wrap">
 	{{with .Body}}
@@ -16,22 +16,22 @@
 			<h1>{{.Sheet.Title}}</h1>
 			{{if .Sheet.Artist}}<p class="by">{{.Sheet.Artist}}</p>{{end}}
 			<ul class="facts">
-				{{if .Sheet.Key}}<li>Tono <b>{{.Sheet.Key}}</b></li>{{end}}
-				{{if .Sheet.Capo}}<li>Cejilla <b>{{.Sheet.Capo}}</b></li>{{end}}
-				{{if .Sheet.Tuning}}<li>Afinación <b>{{.Sheet.Tuning}}</b></li>{{end}}
+				{{if .Sheet.Key}}<li>{{$.T "fact.key"}} <b>{{.Sheet.Key}}</b></li>{{end}}
+				{{if .Sheet.Capo}}<li>{{$.T "fact.capo"}} <b>{{.Sheet.Capo}}</b></li>{{end}}
+				{{if .Sheet.Tuning}}<li>{{$.T "fact.tuning"}} <b>{{.Sheet.Tuning}}</b></li>{{end}}
 			</ul>
 			{{/* The transposition has to be legible on paper: a printed sheet in
 			     the wrong key with nothing to say so is a wasted page. */}}
 			{{if .Sheet.Shifted}}
 				<p class="transposed">
-					{{.Controls.StepLabel}}{{if .Controls.OrigKey}} · original en {{.Controls.OrigKey}}{{end}}
+					{{.Controls.StepLabel}}{{if .Controls.OrigKey}} · {{$.T "sheet.origkey" .Controls.OrigKey}}{{end}}
 				</p>
 			{{end}}
 			{{if .Sheet.SimplifyNote}}<p class="transposed">{{.Sheet.SimplifyNote}}</p>{{end}}
 			{{if .Sheet.TabNote}}<p class="transposed">{{.Sheet.TabNote}}</p>{{end}}
 		</div>
 
-		{{template "sections" .Sheet}}
+		{{template "sections" (sheet $ .Sheet)}}
 	{{end}}
 </main>
 </body>

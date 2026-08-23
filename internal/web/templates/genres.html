@@ -3,20 +3,20 @@
 {{template "top" .}}
 <main class="wrap wrap-wide">
 	{{template "nav" .}}
-	<h1>Géneros</h1>
+	<h1>{{.T "nav.genres"}}</h1>
 	{{if .Body}}
 		<ul class="songlist">
 			{{range .Body}}
 				<li><a href="/?genre={{.Name}}">
 					<span class="t">{{.Name}}</span>
-					<span class="a">{{.Count}} {{plural .Count "canción" "canciones"}}</span>
+					<span class="a">{{.Count}} {{plural .Count ($.T "count.song") ($.T "count.songs")}}</span>
 				</a></li>
 			{{end}}
 		</ul>
 	{{else}}
 		<div class="empty">
-			<p>Ninguna canción tiene género todavía.</p>
-			<p>Añade <code>genre: bolero</code> en la cabecera de un archivo <code>.song</code>.</p>
+			<p>{{.T "genres.empty"}}</p>
+			<p>{{.T "genres.how"}}</p>
 		</div>
 	{{end}}
 </main>

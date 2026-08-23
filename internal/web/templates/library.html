@@ -6,12 +6,12 @@
 	{{with .Body}}
 		{{if .Filters}}
 			<div class="filters">
-				{{range .Filters}}<a class="pill" href="{{.ClearURL}}" title="Quitar este filtro">{{.Label}} ✕</a>{{end}}
+				{{range .Filters}}<a class="pill" href="{{.ClearURL}}" title="{{$.T `library.filter.clear`}}">{{.Label}} ✕</a>{{end}}
 			</div>
 		{{end}}
 
 		{{if .Total}}
-			<p class="count">{{.Total}} {{plural .Total "canción" "canciones"}}</p>
+			<p class="count">{{.Total}} {{plural .Total ($.T "count.song") ($.T "count.songs")}}</p>
 		{{end}}
 
 		{{if .Hits}}
@@ -23,9 +23,9 @@
 							{{if .Artist}}<div class="a">{{.Artist}}</div>{{end}}
 							<div class="meta">
 								{{if .Key}}<span>{{.Key}}</span>{{end}}
-								{{if .Capo}}<span>cejilla {{.Capo}}</span>{{end}}
+								{{if .Capo}}<span>{{$.T "fact.capo.low"}} {{.Capo}}</span>{{end}}
 								{{if .Genre}}<span class="pill">{{.Genre}}</span>{{end}}
-								{{if .Broken}}<span class="pill pill-warn">error de sintaxis</span>{{end}}
+								{{if .Broken}}<span class="pill pill-warn">{{$.T "library.broken"}}</span>{{end}}
 							</div>
 							{{if .Frags}}
 								<div class="excerpt">{{range .Frags}}{{if .Hit}}<mark>{{.Text}}</mark>{{else}}{{.Text}}{{end}}{{end}}</div>
@@ -37,21 +37,21 @@
 
 			{{if or .PrevURL .NextURL}}
 				<div class="filters filters-spaced">
-					{{if .PrevURL}}<a class="btn" href="{{.PrevURL}}">← Anteriores</a>{{end}}
-					{{if .NextURL}}<a class="btn" href="{{.NextURL}}">Siguientes →</a>{{end}}
+					{{if .PrevURL}}<a class="btn" href="{{.PrevURL}}">← {{$.T "page.previous"}}</a>{{end}}
+					{{if .NextURL}}<a class="btn" href="{{.NextURL}}">{{$.T "page.next"}} →</a>{{end}}
 				</div>
 			{{end}}
 		{{else}}
 			<div class="empty">
 				{{if .Empty.Searching}}
-					<p>No hay ninguna canción que coincida.</p>
-					<p><a href="/">Ver toda la biblioteca</a></p>
+					<p>{{$.T "library.nomatch"}}</p>
+					<p><a href="/">{{$.T "library.seeall"}}</a></p>
 				{{else}}
-					<p><b>Tu tabernáculo está vacío.</b></p>
-					<p>Pon tus archivos <code>.song</code> en:</p>
-					<p><code>{{.Empty.SongsDir}}/Artista/Título.song</code></p>
-					<p>Aparecerán en cuanto se revise la carpeta.</p>
-					{{with $.Nav.Add}}<p><a class="btn" href="{{.URL}}">Añadir una canción</a></p>{{end}}
+					<p><b>{{$.T "library.empty"}}</b></p>
+					<p>{{$.T "library.empty.where"}}</p>
+					<p><code>{{.Empty.SongsDir}}/{{$.T "library.empty.path"}}</code></p>
+					<p>{{$.T "library.empty.when"}}</p>
+					{{with $.Nav.Add}}<p><a class="btn" href="{{.URL}}">{{$.T "library.empty.add"}}</a></p>{{end}}
 				{{end}}
 			</div>
 		{{end}}

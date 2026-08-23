@@ -24,7 +24,7 @@ const maxSymbolBytes = 32
 // bookmark, and reached again with the back button.
 func (s *Server) handleChords(w http.ResponseWriter, r *http.Request) {
 	v := s.labFor(r)
-	s.render(w, r, http.StatusOK, "chords.html", s.page(r, "Acordes", v))
+	s.render(w, r, http.StatusOK, "chords.html", s.page(r, "nav.chords", v))
 }
 
 // handleChordFragment returns the part of the page that depends on the shape, so
@@ -32,7 +32,7 @@ func (s *Server) handleChords(w http.ResponseWriter, r *http.Request) {
 // asks for it and the form reloads the page instead.
 func (s *Server) handleChordFragment(w http.ResponseWriter, r *http.Request) {
 	v := s.labFor(r)
-	s.render(w, r, http.StatusOK, "chordfragment.html", s.page(r, "Acordes", v))
+	s.render(w, r, http.StatusOK, "chordfragment.html", s.page(r, "nav.chords", v))
 }
 
 // labFor reads the query.

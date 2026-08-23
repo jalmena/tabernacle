@@ -4,29 +4,27 @@
 <main class="wrap">
 	{{template "nav" .}}
 	{{with .Body}}
-		<h1>Revisión de la carpeta</h1>
+		<h1>{{$.T "scan.title"}}</h1>
 		{{if .Changed}}
 			<ul class="facts facts-block">
-				{{if .Report.Added}}<li>Añadidas <b>{{.Report.Added}}</b></li>{{end}}
-				{{if .Report.Updated}}<li>Actualizadas <b>{{.Report.Updated}}</b></li>{{end}}
-				{{if .Report.Renamed}}<li>Movidas <b>{{.Report.Renamed}}</b></li>{{end}}
-				{{if .Report.Removed}}<li>Quitadas <b>{{.Report.Removed}}</b></li>{{end}}
-				{{if .Report.Failed}}<li>Con errores <b>{{.Report.Failed}}</b></li>{{end}}
+				{{if .Report.Added}}<li>{{$.T "scan.added"}} <b>{{.Report.Added}}</b></li>{{end}}
+				{{if .Report.Updated}}<li>{{$.T "scan.updated"}} <b>{{.Report.Updated}}</b></li>{{end}}
+				{{if .Report.Renamed}}<li>{{$.T "scan.moved"}} <b>{{.Report.Renamed}}</b></li>{{end}}
+				{{if .Report.Removed}}<li>{{$.T "scan.removed"}} <b>{{.Report.Removed}}</b></li>{{end}}
+				{{if .Report.Failed}}<li>{{$.T "scan.failed"}} <b>{{.Report.Failed}}</b></li>{{end}}
 			</ul>
 		{{else}}
 			<p class="count">
-				Nada ha cambiado. Se han revisado
-				<b>{{.Report.Scanned}}</b> {{plural .Report.Scanned "archivo" "archivos"}} y todos
-				estaban ya al día.
+				{{plural .Report.Scanned ($.T "scan.nochange.one") ($.T "scan.nochange" .Report.Scanned)}}
 			</p>
 		{{end}}
 		{{if .Report.Failed}}
 			<p class="notice">
-				Hay {{.Report.Failed}} {{plural .Report.Failed "archivo" "archivos"}} que no se
-				pueden leer. <a href="/?broken=1">Verlos</a>.
+				{{plural .Report.Failed ($.T "scan.unreadable.one") ($.T "scan.unreadable" .Report.Failed)}}
+				<a href="/?broken=1">{{$.T "scan.seethem"}}</a>.
 			</p>
 		{{end}}
-		<p><a class="btn" href="/">Ir a las canciones</a></p>
+		<p><a class="btn" href="/">{{$.T "action.songs"}}</a></p>
 	{{end}}
 </main>
 {{template "scripts" .}}

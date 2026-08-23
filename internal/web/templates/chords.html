@@ -3,9 +3,8 @@
 {{template "top" .}}
 <main class="wrap wrap-wide">
 	{{template "nav" .}}
-	<h1>Acordes</h1>
-	<p class="lede">Dibuja una posición y se te dirá qué acorde es, o pide un acorde y se te
-		mostrarán todas las formas de tocarlo.</p>
+	<h1>{{.T "nav.chords"}}</h1>
+	<p class="lede">{{.T "lab.lede"}}</p>
 
 	<div id="chordlab">{{template "chordlab" .}}</div>
 </main>

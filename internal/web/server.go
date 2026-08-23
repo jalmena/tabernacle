@@ -95,8 +95,12 @@ func funcs() template.FuncMap {
 			}
 			return strconv.Itoa(n)
 		},
-		"add": func(a, b int) int { return a + b },
-		"sub": func(a, b int) int { return a - b },
+		// sheet hands a partial both the page's words and the sheet to render,
+		// because a partial reached from three places cannot be given only one
+		// of the two and still say anything.
+		"sheet": func(p page, v render.SheetView) sheetArg { return sheetArg{page: p, Sheet: v} },
+		"add":   func(a, b int) int { return a + b },
+		"sub":   func(a, b int) int { return a - b },
 		"plural": func(n int, one, many string) string {
 			if n == 1 {
 				return one
@@ -273,6 +277,13 @@ type navState struct {
 	Registration bool
 }
 
+// sheetArg carries a sheet together with the page it is being rendered on. The
+// embedded page is what makes T reachable from inside the partial.
+type sheetArg struct {
+	page
+	Sheet render.SheetView
+}
+
 // navLink is one entry in the header.
 type navLink struct {
 	Label string
@@ -295,7 +306,12 @@ func (p page) T(key string, args ...any) string { return p.Print.T(key, args...)
 // Lang is the language this page is in, for the html element and the chooser.
 func (p page) Lang() string { return string(p.Print.Lang()) }
 
-func (s *Server) page(r *http.Request, title string, body any) page {
+// page builds the shell every template receives.
+//
+// The title is a catalogue key rather than a sentence, because a browser tab is
+// a place in the interface like any other. The empty string means the page has
+// no title of its own.
+func (s *Server) page(r *http.Request, titleKey string, body any) page {
 	qs := r.URL.Query()
 	path := r.URL.Path
 
@@ -347,6 +363,10 @@ func (s *Server) page(r *http.Request, title string, body any) page {
 		nav.Registration = s.acc.RegistrationOpen()
 	}
 	nav.Unclaimed = v.Unclaimed
+	title := ""
+	if titleKey != "" {
+		title = t.T(titleKey)
+	}
 	return page{Print: t, Title: title, Nav: nav, Body: body}
 }
 
@@ -385,9 +405,13 @@ func (s *Server) render(w http.ResponseWriter, r *http.Request, status int, name
 // It goes through s.page like everything else, so an error page carries the
 // navigation too. A 404 that strands the reader with no way out is a worse
 // failure than whatever they mistyped.
-func (s *Server) fail(w http.ResponseWriter, r *http.Request, status int, heading, detail string) {
+// fail shows an error page. Both parts are catalogue keys; anything the detail
+// has to name is passed after them.
+func (s *Server) fail(w http.ResponseWriter, r *http.Request, status int, headKey, detailKey string, args ...any) {
+	say := i18n.For(s.langFor(r))
+	head := say.T(headKey)
 	s.render(w, r, status, "error.html",
-		s.page(r, heading, errorBody{Status: status, Heading: heading, Detail: detail}))
+		s.page(r, headKey, errorBody{Status: status, Heading: head, Detail: say.T(detailKey, args...)}))
 }
 
 type errorBody struct {
@@ -400,13 +424,11 @@ type errorBody struct {
 // uninformative, so an internal detail never leaks into a page.
 func (s *Server) serverError(w http.ResponseWriter, r *http.Request, err error) {
 	s.log.Error("request failed", "method", r.Method, "path", r.URL.Path, "error", err)
-	s.fail(w, r, http.StatusInternalServerError, "Algo ha ido mal",
-		"No se ha podido completar la operación. Revisa el registro del servidor para más detalles.")
+	s.fail(w, r, http.StatusInternalServerError, "fail.server", "fail.server.detail")
 }
 
 func (s *Server) handleNotFound(w http.ResponseWriter, r *http.Request) {
-	s.fail(w, r, http.StatusNotFound, "Aquí no hay nada",
-		"Esa dirección no existe. Prueba a buscar la canción desde la biblioteca.")
+	s.fail(w, r, http.StatusNotFound, "fail.nothere", "fail.nothere.detail")
 }
 
 func (s *Server) handleRobots(w http.ResponseWriter, r *http.Request) {

@@ -168,20 +168,19 @@ func (s *Server) renderSettings(w http.ResponseWriter, r *http.Request, status i
 // cannot be used to add a second.
 func (s *Server) handleClaim(w http.ResponseWriter, r *http.Request) {
 	if s.acc.Count() != 0 {
-		s.fail(w, r, http.StatusForbidden, "Ya reclamada",
-			"Esta instancia ya tiene cuentas. Pide a un administrador que te cree una.")
+		s.fail(w, r, http.StatusForbidden, "fail.claimed", "fail.claimed.detail")
 		return
 	}
 	name := strings.TrimSpace(r.PostFormValue("user"))
 	password := r.PostFormValue("password")
 	if password != r.PostFormValue("repeat") {
-		s.renderSettings(w, r, http.StatusBadRequest, "Las dos contraseñas no coinciden.")
+		s.renderSettings(w, r, http.StatusBadRequest, i18n.For(s.langFor(r)).T("register.mismatch"))
 		return
 	}
 
 	u, err := s.acc.Create(name, password, account.RoleAdmin)
 	if err != nil {
-		s.renderSettings(w, r, http.StatusBadRequest, accountProblem(err))
+		s.renderSettings(w, r, http.StatusBadRequest, accountProblem(i18n.For(s.langFor(r)), err))
 		return
 	}
 	s.log.Info("the instance was claimed", "user", u.Name)
@@ -197,7 +196,7 @@ func (s *Server) handleProfile(w http.ResponseWriter, r *http.Request) {
 	}
 	if name := strings.TrimSpace(r.PostFormValue("user")); name != "" && name != v.User.Name {
 		if err := s.acc.Rename(v.User.ID, name); err != nil {
-			s.renderSettings(w, r, http.StatusBadRequest, accountProblem(err))
+			s.renderSettings(w, r, http.StatusBadRequest, accountProblem(i18n.For(s.langFor(r)), err))
 			return
 		}
 	}
@@ -215,15 +214,15 @@ func (s *Server) handleLook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := s.acc.SetTheme(v.User.ID, r.PostFormValue("theme")); err != nil {
-		s.renderSettings(w, r, http.StatusBadRequest, accountProblem(err))
+		s.renderSettings(w, r, http.StatusBadRequest, accountProblem(i18n.For(s.langFor(r)), err))
 		return
 	}
 	if err := s.acc.SetLang(v.User.ID, r.PostFormValue("lang")); err != nil {
-		s.renderSettings(w, r, http.StatusBadRequest, accountProblem(err))
+		s.renderSettings(w, r, http.StatusBadRequest, accountProblem(i18n.For(s.langFor(r)), err))
 		return
 	}
 	if err := s.acc.SetNotation(v.User.ID, r.PostFormValue("notation")); err != nil {
-		s.renderSettings(w, r, http.StatusBadRequest, accountProblem(err))
+		s.renderSettings(w, r, http.StatusBadRequest, accountProblem(i18n.For(s.langFor(r)), err))
 		return
 	}
 	s.redirect(w, r, "/settings", "language")
@@ -237,7 +236,7 @@ func (s *Server) handlePassword(w http.ResponseWriter, r *http.Request) {
 	}
 	next := r.PostFormValue("password")
 	if next != r.PostFormValue("repeat") {
-		s.renderSettings(w, r, http.StatusBadRequest, "Las dos contraseñas no coinciden.")
+		s.renderSettings(w, r, http.StatusBadRequest, i18n.For(s.langFor(r)).T("register.mismatch"))
 		return
 	}
 	err := func() error {
@@ -247,7 +246,7 @@ func (s *Server) handlePassword(w http.ResponseWriter, r *http.Request) {
 		return e
 	}()
 	if err != nil {
-		s.renderSettings(w, r, http.StatusBadRequest, accountProblem(err))
+		s.renderSettings(w, r, http.StatusBadRequest, accountProblem(i18n.For(s.langFor(r)), err))
 		return
 	}
 	// The epoch moved, so this device's own cookie is now stale too. Reissue it,
@@ -297,7 +296,7 @@ func (s *Server) renderUsers(w http.ResponseWriter, r *http.Request, status int,
 	for _, u := range s.acc.List() {
 		body.Users = append(body.Users, rowFor(u, me))
 	}
-	s.render(w, r, status, "users.html", s.page(r, "Usuarios", body))
+	s.render(w, r, status, "users.html", s.page(r, "users.title", body))
 }
 
 // handleUserEdit is one account's own page.
@@ -311,7 +310,7 @@ func (s *Server) handleUserEdit(w http.ResponseWriter, r *http.Request) {
 func (s *Server) renderUserEdit(w http.ResponseWriter, r *http.Request, status int, problem string) {
 	u, ok := s.acc.ByID(r.PathValue("id"))
 	if !ok {
-		s.fail(w, r, http.StatusNotFound, "No existe", "Esa cuenta ya no está.")
+		s.fail(w, r, http.StatusNotFound, "fail.nouser", "fail.nouser.detail")
 		return
 	}
 	body := userEditBody{
@@ -344,7 +343,7 @@ func (s *Server) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 		return s.acc.Create(strings.TrimSpace(r.PostFormValue("user")), r.PostFormValue("password"), role)
 	})
 	if err != nil {
-		s.renderUsers(w, r, http.StatusBadRequest, accountProblem(err))
+		s.renderUsers(w, r, http.StatusBadRequest, accountProblem(i18n.For(s.langFor(r)), err))
 		return
 	}
 	s.redirect(w, r, "/settings/users", "user-created")
@@ -356,7 +355,7 @@ func (s *Server) handleSetRole(w http.ResponseWriter, r *http.Request) {
 		role = account.RoleAdmin
 	}
 	if err := s.acc.SetRole(viewerOf(r).User.ID, r.PathValue("id"), role); err != nil {
-		s.renderUserEdit(w, r, statusFor(err), accountProblem(err))
+		s.renderUserEdit(w, r, statusFor(err), accountProblem(i18n.For(s.langFor(r)), err))
 		return
 	}
 	s.redirect(w, r, "/settings/users/"+r.PathValue("id"), "role-changed")
@@ -364,7 +363,7 @@ func (s *Server) handleSetRole(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleRenameUser(w http.ResponseWriter, r *http.Request) {
 	if err := s.acc.Rename(r.PathValue("id"), strings.TrimSpace(r.PostFormValue("user"))); err != nil {
-		s.renderUserEdit(w, r, statusFor(err), accountProblem(err))
+		s.renderUserEdit(w, r, statusFor(err), accountProblem(i18n.For(s.langFor(r)), err))
 		return
 	}
 	s.redirect(w, r, "/settings/users/"+r.PathValue("id"), "profile")
@@ -375,7 +374,7 @@ func (s *Server) handleResetPassword(w http.ResponseWriter, r *http.Request) {
 		return account.User{}, s.acc.SetPassword(r.PathValue("id"), r.PostFormValue("password"))
 	})
 	if err != nil {
-		s.renderUserEdit(w, r, statusFor(err), accountProblem(err))
+		s.renderUserEdit(w, r, statusFor(err), accountProblem(i18n.For(s.langFor(r)), err))
 		return
 	}
 	s.redirect(w, r, "/settings/users/"+r.PathValue("id"), "user-reset")
@@ -383,7 +382,7 @@ func (s *Server) handleResetPassword(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleDeleteUser(w http.ResponseWriter, r *http.Request) {
 	if err := s.acc.Delete(viewerOf(r).User.ID, r.PathValue("id")); err != nil {
-		s.renderUserEdit(w, r, statusFor(err), accountProblem(err))
+		s.renderUserEdit(w, r, statusFor(err), accountProblem(i18n.For(s.langFor(r)), err))
 		return
 	}
 	s.redirect(w, r, "/settings/users", "user-deleted")
@@ -408,30 +407,33 @@ func rowFor(u account.User, me string) userRow {
 	return row
 }
 
-func accountProblem(err error) string {
+// accountProblem turns a refusal from the accounts store into a sentence the
+// reader can act on. The store speaks in error values, which is what lets it
+// stay a package that knows nothing about pages or languages.
+func accountProblem(say *i18n.Printer, err error) string {
 	switch {
 	case errors.Is(err, account.ErrNameTaken):
-		return "Ese nombre ya está en uso."
+		return say.T("problem.nametaken")
 	case errors.Is(err, account.ErrNameInvalid):
-		return "Un nombre puede tener entre 2 y 32 letras, números, puntos, guiones o guiones bajos."
+		return say.T("problem.nameinvalid")
 	case errors.Is(err, account.ErrPasswordTooShort):
-		return "La contraseña necesita al menos 10 caracteres."
+		return say.T("problem.passwordshort")
 	case errors.Is(err, account.ErrBadCredentials):
-		return "La contraseña actual no es correcta."
+		return say.T("problem.badpassword")
 	case errors.Is(err, account.ErrThemeInvalid):
-		return "Ese tema no existe."
+		return say.T("problem.notheme")
 	case errors.Is(err, account.ErrLangInvalid):
-		return "Ese idioma no existe."
+		return say.T("problem.nolang")
 	case errors.Is(err, account.ErrNotationInvalid):
-		return "Esa notación no existe."
+		return say.T("problem.nonotation")
 	case errors.Is(err, account.ErrLastAdmin):
-		return "No puedes dejar la instancia sin administrador."
+		return say.T("problem.lastadmin")
 	case errors.Is(err, account.ErrSelfTarget):
-		return "No puedes hacerte eso a tu propia cuenta. Pídeselo a otro administrador."
+		return say.T("problem.self")
 	case errors.Is(err, account.ErrNotFound):
-		return "Esa cuenta ya no existe."
+		return say.T("problem.gone")
 	}
-	return "No se ha podido guardar el cambio."
+	return say.T("problem.unsaved")
 }
 
 func statusFor(err error) int {

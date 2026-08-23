@@ -5,6 +5,8 @@ import (
 	"strconv"
 
 	"github.com/jalmena/tabernacle/internal/index"
+
+	"github.com/jalmena/tabernacle/internal/i18n"
 )
 
 const perPage = 40
@@ -117,9 +119,10 @@ func (s *Server) handleLibrary(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
+	say := i18n.For(s.langFor(r))
 	qs := r.URL.Query()
 	for _, f := range []struct{ key, label, value string }{
-		{"genre", "género", q.Genre},
+		{"genre", say.T("filter.genre"), q.Genre},
 		{"artist", "artista", q.Artist},
 		{"chord", "acorde", q.Chord},
 		{"key", "tono", q.Key},
@@ -133,7 +136,7 @@ func (s *Server) handleLibrary(w http.ResponseWriter, r *http.Request) {
 	}
 	if q.Broken {
 		body.Filters = append(body.Filters, filterChip{
-			Label: "con errores", ClearURL: libraryURL(qs, "broken", ""),
+			Label: say.T("filter.broken"), ClearURL: libraryURL(qs, "broken", ""),
 		})
 	}
 
@@ -158,7 +161,7 @@ func (s *Server) handleArtists(w http.ResponseWriter, r *http.Request) {
 		s.serverError(w, r, err)
 		return
 	}
-	s.render(w, r, http.StatusOK, "artists.html", s.page(r, "Artistas", artists))
+	s.render(w, r, http.StatusOK, "artists.html", s.page(r, "nav.artists", artists))
 }
 
 // handleGenres lists the genres in the collection.
@@ -168,7 +171,7 @@ func (s *Server) handleGenres(w http.ResponseWriter, r *http.Request) {
 		s.serverError(w, r, err)
 		return
 	}
-	s.render(w, r, http.StatusOK, "genres.html", s.page(r, "Géneros", genres))
+	s.render(w, r, http.StatusOK, "genres.html", s.page(r, "nav.genres", genres))
 }
 
 // libraryURL rewrites one parameter of the current query.

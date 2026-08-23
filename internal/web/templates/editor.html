@@ -10,38 +10,39 @@
 			     it. Nothing reaches the collection until Guardar, so a file with
 			     a mistake in it can be seen and fixed first. */}}
 			<form class="loadbar" method="post" action="/songs/new" enctype="multipart/form-data">
-				<label class="btn btn-quiet" for="loadfile">Cargar archivo…</label>
+				<label class="btn btn-quiet" for="loadfile">{{$.T "editor.loadfile"}}</label>
 				<input id="loadfile" type="file" name="file" accept=".song,.txt,text/plain">
 				{{/* Choosing a file is enough: the script reads it here and drops
 				     the text in the box below. With scripting off there is nothing
 				     to trigger that, so the button appears only in that case. */}}
-				<noscript><button class="btn btn-quiet" type="submit">Cargar</button></noscript>
-				{{if .Loaded}}<span class="quiet">Cargado: {{.Loaded}}</span>{{end}}
+				<noscript><button class="btn btn-quiet" type="submit">{{$.T "editor.load"}}</button></noscript>
+				{{if .Loaded}}<span class="quiet">{{$.T "editor.loaded" .Loaded}}</span>{{end}}
 			</form>
 		{{end}}
 
 		{{if .ErrMessage}}
 			<p class="notice">
-				{{if .ErrLine}}Línea <code>{{.ErrLine}}</code>: {{end}}{{.ErrMessage}}
+				{{if .ErrLine}}{{$.T "editor.line"}} <code>{{.ErrLine}}</code>: {{end}}{{.ErrMessage}}
 			</p>
 		{{end}}
 
 		{{if not .Editing}}
 			<p class="count">
-				Pega una canción en formato <code>.song</code>, o carga un archivo. Los acordes
-				van entre corchetes, donde caen: <code>A[G]mazing grace</code>. Las secciones
-				empiezan con <code>## Estrofa 1</code>. De la cabecera solo hace falta el título.
+				{{$.T "editor.help.paste"}}
+				{{$.T "editor.help.chords"}} <code>A[G]mazing grace</code>.
+				{{$.T "editor.help.sections"}} <code>## {{$.T "editor.help.verse"}}</code>.
+				{{$.T "editor.help.header"}}
 			</p>
 		{{end}}
 
 		<form method="post" action="{{.Action}}" class="editor">
 			{{if .Hash}}<input type="hidden" name="hash" value="{{.Hash}}">{{end}}
 			<textarea id="songtext" name="text" rows="26" spellcheck="false" autocapitalize="off"
-			          autocomplete="off" aria-label="Contenido del archivo .song"
+			          autocomplete="off" aria-label="{{$.T `editor.label`}}"
 			          placeholder="{{.Placeholder}}">{{.Text}}</textarea>
 			<div class="filters">
-				<button class="btn" type="submit">Guardar</button>
-				<a class="btn btn-quiet" href="{{.CancelURL}}">Cancelar</a>
+				<button class="btn" type="submit">{{$.T "action.save"}}</button>
+				<a class="btn btn-quiet" href="{{.CancelURL}}">{{$.T "action.cancel"}}</a>
 			</div>
 		</form>
 	{{end}}

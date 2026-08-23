@@ -260,8 +260,7 @@ func (s *Server) resolve(w http.ResponseWriter, r *http.Request, err error) {
 		}
 		http.Redirect(w, r, target, http.StatusMovedPermanently)
 	case errors.Is(err, library.ErrNotFound):
-		s.fail(w, r, http.StatusNotFound, "Esa canción no está aquí",
-			"Puede que se haya renombrado o eliminado. Prueba a buscarla desde la biblioteca.")
+		s.fail(w, r, http.StatusNotFound, "fail.nosong", "fail.nosong.detail")
 	default:
 		s.serverError(w, r, err)
 	}

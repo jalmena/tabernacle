@@ -169,8 +169,12 @@ type WordView struct {
 
 // CellView is one chord sitting above one run of text.
 type CellView struct {
-	Chord      string // "" when this cell carries no chord
-	ChordID    string
+	Chord   string // "" when this cell carries no chord
+	ChordID string
+	// Title is what a reader sees on hovering the chord. It is built here and
+	// not in the template because the template that draws a line is handed a
+	// list of lines and nothing else — there is no language in reach down there.
+	Title      string
 	Annotation string // "" unless the cell is an annotation such as "x2"
 	Text       string
 }
@@ -288,7 +292,7 @@ func Sheet(s song.Song, o Options) SheetView {
 			Kind:   string(sec.Kind),
 			Label:  sec.Label,
 			Anchor: uniqueAnchor(anchors, sec),
-			Blocks: blocksOf(sec, o.Notation),
+			Blocks: blocksOf(say, sec, o.Notation),
 		}
 		v.Sections = append(v.Sections, sv)
 		if sv.Label != "" {
@@ -300,7 +304,7 @@ func Sheet(s song.Song, o Options) SheetView {
 
 // blocksOf groups a section's lines into stanzas, splitting on blank lines and
 // breaking out verbatim blocks as their own units.
-func blocksOf(sec song.Section, no chord.Notation) []BlockView {
+func blocksOf(say *i18n.Printer, sec song.Section, no chord.Notation) []BlockView {
 	var (
 		out     []BlockView
 		current BlockView
@@ -319,7 +323,7 @@ func blocksOf(sec song.Section, no chord.Notation) []BlockView {
 			flush()
 			out = append(out, BlockView{Verbatim: true, Info: ln.Info, Text: ln.Text})
 		default:
-			current.Lines = append(current.Lines, lineOf(ln, no))
+			current.Lines = append(current.Lines, lineOf(say, ln, no))
 		}
 	}
 	flush()
@@ -332,7 +336,7 @@ func blocksOf(sec song.Section, no chord.Notation) []BlockView {
 // between runs of text: "A[G]mazing" arrives as text "A", chord G, text
 // "mazing". Splitting on whitespace and grouping into words is what lets the
 // page reflow on a phone without ever separating a chord from its syllable.
-func lineOf(ln song.Line, no chord.Notation) LineView {
+func lineOf(say *i18n.Printer, ln song.Line, no chord.Notation) LineView {
 	var (
 		out   LineView
 		cells []CellView
@@ -362,6 +366,7 @@ func lineOf(ln song.Line, no chord.Notation) LineView {
 			closeCell()
 			cell.Chord = tok.Chord.Format(no)
 			cell.ChordID = ChordID(tok.Chord)
+			cell.Title = say.T("sheet.seeshape", cell.Chord)
 			out.HasChord = true
 		case song.TokenAnnotation:
 			closeCell()

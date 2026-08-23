@@ -4,7 +4,7 @@
 <body class="printing paper-{{.Body.Theme}}">
 {{/* Only what a reader needs to leave or to print. The paper was chosen on the
      way in; offering it again here would be a control on a document. */}}
-<nav class="paperbar noprint" aria-label="Cancionero">
+<nav class="paperbar noprint" aria-label="{{.T `book.title`}}">
 	<button class="btn" type="button" data-print>{{.T "book.printpdf"}}</button>
 	<span class="sep"></span>
 	<a class="btn btn-quiet" href="{{.Body.BackTo}}">{{.T "book.back"}}</a>
@@ -34,18 +34,18 @@
 					<h1>{{.Sheet.Title}}</h1>
 					{{if .Sheet.Artist}}<p class="by">{{.Sheet.Artist}}</p>{{end}}
 					<ul class="facts">
-						{{if .Sheet.Key}}<li>Tono <b>{{.Sheet.Key}}</b></li>{{end}}
-						{{if .Sheet.Capo}}<li>Cejilla <b>{{.Sheet.Capo}}</b></li>{{end}}
-						{{if .Sheet.Tuning}}<li>Afinación <b>{{.Sheet.Tuning}}</b></li>{{end}}
+						{{if .Sheet.Key}}<li>{{$.T "fact.key"}} <b>{{.Sheet.Key}}</b></li>{{end}}
+						{{if .Sheet.Capo}}<li>{{$.T "fact.capo"}} <b>{{.Sheet.Capo}}</b></li>{{end}}
+						{{if .Sheet.Tuning}}<li>{{$.T "fact.tuning"}} <b>{{.Sheet.Tuning}}</b></li>{{end}}
 					</ul>
 					{{if .Sheet.Shifted}}
 						<p class="transposed">
-							{{.Step}}{{if .OrigKey}} · original en {{.OrigKey}}{{end}}
+							{{.Step}}{{if .OrigKey}} · {{$.T "sheet.origkey" .OrigKey}}{{end}}
 						</p>
 					{{end}}
 					{{if .Sheet.TabNote}}<p class="transposed">{{.Sheet.TabNote}}</p>{{end}}
 				</div>
-				<div class="songbody">{{template "sections" .Sheet}}</div>
+				<div class="songbody">{{template "sections" (sheet $ .Sheet)}}</div>
 			</section>
 		{{end}}
 	{{end}}

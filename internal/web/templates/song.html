@@ -4,37 +4,37 @@
 <main class="wrap">
 	{{template "nav" .}}
 	{{with .Body}}
-		{{template "songfacts" .}}
+		{{template "songfacts" $}}
 
 		{{if .Broken}}
 			<p class="notice">
-				Este archivo tiene un error de sintaxis{{if .ParseAt}} en la línea <code>{{.ParseAt}}</code>{{end}}:
+				{{if .ParseAt}}{{$.T "song.broken.at" .ParseAt}}{{else}}{{$.T "song.broken"}}{{end}}
 				<code>{{.ParseMsg}}</code>.
-				Se muestra la última versión que sí se pudo leer.
-				{{if .CanEdit}}<a href="{{.EditURL}}">Corregirlo</a>.{{end}}
+				{{$.T "song.broken.showing"}}
+				{{if .CanEdit}}<a href="{{.EditURL}}">{{$.T "song.broken.fix"}}</a>.{{end}}
 			</p>
 		{{end}}
 
-		{{template "songsheet" .}}
+		{{template "songsheet" $}}
 
 		<footer class="sheet-foot noprint">
 			<div class="filters">
-				<a class="btn btn-quiet" href="{{.RawURL}}">Descargar .song</a>
+				<a class="btn btn-quiet" href="{{.RawURL}}">{{$.T "song.download"}}</a>
 				{{if .CanEdit}}
-					<a class="btn btn-quiet" href="{{.EditURL}}">Editar archivo</a>
+					<a class="btn btn-quiet" href="{{.EditURL}}">{{$.T "song.edit"}}</a>
 					{{if .Controls.CanReset}}
 						<form method="post" action="/songs/{{.Slug}}/transpose">
 							<input type="hidden" name="t" value="{{.Controls.Transpose}}">
 							<button class="btn btn-quiet" type="submit"
-							        title="Abrir esta canción siempre en este tono">Recordar el tono</button>
+							        title="{{$.T `song.remember.hint`}}">{{$.T "song.remember"}}</button>
 						</form>
 						<form method="post" action="/songs/{{.Slug}}/commit-transpose">
 							<input type="hidden" name="t" value="{{.Controls.Transpose}}">
 							<button class="btn btn-quiet" type="submit"
-							        title="Reescribir el archivo en este tono">Guardar en el archivo</button>
+							        title="{{$.T `song.commit.hint`}}">{{$.T "song.commit"}}</button>
 						</form>
 					{{end}}
-					<a class="btn btn-quiet" href="/songs/{{.Slug}}/delete">Eliminar</a>
+					<a class="btn btn-quiet" href="/songs/{{.Slug}}/delete">{{$.T "song.delete"}}</a>
 				{{end}}
 			</div>
 		</footer>

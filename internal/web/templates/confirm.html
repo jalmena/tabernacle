@@ -8,7 +8,7 @@
 		<form method="post" action="{{.Action}}" class="editor">
 			<div class="filters">
 				<button class="btn btn-danger" type="submit">{{.Confirm}}</button>
-				<a class="btn btn-quiet" href="{{.CancelURL}}">Cancelar</a>
+				<a class="btn btn-quiet" href="{{.CancelURL}}">{{$.T "action.cancel"}}</a>
 			</div>
 		</form>
 	{{end}}

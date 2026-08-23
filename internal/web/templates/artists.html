@@ -3,18 +3,18 @@
 {{template "top" .}}
 <main class="wrap wrap-wide">
 	{{template "nav" .}}
-	<h1>Artistas</h1>
+	<h1>{{.T "nav.artists"}}</h1>
 	{{if .Body}}
 		<ul class="songlist">
 			{{range .Body}}
 				<li><a href="/?artist={{.Name}}">
 					<span class="t">{{.Name}}</span>
-					<span class="a">{{.Count}} {{plural .Count "canción" "canciones"}}</span>
+					<span class="a">{{.Count}} {{plural .Count ($.T "count.song") ($.T "count.songs")}}</span>
 				</a></li>
 			{{end}}
 		</ul>
 	{{else}}
-		<div class="empty"><p>Todavía no hay ningún artista en la colección.</p></div>
+		<div class="empty"><p>{{.T "artists.empty"}}</p></div>
 	{{end}}
 </main>
 {{template "scripts" .}}

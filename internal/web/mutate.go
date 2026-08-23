@@ -10,6 +10,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/jalmena/tabernacle/internal/i18n"
 	"github.com/jalmena/tabernacle/internal/library"
 	"github.com/jalmena/tabernacle/internal/render"
 	"github.com/jalmena/tabernacle/internal/song"
@@ -218,16 +219,14 @@ type guard struct {
 func (s *Server) guarded(g guard, h func(http.ResponseWriter, *http.Request)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if g.collection && s.cfg.ReadOnly {
-			s.fail(w, r, http.StatusForbidden, "Solo lectura",
-				"Esta instancia está configurada para no permitir cambios en la colección.")
+			s.fail(w, r, http.StatusForbidden, "fail.readonly", "fail.readonly.detail")
 			return
 		}
 		if err := s.requireSameOrigin(r); err != nil {
 			s.log.Warn("refused a cross-origin write",
 				"path", r.URL.Path, "origin", r.Header.Get("Origin"), "host", r.Host,
 				"fetch_site", r.Header.Get("Sec-Fetch-Site"), "reason", err)
-			s.fail(w, r, http.StatusForbidden, "Petición rechazada",
-				"La petición no parece venir de esta página.")
+			s.fail(w, r, http.StatusForbidden, "fail.origin", "fail.origin.detail")
 			return
 		}
 		if !s.permitted(r, g.minimum) {
@@ -237,8 +236,7 @@ func (s *Server) guarded(g guard, h func(http.ResponseWriter, *http.Request)) ht
 		if g.parseForm {
 			r.Body = http.MaxBytesReader(w, r.Body, maxFormBytes)
 			if err := r.ParseForm(); err != nil {
-				s.fail(w, r, http.StatusRequestEntityTooLarge, "Envío demasiado grande",
-					"El formulario supera el tamaño permitido.")
+				s.fail(w, r, http.StatusRequestEntityTooLarge, "fail.toobig", "fail.toobig.detail")
 				return
 			}
 		}
@@ -266,14 +264,13 @@ func (s *Server) refusePrivilege(w http.ResponseWriter, r *http.Request, need ac
 	if !viewerOf(r).In {
 		body := loginBody{
 			Next:    safeNext(r.URL.Path),
-			Problem: "Inicia sesión para guardar cambios.",
+			Problem: i18n.For(s.langFor(r)).T("login.needed"),
 		}
-		s.render(w, r, http.StatusUnauthorized, "login.html", s.page(r, "Acceder", body))
+		s.render(w, r, http.StatusUnauthorized, "login.html", s.page(r, "login.title", body))
 		return
 	}
 	_ = need
-	s.fail(w, r, http.StatusForbidden, "Sin permiso",
-		"Esta acción es solo para administradores.")
+	s.fail(w, r, http.StatusForbidden, "fail.notallowed", "fail.notallowed.detail")
 }
 
 // mutating wraps a handler that changes the collection.
@@ -362,8 +359,9 @@ type editorBody struct {
 }
 
 func (s *Server) handleNewSong(w http.ResponseWriter, r *http.Request) {
-	s.render(w, r, http.StatusOK, "editor.html", s.page(r, "Añadir una canción", editorBody{
-		Title:       "Añadir una canción",
+	say := i18n.For(s.langFor(r))
+	s.render(w, r, http.StatusOK, "editor.html", s.page(r, "library.empty.add", editorBody{
+		Title:       say.T("library.empty.add"),
 		Action:      "/songs",
 		CancelURL:   "/",
 		Placeholder: newSongPlaceholder,
@@ -371,11 +369,12 @@ func (s *Server) handleNewSong(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleCreateSong(w http.ResponseWriter, r *http.Request) {
+	say := i18n.For(s.langFor(r))
 	text := r.PostFormValue("text")
 	slug, err := s.lib.CreateFromText(r.Context(), text)
 	if err != nil {
 		s.renderEditorError(w, r, editorBody{
-			Title:       "Añadir una canción",
+			Title:       say.T("library.empty.add"),
 			Action:      "/songs",
 			CancelURL:   "/",
 			Text:        text,
@@ -395,8 +394,9 @@ func (s *Server) handleCreateSong(w http.ResponseWriter, r *http.Request) {
 // upload you cannot see before it lands is how a collection fills with files
 // nobody meant to add.
 func (s *Server) handleLoadIntoEditor(w http.ResponseWriter, r *http.Request) {
+	say := i18n.For(s.langFor(r))
 	body := editorBody{
-		Title:       "Añadir una canción",
+		Title:       say.T("library.empty.add"),
 		Action:      "/songs",
 		CancelURL:   "/",
 		Placeholder: newSongPlaceholder,
@@ -404,7 +404,7 @@ func (s *Server) handleLoadIntoEditor(w http.ResponseWriter, r *http.Request) {
 
 	r.Body = http.MaxBytesReader(w, r.Body, s.cfg.MaxSongBytes+(1<<16))
 	if err := r.ParseMultipartForm(1 << 20); err != nil {
-		body.ErrMessage = "No se ha podido leer el archivo, o es demasiado grande."
+		body.ErrMessage = say.T("editor.unreadable")
 		s.render(w, r, http.StatusRequestEntityTooLarge, "editor.html",
 			s.page(r, body.Title, body))
 		return
@@ -417,14 +417,14 @@ func (s *Server) handleLoadIntoEditor(w http.ResponseWriter, r *http.Request) {
 
 	files := r.MultipartForm.File["file"]
 	if len(files) == 0 {
-		body.ErrMessage = "No has seleccionado ningún archivo."
+		body.ErrMessage = say.T("editor.nofile")
 		s.render(w, r, http.StatusBadRequest, "editor.html", s.page(r, body.Title, body))
 		return
 	}
 
 	f, err := files[0].Open()
 	if err != nil {
-		body.ErrMessage = "No se ha podido abrir el archivo."
+		body.ErrMessage = say.T("editor.cannotopen")
 		s.render(w, r, http.StatusBadRequest, "editor.html", s.page(r, body.Title, body))
 		return
 	}
@@ -467,7 +467,7 @@ func (s *Server) handleEditSong(w http.ResponseWriter, r *http.Request) {
 		s.resolve(w, r, err)
 		return
 	}
-	s.render(w, r, http.StatusOK, "editor.html", s.page(r, "Editar", editorBody{
+	s.render(w, r, http.StatusOK, "editor.html", s.page(r, "title.edit", editorBody{
 		Title:     "Editar el archivo",
 		Action:    "/songs/" + slug,
 		Slug:      slug,
@@ -499,7 +499,7 @@ func (s *Server) handleSaveSong(w http.ResponseWriter, r *http.Request) {
 			// one of them quietly discarded.
 			body.ErrMessage = "El archivo ha cambiado desde que abriste el editor. " +
 				"Copia tu texto, vuelve a abrir la canción y aplica los cambios de nuevo."
-			s.render(w, r, http.StatusConflict, "editor.html", s.page(r, "Conflicto", body))
+			s.render(w, r, http.StatusConflict, "editor.html", s.page(r, "title.conflict", body))
 			return
 		}
 		s.renderEditorError(w, r, body, err)
@@ -547,7 +547,7 @@ func (s *Server) handleDeleteForm(w http.ResponseWriter, r *http.Request) {
 	if view.Record.Artist != "" {
 		name += " · " + view.Record.Artist
 	}
-	s.render(w, r, http.StatusOK, "confirm.html", s.page(r, "Eliminar", confirmBody{
+	s.render(w, r, http.StatusOK, "confirm.html", s.page(r, "song.delete", confirmBody{
 		Heading: "¿Eliminar " + name + "?",
 		Detail: "El archivo se mueve a la carpeta de la papelera, dentro del directorio " +
 			"de datos. Puedes recuperarlo desde ahí con el gestor de archivos.",
@@ -571,8 +571,7 @@ func (s *Server) handleRememberTranspose(w http.ResponseWriter, r *http.Request)
 	slug := r.PathValue("slug")
 	n, err := strconv.Atoi(r.PostFormValue("t"))
 	if err != nil {
-		s.fail(w, r, http.StatusBadRequest, "Valor no válido",
-			"El número de semitonos no es un número.")
+		s.fail(w, r, http.StatusBadRequest, "fail.badvalue", "fail.badvalue.detail")
 		return
 	}
 	state, err := s.lib.State(r.Context(), slug)
@@ -594,8 +593,7 @@ func (s *Server) handleCommitTranspose(w http.ResponseWriter, r *http.Request) {
 	slug := r.PathValue("slug")
 	n, err := strconv.Atoi(r.PostFormValue("t"))
 	if err != nil || render.NormalizeTranspose(n) == 0 {
-		s.fail(w, r, http.StatusBadRequest, "Nada que guardar",
-			"No hay ninguna transposición que escribir en el archivo.")
+		s.fail(w, r, http.StatusBadRequest, "fail.nothing", "fail.nothing.detail")
 		return
 	}
 	if err := s.lib.CommitTranspose(r.Context(), slug, render.NormalizeTranspose(n)); err != nil {
@@ -623,7 +621,7 @@ func (s *Server) handleReindex(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, library.ErrSyncBusy) {
 			// Another scan is already doing the work; report its result.
 			last, _ := s.lib.LastScan()
-			s.render(w, r, http.StatusOK, "scan.html", s.page(r, "Revisión", scanBody{Report: last}))
+			s.render(w, r, http.StatusOK, "scan.html", s.page(r, "scan.title", scanBody{Report: last}))
 			return
 		}
 		s.serverError(w, r, err)
@@ -631,5 +629,5 @@ func (s *Server) handleReindex(w http.ResponseWriter, r *http.Request) {
 	}
 	changed := rep.Added+rep.Updated+rep.Renamed+rep.Removed+rep.Failed > 0
 	s.render(w, r, http.StatusOK, "scan.html",
-		s.page(r, "Revisión", scanBody{Report: rep, Changed: changed}))
+		s.page(r, "scan.title", scanBody{Report: rep, Changed: changed}))
 }

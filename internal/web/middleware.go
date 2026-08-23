@@ -24,7 +24,10 @@ func (s *Server) requireAllowedHost(next http.Handler) http.Handler {
 		if !s.cfg.HostAllowed(r.Host) {
 			s.log.Warn("refused a request for an unexpected host",
 				"host", r.Host, "path", r.URL.Path, "remote", clientIP(r))
-			http.Error(w, "Host no permitido", http.StatusMisdirectedRequest)
+			// In English, and deliberately: this refusal happens before there is a
+			// reader, a session or a page, so there is nobody whose language to
+			// speak. It is a protocol-level no.
+			http.Error(w, "Host not allowed", http.StatusMisdirectedRequest)
 			return
 		}
 		next.ServeHTTP(w, r)

@@ -97,7 +97,7 @@ func (s *Server) handleSongbook(w http.ResponseWriter, r *http.Request) {
 			Slug: h.Slug, Title: h.Title, Artist: h.Artist, Key: h.Key,
 		})
 	}
-	s.render(w, r, http.StatusOK, "songbook.html", s.page(r, "Generar cancionero", body))
+	s.render(w, r, http.StatusOK, "songbook.html", s.page(r, "book.title", body))
 }
 
 // handleSongbookPrint renders many songs as one printable document.
@@ -105,9 +105,7 @@ func (s *Server) handleSongbookPrint(w http.ResponseWriter, r *http.Request) {
 	slugs, err := s.songbookSlugs(r)
 	switch {
 	case errors.Is(err, errTooManySongs):
-		s.fail(w, r, http.StatusBadRequest, "Demasiadas canciones",
-			"Un cancionero admite hasta 60 canciones elegidas una a una. Para más, "+
-				"filtra la biblioteca y marca «todas las de esta búsqueda».")
+		s.fail(w, r, http.StatusBadRequest, "fail.toomany", "fail.toomany.detail", maxSongbookSongs)
 		return
 	case err != nil:
 		s.serverError(w, r, err)
@@ -152,11 +150,10 @@ func (s *Server) handleSongbookPrint(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 	if len(body.Songs) == 0 {
-		s.fail(w, r, http.StatusNotFound, "Ninguna canción",
-			"Ninguna de las canciones elegidas sigue en la colección.")
+		s.fail(w, r, http.StatusNotFound, "fail.nosongs", "fail.nosongs.detail")
 		return
 	}
-	s.render(w, r, http.StatusOK, "songbookprint.html", s.page(r, "Cancionero", body))
+	s.render(w, r, http.StatusOK, "songbookprint.html", s.page(r, "title.songbook", body))
 }
 
 // songbookSlugs resolves which songs a book holds, from either form the print

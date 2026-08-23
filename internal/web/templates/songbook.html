@@ -77,9 +77,9 @@
 					<legend>{{$.T "settings.notation"}}</legend>
 					<div class="segmented">
 						<label><input type="radio" name="n" value="english"
-						              {{if not .Solfege}}checked{{end}}><span>A B C</span></label>
+						              {{if not .Solfege}}checked{{end}}><span>{{$.T "notation.abc"}}</span></label>
 						<label><input type="radio" name="n" value="solfege"
-						              {{if .Solfege}}checked{{end}}><span>Do Re Mi</span></label>
+						              {{if .Solfege}}checked{{end}}><span>{{$.T "notation.doremi"}}</span></label>
 					</div>
 				</fieldset>
 
