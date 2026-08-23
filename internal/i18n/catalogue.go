@@ -165,6 +165,96 @@ var catalogue = map[Lang]map[string]string{
 		"transfer.title":  "Importar y exportar",
 		"transfer.import": "Importar",
 		"transfer.export": "Exportar",
+
+		// A chord shape: what it is called and how it is spoken aloud.
+		"shape.allopen": "Cuerdas al aire",
+		"shape.barre":   "Cejilla en el traste %d",
+		"shape.first":   "Posición abierta",
+		"shape.fret":    "Traste %d",
+
+		// The strings, counted the way a player counts them. Three forms,
+		// because a column header, a spoken sentence and a list of what to
+		// silence each want a different one.
+		"string.1.short": "1ª",
+		"string.2.short": "2ª",
+		"string.3.short": "3ª",
+		"string.4.short": "4ª",
+		"string.5.short": "5ª",
+		"string.6.short": "6ª",
+		"string.1.long":  "1ª cuerda",
+		"string.2.long":  "2ª cuerda",
+		"string.3.long":  "3ª cuerda",
+		"string.4.long":  "4ª cuerda",
+		"string.5.long":  "5ª cuerda",
+		"string.6.long":  "6ª cuerda",
+		"string.1.the":   "la 1ª",
+		"string.2.the":   "la 2ª",
+		"string.3.the":   "la 3ª",
+		"string.4.the":   "la 4ª",
+		"string.5.the":   "la 5ª",
+		"string.6.the":   "la 6ª",
+		"string.n":       "cuerda %d",
+
+		"finger.1": "índice",
+		"finger.2": "medio",
+		"finger.3": "anular",
+		"finger.4": "pequeño",
+		"finger.5": "pulgar",
+
+		"spoken.muted":      "%s no suena",
+		"spoken.open":       "%s al aire",
+		"spoken.fret":       "%s traste %d",
+		"spoken.withfinger": "%s con el %s",
+
+		// Joining a list. The last join is a word, and which word it is belongs
+		// to the language.
+		"list.and": "%s y %s",
+
+		// Notes on a sheet.
+		"tab.floor":      "La tablatura se queda como estaba: bajarla más pasaría de la cuerda al aire.",
+		"tab.ceiling":    "La tablatura se queda como estaba: subirla más se saldría del mástil.",
+		"tuning.unknown": "No se conoce la afinación %s, así que no se muestran posiciones de acordes.",
+		"tuning.other":   "Afinación %s: se muestran solo las posiciones estándar que siguen siendo válidas.",
+		"simplify.note":  "Acordes simplificados a posiciones que se pueden tocar.",
+
+		// Naming what a shape plays.
+		"degree.third":     "la tercera",
+		"degree.fourth":    "la cuarta",
+		"degree.fifth":     "la quinta",
+		"degree.sixth":     "la sexta",
+		"degree.seventh":   "la séptima",
+		"degree.ninth":     "la novena",
+		"reading.without":  "sin %s",
+		"reading.overbass": "con %s en el bajo",
+		"nearly.without":   "sin %s",
+
+		// The chord page.
+		"lab.unreadable":     "No se entiende «%s» como un acorde.",
+		"lab.unknownchord":   "No se sabe formar %s en la guitarra.",
+		"lab.unreachable":    "No hay ninguna forma de %s que una mano alcance.",
+		"lab.alwaysinverted": "Toda forma de %s deja otra nota en el bajo.",
+
+		// The families of chord, glossed for somebody who does not read symbols.
+		"quality.major":    "mayor",
+		"quality.minor":    "menor",
+		"quality.dom7":     "séptima de dominante",
+		"quality.maj7":     "séptima mayor",
+		"quality.min7":     "séptima menor",
+		"quality.minmaj7":  "menor con séptima mayor",
+		"quality.six":      "sexta",
+		"quality.min6":     "sexta menor",
+		"quality.sus2":     "cuarta suspendida (sus2)",
+		"quality.sus4":     "cuarta suspendida (sus4)",
+		"quality.dom7sus4": "séptima suspendida",
+		"quality.add9":     "con novena añadida",
+		"quality.dom9":     "novena de dominante",
+		"quality.maj9":     "novena mayor",
+		"quality.min9":     "novena menor",
+		"quality.dim":      "disminuido",
+		"quality.dim7":     "séptima disminuida",
+		"quality.halfdim":  "semidisminuido",
+		"quality.aug":      "aumentado",
+		"quality.power":    "quinta (acorde de poder)",
 	},
 
 	English: {
@@ -316,5 +406,91 @@ var catalogue = map[Lang]map[string]string{
 		"transfer.title":  "Import and export",
 		"transfer.import": "Import",
 		"transfer.export": "Export",
+
+		// A chord shape: what it is called and how it is spoken aloud.
+		"shape.allopen": "Open strings",
+		"shape.barre":   "Barre at fret %d",
+		"shape.first":   "Open position",
+		"shape.fret":    "Fret %d",
+
+		// The strings, counted the way a player counts them.
+		"string.1.short": "1st",
+		"string.2.short": "2nd",
+		"string.3.short": "3rd",
+		"string.4.short": "4th",
+		"string.5.short": "5th",
+		"string.6.short": "6th",
+		"string.1.long":  "1st string",
+		"string.2.long":  "2nd string",
+		"string.3.long":  "3rd string",
+		"string.4.long":  "4th string",
+		"string.5.long":  "5th string",
+		"string.6.long":  "6th string",
+		"string.1.the":   "the 1st",
+		"string.2.the":   "the 2nd",
+		"string.3.the":   "the 3rd",
+		"string.4.the":   "the 4th",
+		"string.5.the":   "the 5th",
+		"string.6.the":   "the 6th",
+		"string.n":       "string %d",
+
+		"finger.1": "index",
+		"finger.2": "middle",
+		"finger.3": "ring",
+		"finger.4": "little",
+		"finger.5": "thumb",
+
+		"spoken.muted":      "%s not played",
+		"spoken.open":       "%s open",
+		"spoken.fret":       "%s fret %d",
+		"spoken.withfinger": "%s with the %s",
+
+		"list.and": "%s and %s",
+
+		// Notes on a sheet.
+		"tab.floor":      "The tablature stays where it was: any lower would go past the open string.",
+		"tab.ceiling":    "The tablature stays where it was: any higher would run off the neck.",
+		"tuning.unknown": "%s is not a tuning we know, so no chord shapes are shown.",
+		"tuning.other":   "%s tuning: only the standard shapes that still hold are shown.",
+		"simplify.note":  "Chords simplified to shapes you can hold.",
+
+		// Naming what a shape plays.
+		"degree.third":     "the third",
+		"degree.fourth":    "the fourth",
+		"degree.fifth":     "the fifth",
+		"degree.sixth":     "the sixth",
+		"degree.seventh":   "the seventh",
+		"degree.ninth":     "the ninth",
+		"reading.without":  "no %s",
+		"reading.overbass": "over %s",
+		"nearly.without":   "without %s",
+
+		// The chord page.
+		"lab.unreadable":     "%s does not read as a chord.",
+		"lab.unknownchord":   "There is no way to shape %s on a guitar.",
+		"lab.unreachable":    "No shape for %s is within reach of one hand.",
+		"lab.alwaysinverted": "Every way of holding %s leaves another note in the bass.",
+
+		// The families of chord, glossed for somebody who does not read symbols.
+		"quality.major":    "major",
+		"quality.minor":    "minor",
+		"quality.dom7":     "dominant seventh",
+		"quality.maj7":     "major seventh",
+		"quality.min7":     "minor seventh",
+		"quality.minmaj7":  "minor with a major seventh",
+		"quality.six":      "sixth",
+		"quality.min6":     "minor sixth",
+		"quality.sus2":     "suspended second (sus2)",
+		"quality.sus4":     "suspended fourth (sus4)",
+		"quality.dom7sus4": "suspended seventh",
+		"quality.add9":     "with an added ninth",
+		"quality.dom9":     "dominant ninth",
+		"quality.maj9":     "major ninth",
+		"quality.min9":     "minor ninth",
+		"quality.dim":      "diminished",
+		"quality.dim7":     "diminished seventh",
+		"quality.halfdim":  "half-diminished",
+		"quality.aug":      "augmented",
+		"quality.power":    "fifth (power chord)",
 	},
 }

@@ -14,6 +14,7 @@ import (
 	"unicode"
 
 	"github.com/jalmena/tabernacle/internal/chord"
+	"github.com/jalmena/tabernacle/internal/i18n"
 	"github.com/jalmena/tabernacle/internal/song"
 	"github.com/jalmena/tabernacle/internal/voicing"
 )
@@ -23,6 +24,14 @@ type Options struct {
 	Transpose int
 	Notation  chord.Notation
 	Print     bool
+
+	// Lang is the language the sheet's own words are in: the caption under a
+	// diagram, the note explaining a tuning, the description a screen reader
+	// reads out. The song is the writer's and is never touched.
+	//
+	// The zero value is the base language, so a caller that has no opinion still
+	// gets sentences rather than keys.
+	Lang i18n.Lang
 
 	// Diagrams asks for guitar shapes alongside each chord. It is off by
 	// default so that a listing page never pays for diagrams it does not show.
@@ -205,6 +214,7 @@ func (v SheetView) PrintedLines() int {
 // Sheet renders a song.
 func Sheet(s song.Song, o Options) SheetView {
 	o.Transpose = NormalizeTranspose(o.Transpose)
+	say := i18n.For(o.Lang)
 
 	shift := o.Transpose
 	shown := s
@@ -230,20 +240,18 @@ func Sheet(s song.Song, o Options) SheetView {
 	}
 	switch {
 	case moved.TabsTooLow > 0:
-		v.TabNote = "La tablatura se queda como estaba: bajarla más pasaría de la cuerda al aire."
+		v.TabNote = say.T("tab.floor")
 	case moved.TabsTooHigh > 0:
-		v.TabNote = "La tablatura se queda como estaba: subirla más se saldría del mástil."
+		v.TabNote = say.T("tab.ceiling")
 	}
 	if o.Diagrams && s.Tuning != "" {
 		switch t, ok := voicing.ParseTuning(s.Tuning); {
 		case !ok:
-			v.TuningNote = "No se conoce la afinación " + s.Tuning +
-				", así que no se muestran posiciones de acordes."
+			v.TuningNote = say.T("tuning.unknown", s.Tuning)
 		case !t.Equal(voicing.Standard()):
 			// Said once for the sheet rather than on every chord, since in a
 			// song like this it applies to nearly all of them.
-			v.TuningNote = "Afinación " + t.Name +
-				": se muestran solo las posiciones estándar que siguen siendo válidas."
+			v.TuningNote = say.T("tuning.other", t.Name)
 		}
 	}
 
@@ -253,7 +261,7 @@ func Sheet(s song.Song, o Options) SheetView {
 			var moved int
 			if shown, moved = simplify(shown, vo); moved > 0 {
 				v.Simplified = true
-				v.SimplifyNote = "Acordes simplificados a posiciones que se pueden tocar."
+				v.SimplifyNote = say.T("simplify.note")
 			}
 		} else {
 			v.CanSimplify = wouldSimplify(shown, vo)
@@ -263,7 +271,7 @@ func Sheet(s song.Song, o Options) SheetView {
 	for _, c := range shown.Chords() {
 		ref := ChordRef{Text: c.Format(o.Notation), ID: ChordID(c)}
 		if o.Diagrams {
-			ref.Voicings, ref.Warning = chordVoicings(c, ref.Text, vo)
+			ref.Voicings, ref.Warning = chordVoicings(say, c, ref.Text, vo)
 			// A card with no shape is a dead end unless it says where to go. The
 			// sheet-wide control is the way out, so name it here rather than
 			// leaving the reader to guess that the button at the top is related.

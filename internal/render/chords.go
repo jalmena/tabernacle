@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/jalmena/tabernacle/internal/chord"
+	"github.com/jalmena/tabernacle/internal/i18n"
 	"github.com/jalmena/tabernacle/internal/voicing"
 )
 
@@ -39,13 +40,13 @@ type BarreView struct {
 }
 
 // chordVoicings looks up the shapes for one chord and describes them.
-func chordVoicings(c chord.Chord, text string, opts voicing.Options) ([]VoicingView, string) {
+func chordVoicings(say *i18n.Printer, c chord.Chord, text string, opts voicing.Options) ([]VoicingView, string) {
 	res := voicing.For(c, opts)
 	out := make([]VoicingView, 0, len(res.Voicings))
 	for i, v := range res.Voicings {
 		w := windowFor(v)
 		vv := VoicingView{
-			Name:       shapeName(v),
+			Name:       shapeName(say, v),
 			StartFret:  w.Start,
 			FretsShown: w.Frets,
 			Index:      i + 1,
@@ -61,7 +62,7 @@ func chordVoicings(c chord.Chord, text string, opts voicing.Options) ([]VoicingV
 		for _, b := range v.Barres {
 			vv.Barres = append(vv.Barres, BarreView{Fret: int(b.Fret), From: b.From, To: b.To})
 		}
-		vv.Fingering = describeShape(text, v)
+		vv.Fingering = describeShape(say, text, v)
 		out = append(out, vv)
 	}
 	return out, res.Warning
@@ -154,52 +155,55 @@ func lowestBarre(v voicing.Voicing) int {
 
 // shapeName says where on the neck a shape sits, which is what a player wants to
 // know before looking at the dots.
-func shapeName(v voicing.Voicing) string {
+func shapeName(say *i18n.Printer, v voicing.Voicing) string {
 	w := windowFor(v)
 	switch w.how {
 	case allOpen:
-		return "Cuerdas al aire"
+		return say.T("shape.allopen")
 	case barred:
-		return "Cejilla en el traste " + strconv.Itoa(w.names)
+		return say.T("shape.barre", w.names)
 	case firstPosition:
-		return "Posición abierta"
+		return say.T("shape.first")
 	default:
-		return "Traste " + strconv.Itoa(w.names)
+		return say.T("shape.fret", w.names)
 	}
 }
 
-// stringNames are the guitar's strings as a player counts them: the sixth is the
-// lowest. The dataset is indexed the other way round, lowest first, so this
-// reverses on the way out rather than keeping two conventions in the code.
-var stringNames = [6]string{"6ª", "5ª", "4ª", "3ª", "2ª", "1ª"}
-
-var fingerNames = map[int]string{
-	1: "índice", 2: "medio", 3: "anular", 4: "pequeño", 5: "pulgar",
+// stringKey names a string as a player counts them: the sixth is the lowest. The
+// dataset is indexed the other way round, lowest first, so this counts back
+// rather than keeping two conventions in the code.
+//
+// Two forms, because they are read in different places: the short one labels a
+// column of the fretboard, the long one is spoken.
+func stringKey(i int, form string) string {
+	return "string." + strconv.Itoa(6-i) + "." + form
 }
+
+// fingerKey names a finger. Five, because the dataset can write a thumbed note
+// even though nothing generated uses one.
+func fingerKey(f int) string { return "finger." + strconv.Itoa(f) }
 
 // describeShape puts a shape into words.
 //
 // This is the accessible content of a diagram, and it is also what makes the
 // panel useful on a phone where the picture is small. Producing it here rather
 // than in JavaScript keeps the one description in tested Go.
-func describeShape(name string, v voicing.Voicing) string {
+func describeShape(say *i18n.Printer, name string, v voicing.Voicing) string {
 	var parts []string
 	for i, f := range v.Frets {
-		label := "cuerda " + strconv.Itoa(i+1)
-		if i < len(stringNames) && len(v.Frets) == 6 {
-			label = stringNames[i] + " cuerda"
+		label := say.T("string.n", i+1)
+		if len(v.Frets) == 6 {
+			label = say.T(stringKey(i, "long"))
 		}
 		switch {
 		case f == voicing.Muted:
-			parts = append(parts, label+" al aire no suena")
+			parts = append(parts, say.T("spoken.muted", label))
 		case f == voicing.Open:
-			parts = append(parts, label+" al aire")
+			parts = append(parts, say.T("spoken.open", label))
 		default:
-			s := label + " traste " + strconv.Itoa(int(f))
-			if i < len(v.Fingers) {
-				if fn, ok := fingerNames[int(v.Fingers[i])]; ok {
-					s += " con el " + fn
-				}
+			s := say.T("spoken.fret", label, int(f))
+			if i < len(v.Fingers) && i18n.Has(fingerKey(int(v.Fingers[i]))) {
+				s = say.T("spoken.withfinger", s, say.T(fingerKey(int(v.Fingers[i]))))
 			}
 			parts = append(parts, s)
 		}

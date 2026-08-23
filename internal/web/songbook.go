@@ -141,6 +141,7 @@ func (s *Server) handleSongbookPrint(w http.ResponseWriter, r *http.Request) {
 		sheet := render.Sheet(view.Song, render.Options{
 			Transpose: view.State.Transpose,
 			Notation:  notation,
+			Lang:      s.langFor(r),
 			Print:     true,
 		})
 		body.Songs = append(body.Songs, songbookSheet{

@@ -57,6 +57,7 @@ func (s *Server) labFor(r *http.Request) render.LabView {
 
 	return render.Lab(render.LabOptions{
 		Notation: s.notationFor(r, ""),
+		Lang:     s.langFor(r),
 		Start:    start,
 		Grip:     grip,
 		Symbol:   sym,

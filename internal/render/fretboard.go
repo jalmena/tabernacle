@@ -6,12 +6,14 @@ import (
 	"strconv"
 
 	"github.com/jalmena/tabernacle/internal/chord"
+	"github.com/jalmena/tabernacle/internal/i18n"
 	"github.com/jalmena/tabernacle/internal/voicing"
 )
 
 // LabOptions is what the chord page needs in order to answer.
 type LabOptions struct {
 	Notation chord.Notation
+	Lang     i18n.Lang
 	Start    int    // first fret of the editable window
 	Grip     string // the shape drawn on the board
 	Symbol   string // the chord asked for, as written
@@ -159,9 +161,10 @@ const maxStart = 12
 // six strings ringing open, which is what a guitar does when nobody is holding
 // it.
 func Lab(o LabOptions) LabView {
+	say := i18n.For(o.Lang)
 	v := LabView{Symbol: o.Symbol, All: o.All}
-	v.Roots, v.Qualities = chooserFor(o)
-	v.Shapes, v.Total, v.Inversions, v.Chord, v.Problem = variantsFor(o)
+	v.Roots, v.Qualities = chooserFor(say, o)
+	v.Shapes, v.Total, v.Inversions, v.Chord, v.Problem = variantsFor(say, o)
 
 	frets, ok := voicing.ParseGrip(o.Grip)
 	if !ok || len(frets) != voicing.Standard().Strings() {
@@ -186,7 +189,7 @@ func Lab(o LabOptions) LabView {
 	}
 
 	drawn := voicing.Voicing{Tuning: voicing.Standard(), Frets: frets}
-	v.Board = boardFor(drawn, start, o)
+	v.Board = boardFor(say, drawn, start, o)
 
 	for _, r := range voicing.Identify(frets, voicing.Standard()) {
 		sym := r.Chord.Format(chord.English)
@@ -194,7 +197,7 @@ func Lab(o LabOptions) LabView {
 			Name:  r.Chord.Format(o.Notation),
 			Value: sym,
 			URL:   labURL(sym, drawn.Grip(), start, o.All),
-			Note:  readingNote(r, o.Notation),
+			Note:  readingNote(say, r, o.Notation),
 		})
 	}
 	if len(v.Readings) == 0 {
@@ -221,7 +224,7 @@ func Lab(o LabOptions) LabView {
 				Value: sym,
 				Grip:  hushed.Grip(),
 				Start: start,
-				Note:  withoutStrings(sg.Silence),
+				Note:  withoutStrings(say, sg.Silence),
 				URL:   labURL(sym, hushed.Grip(), start, o.All),
 			})
 		}
@@ -252,7 +255,7 @@ func Lab(o LabOptions) LabView {
 }
 
 // boardFor lays out the editable neck with the drawn shape on it.
-func boardFor(v voicing.Voicing, start int, o LabOptions) FretboardView {
+func boardFor(say *i18n.Printer, v voicing.Voicing, start int, o LabOptions) FretboardView {
 	b := FretboardView{Start: start, Grip: v.Grip()}
 	if start > 1 {
 		b.Down = labURLAt(o, v.Grip(), start-1)
@@ -268,8 +271,8 @@ func boardFor(v voicing.Voicing, start int, o LabOptions) FretboardView {
 			First: i == 0,
 			Last:  i == len(v.Frets)-1,
 		}
-		if i < len(stringNames) && len(v.Frets) == len(stringNames) {
-			row.Name = stringNames[i]
+		if len(v.Frets) == 6 {
+			row.Name = say.T(stringKey(i, "short"))
 		}
 		for n := start; n < start+labFrets; n++ {
 			row.Cells = append(row.Cells, FretCell{
@@ -290,45 +293,47 @@ func boardFor(v voicing.Voicing, start int, o LabOptions) FretboardView {
 const howManyNearly = 4
 
 // withoutStrings names the strings a suggestion asks to be stopped.
-func withoutStrings(at []int) string {
+func withoutStrings(say *i18n.Printer, at []int) string {
 	parts := make([]string, 0, len(at))
 	for _, i := range at {
-		if i < len(stringNames) {
-			parts = append(parts, "la "+stringNames[i])
+		if i >= 0 && i < 6 {
+			parts = append(parts, say.T(stringKey(i, "the")))
 		}
 	}
 	if len(parts) == 0 {
 		return ""
 	}
-	return "sin " + joinWords(parts)
+	return say.T("nearly.without", joinWords(say, parts))
 }
 
 // readingNote says what is unusual about a reading, so that "Do7 sin la quinta"
 // is not silently presented as an ordinary Do7.
-func readingNote(r voicing.Reading, no chord.Notation) string {
+func readingNote(say *i18n.Printer, r voicing.Reading, no chord.Notation) string {
 	var parts []string
 	for _, iv := range r.Omitted {
-		if name, ok := intervalNames[iv]; ok {
-			parts = append(parts, "sin "+name)
+		if key, ok := intervalKeys[iv]; ok {
+			parts = append(parts, say.T("reading.without", say.T(key)))
 		}
 	}
 	if r.Inverted {
-		parts = append(parts, "con "+chord.Spell(r.Bass, chord.Sharps).Format(no)+" en el bajo")
+		parts = append(parts, say.T("reading.overbass", chord.Spell(r.Bass, chord.Sharps).Format(no)))
 	}
-	return joinWords(parts)
+	return joinWords(say, parts)
 }
 
-// intervalNames names the notes a chord can be missing, in Spanish and in the
-// degree a player counts: the interval in semitones is how the code thinks, and
-// "la quinta" is how a person does.
-var intervalNames = map[int]string{
-	3: "la tercera", 4: "la tercera", 7: "la quinta",
-	10: "la séptima", 11: "la séptima", 9: "la sexta",
-	2: "la novena", 14: "la novena", 5: "la cuarta",
-	6: "la quinta", 8: "la quinta",
+// intervalKeys names the notes a chord can be missing by the degree a player
+// counts: the interval in semitones is how the code thinks, and "the fifth" is
+// how a person does. Both spellings of a degree land on the same word, because
+// a flattened third is still the third.
+var intervalKeys = map[int]string{
+	2: "degree.ninth", 3: "degree.third", 4: "degree.third", 5: "degree.fourth",
+	6: "degree.fifth", 7: "degree.fifth", 8: "degree.fifth", 9: "degree.sixth",
+	10: "degree.seventh", 11: "degree.seventh", 14: "degree.ninth",
 }
 
-func joinWords(parts []string) string {
+// joinWords strings a list together the way the language does. The last join is
+// a word and not a comma, and which word it is belongs to the language.
+func joinWords(say *i18n.Printer, parts []string) string {
 	switch len(parts) {
 	case 0:
 		return ""
@@ -339,27 +344,27 @@ func joinWords(parts []string) string {
 	for _, p := range parts[1 : len(parts)-1] {
 		out += ", " + p
 	}
-	return out + " y " + parts[len(parts)-1]
+	return say.T("list.and", out, parts[len(parts)-1])
 }
 
 // variantsFor works out every way to play the chord that was asked for.
-func variantsFor(o LabOptions) ([]LabShape, int, []InversionView, string, string) {
+func variantsFor(say *i18n.Printer, o LabOptions) ([]LabShape, int, []InversionView, string, string) {
 	if o.Symbol == "" {
 		return nil, 0, nil, "", ""
 	}
 	c, err := chord.ParseIn(o.Notation, o.Symbol)
 	if err != nil {
 		if c, err = chord.Parse(o.Symbol); err != nil {
-			return nil, 0, nil, "", "No se entiende «" + o.Symbol + "» como un acorde."
+			return nil, 0, nil, "", say.T("lab.unreadable", o.Symbol)
 		}
 	}
 	name := c.Format(o.Notation)
 	g, ok := voicing.Generate(c, voicing.GenerateOptions{})
 	if !ok {
-		return nil, 0, nil, name, "No se sabe formar " + name + " en la guitarra."
+		return nil, 0, nil, name, say.T("lab.unknownchord", name)
 	}
 	if len(g.Root.Shapes) == 0 && len(g.Inversions) == 0 {
-		return nil, 0, nil, name, "No hay ninguna forma de " + name + " que una mano alcance."
+		return nil, 0, nil, name, say.T("lab.unreachable", name)
 	}
 
 	var invs []InversionView
@@ -379,9 +384,9 @@ func variantsFor(o LabOptions) ([]LabShape, int, []InversionView, string, string
 		// Every way of holding it puts something other than the root underneath,
 		// so there is nothing to show here and the honest thing is to name the
 		// chord that does describe those shapes.
-		return nil, 0, invs, name, "Toda forma de " + name + " deja otra nota en el bajo."
+		return nil, 0, invs, name, say.T("lab.alwaysinverted", name)
 	}
-	shapes := shapeList(g.Root.Shapes, o)
+	shapes := shapeList(say, g.Root.Shapes, o)
 	return shapes, len(g.Root.Shapes), invs, name, ""
 }
 
@@ -399,7 +404,7 @@ const (
 
 // shapeList describes the shapes in the order they are already in — easiest
 // first — and stops when the page has enough.
-func shapeList(vs []voicing.Voicing, o LabOptions) []LabShape {
+func shapeList(say *i18n.Printer, vs []voicing.Voicing, o LabOptions) []LabShape {
 	keep := howMany
 	if o.All {
 		keep = howManyAll
@@ -409,7 +414,7 @@ func shapeList(vs []voicing.Voicing, o LabOptions) []LabShape {
 	}
 	out := make([]LabShape, 0, keep)
 	for i, v := range vs[:keep] {
-		view := voicingView(v, i, keep)
+		view := voicingView(say, v, i, keep)
 		out = append(out, LabShape{
 			Shape: view,
 			Note:  view.Name,
@@ -433,10 +438,10 @@ func startFor(v voicing.Voicing) int {
 
 // voicingView describes one shape for a template. It is the same description the
 // song sheet uses, so a shape looks and reads the same wherever it appears.
-func voicingView(v voicing.Voicing, i, total int) VoicingView {
+func voicingView(say *i18n.Printer, v voicing.Voicing, i, total int) VoicingView {
 	w := windowFor(v)
 	vv := VoicingView{
-		Name:       shapeName(v),
+		Name:       shapeName(say, v),
 		StartFret:  w.Start,
 		FretsShown: w.Frets,
 		Index:      i + 1,
@@ -453,7 +458,7 @@ func voicingView(v voicing.Voicing, i, total int) VoicingView {
 	for _, b := range v.Barres {
 		vv.Barres = append(vv.Barres, BarreView{Fret: int(b.Fret), From: b.From, To: b.To})
 	}
-	vv.Fingering = describeShape(vv.Name, v)
+	vv.Fingering = describeShape(say, vv.Name, v)
 	return vv
 }
 
@@ -469,7 +474,7 @@ func parseSymbol(o LabOptions) (chord.Chord, bool) {
 	return c, err == nil
 }
 
-func chooserFor(o LabOptions) ([]Choice, []Choice) {
+func chooserFor(say *i18n.Printer, o LabOptions) ([]Choice, []Choice) {
 	c, _ := parseSymbol(o)
 	suffix := c.Suffix
 
@@ -491,7 +496,7 @@ func chooserFor(o LabOptions) ([]Choice, []Choice) {
 	qualities := make([]Choice, 0, len(qualityChoices))
 	for _, q := range qualityChoices {
 		qualities = append(qualities, Choice{
-			Label: q.label,
+			Label: say.T(q.key),
 			Value: root + q.suffix,
 			On:    suffix == q.suffix,
 		})
@@ -501,27 +506,30 @@ func chooserFor(o LabOptions) ([]Choice, []Choice) {
 
 // qualityChoices are the families offered by name, glossed so that somebody who
 // does not read chord symbols can still find what they want.
-var qualityChoices = []struct{ suffix, label string }{
-	{"", "mayor"},
-	{"m", "menor"},
-	{"7", "séptima de dominante"},
-	{"maj7", "séptima mayor"},
-	{"m7", "séptima menor"},
-	{"mMaj7", "menor con séptima mayor"},
-	{"6", "sexta"},
-	{"m6", "sexta menor"},
-	{"sus2", "cuarta suspendida (sus2)"},
-	{"sus4", "cuarta suspendida (sus4)"},
-	{"7sus4", "séptima suspendida"},
-	{"add9", "con novena añadida"},
-	{"9", "novena de dominante"},
-	{"maj9", "novena mayor"},
-	{"m9", "novena menor"},
-	{"dim", "disminuido"},
-	{"dim7", "séptima disminuida"},
-	{"m7b5", "semidisminuido"},
-	{"aug", "aumentado"},
-	{"5", "quinta (acorde de poder)"},
+//
+// The suffix is the chord symbol and never translated: maj7 is maj7 in every
+// language a guitarist reads. Only the gloss beside it is words.
+var qualityChoices = []struct{ suffix, key string }{
+	{"", "quality.major"},
+	{"m", "quality.minor"},
+	{"7", "quality.dom7"},
+	{"maj7", "quality.maj7"},
+	{"m7", "quality.min7"},
+	{"mMaj7", "quality.minmaj7"},
+	{"6", "quality.six"},
+	{"m6", "quality.min6"},
+	{"sus2", "quality.sus2"},
+	{"sus4", "quality.sus4"},
+	{"7sus4", "quality.dom7sus4"},
+	{"add9", "quality.add9"},
+	{"9", "quality.dom9"},
+	{"maj9", "quality.maj9"},
+	{"m9", "quality.min9"},
+	{"dim", "quality.dim"},
+	{"dim7", "quality.dim7"},
+	{"m7b5", "quality.halfdim"},
+	{"aug", "quality.aug"},
+	{"5", "quality.power"},
 }
 
 func labURL(symbol, grip string, start int, all bool) string {

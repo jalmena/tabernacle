@@ -39,6 +39,16 @@ var names = map[Lang]string{
 // All lists the languages, base first.
 func All() []Lang { return []Lang{Spanish, English} }
 
+// Codes lists the languages as their codes, for a message that has to name them
+// all.
+func Codes() []string {
+	out := make([]string, 0, len(All()))
+	for _, l := range All() {
+		out = append(out, string(l))
+	}
+	return out
+}
+
 // Name is what this language calls itself.
 func (l Lang) Name() string {
 	if n, ok := names[l]; ok {

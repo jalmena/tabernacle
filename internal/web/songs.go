@@ -126,6 +126,7 @@ func (s *Server) loadSong(r *http.Request) (songBody, songView, error) {
 	sheet := render.Sheet(view.Song, render.Options{
 		Transpose: transpose,
 		Notation:  notation,
+		Lang:      s.langFor(r),
 		Diagrams:  true,
 		Tuning:    tuning,
 		Simplify:  simplify,

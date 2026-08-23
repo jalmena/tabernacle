@@ -8,8 +8,13 @@ import (
 
 	"github.com/jalmena/tabernacle/internal/chord"
 	"github.com/jalmena/tabernacle/internal/harmony"
+	"github.com/jalmena/tabernacle/internal/i18n"
 	"github.com/jalmena/tabernacle/internal/voicing"
 )
+
+// say renders the tests' own expectations in the base language, which is the
+// one their Spanish assertions are written in.
+var say = i18n.For(i18n.Spanish)
 
 // corpus is every shape the collection holds for every root of every quality it
 // models. The naming rule has to be right about all of them, not about the
@@ -51,7 +56,7 @@ var captionNumber = regexp.MustCompile(`(\d+)`)
 func TestCaptionAndWindowAgree(t *testing.T) {
 	for _, v := range corpus(t) {
 		w := windowFor(v)
-		name := shapeName(v)
+		name := shapeName(say, v)
 
 		if w.Frets != windowFrets {
 			t.Fatalf("%v: the window shows %d frets, want %d", v.Frets, w.Frets, windowFrets)
@@ -126,7 +131,7 @@ func TestOpenPositionIsCalledOpenPosition(t *testing.T) {
 	for _, sym := range []string{"G", "G7", "C", "D", "A", "Am", "E", "Em", "D7", "Am7", "Em7", "C7"} {
 		t.Run(sym, func(t *testing.T) {
 			v := firstShape(t, sym)
-			if got := shapeName(v); got != "Posición abierta" {
+			if got := shapeName(say, v); got != "Posición abierta" {
 				t.Errorf("%s (%v) is called %q", sym, v.Frets, got)
 			}
 			if w := windowFor(v); w.Start != 1 {
@@ -146,7 +151,7 @@ func TestBarreNamesItsOwnFret(t *testing.T) {
 			if !v.HasBarre() {
 				t.Skipf("%s's first shape is not barred; nothing to assert here", sym)
 			}
-			name, w := shapeName(v), windowFor(v)
+			name, w := shapeName(say, v), windowFor(v)
 			if name != "Cejilla en el traste "+strconv.Itoa(want) {
 				t.Errorf("%s (%v) is called %q, want the barre at %d", sym, v.Frets, name, want)
 			}
@@ -167,7 +172,7 @@ func TestAClosedShapeAtTheFirstFretIsNotOpen(t *testing.T) {
 		Fingers:  []voicing.Finger{0, 0, 1, 2, 4, 3},
 		Position: 1,
 	}
-	if got := shapeName(v); got != "Traste 1" {
+	if got := shapeName(say, v); got != "Traste 1" {
 		t.Errorf("shapeName = %q, want \"Traste 1\"", got)
 	}
 	if w := windowFor(v); w.Start != 1 {

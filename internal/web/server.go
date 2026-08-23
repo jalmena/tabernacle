@@ -316,7 +316,7 @@ func (s *Server) page(r *http.Request, title string, body any) page {
 	}
 
 	v := viewerOf(r)
-	t := i18n.For(i18n.Lang(v.User.Lang))
+	t := i18n.For(s.langFor(r))
 
 	// Three ways to walk the collection, and then the chord reference, which is
 	// last because it is not one of them: it is the only section that is not
@@ -460,6 +460,21 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Fprintf(w, `{"status":"ok","songs":%d,"artists":%d,"broken":%d}`,
 		stats.Songs, stats.Artists, stats.Broken)
+}
+
+// langFor is the language this reader gets.
+//
+// Their own choice, then whatever the deployment set, then the base language.
+// It is asked for in more places than the header — a diagram's caption and the
+// sentence a screen reader speaks are the sheet's words too.
+func (s *Server) langFor(r *http.Request) i18n.Lang {
+	if l := i18n.Lang(viewerOf(r).User.Lang); l.Valid() {
+		return l
+	}
+	if l := i18n.Lang(s.cfg.Lang); l.Valid() {
+		return l
+	}
+	return i18n.Default
 }
 
 // notationFor decides which note names to show.

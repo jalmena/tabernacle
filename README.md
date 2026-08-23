@@ -86,6 +86,7 @@ once, naming the variable.
 | `TABERNACLE_ALLOWED_HOSTS` | *LAN policy* | Comma-separated hostnames to accept |
 | `TABERNACLE_SCAN_INTERVAL` | `60s` | Rescan period; `0` disables |
 | `TABERNACLE_NOTATION` | `english` | `english` or `solfege` |
+| `TABERNACLE_LANG` | `es` | Interface language for anyone who has not chosen one |
 | `TABERNACLE_READ_ONLY` | `false` | Refuse every modification |
 | `TABERNACLE_MAX_SONG_BYTES` | `1048576` | Cap on one `.song` file |
 | `TABERNACLE_MAX_UPLOAD_BYTES` | `33554432` | Cap on one upload |

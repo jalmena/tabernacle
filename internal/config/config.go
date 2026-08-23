@@ -15,6 +15,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/jalmena/tabernacle/internal/i18n"
 )
 
 // Notation selects the default note names for a reader who has expressed no
@@ -58,7 +60,11 @@ type Config struct {
 	MaxSongBytes   int64         // cap on one .song file
 
 	Notation string // NotationEnglish or NotationSolfege
-	ReadOnly bool   // when true every mutating route refuses
+	// Lang is the interface language for a reader who has not chosen one, as a
+	// two-letter code. An instance in Rotterdam should not open in Spanish
+	// because that is the language this was written in.
+	Lang     string
+	ReadOnly bool // when true every mutating route refuses
 	LogLevel slog.Level
 }
 
@@ -109,6 +115,7 @@ func Load(getenv func(string) string) (Config, error) {
 		Addr:     get("TABERNACLE_ADDR", defaultAddr),
 		DataDir:  get("TABERNACLE_DATA_DIR", defaultDataDir),
 		Notation: strings.ToLower(get("TABERNACLE_NOTATION", NotationEnglish)),
+		Lang:     strings.ToLower(get("TABERNACLE_LANG", string(i18n.Default))),
 	}
 
 	if !filepath.IsAbs(c.DataDir) {
@@ -164,6 +171,11 @@ func Load(getenv func(string) string) (Config, error) {
 	case NotationEnglish, NotationSolfege:
 	default:
 		fail("TABERNACLE_NOTATION must be %q or %q, got %q", NotationEnglish, NotationSolfege, c.Notation)
+	}
+
+	if !i18n.Lang(c.Lang).Valid() {
+		fail("TABERNACLE_LANG must be one of %s, got %q",
+			strings.Join(i18n.Codes(), ", "), c.Lang)
 	}
 
 	raw := get("TABERNACLE_BASE_URL", defaultBaseURL)
