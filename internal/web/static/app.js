@@ -520,7 +520,7 @@
 		var reading = e.target.closest(".readings [data-c]");
 		if (reading) {
 			e.preventDefault();
-			show(fromBoard({ c: reading.dataset.c }), ".readings li:first-child a");
+			show(fromBoard({ c: reading.dataset.c }), ".readings a.on");
 			return;
 		}
 

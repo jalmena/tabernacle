@@ -337,7 +337,7 @@
 			{{if .Readings}}
 				<ul class="readings">
 					{{range .Readings}}
-						<li><a href="{{.URL}}" data-c="{{.Value}}"><span class="rname">{{.Name}}</span>
+						<li><a class="{{if .On}}on{{end}}" href="{{.URL}}" data-c="{{.Value}}"><span class="rname">{{.Name}}</span>
 							{{if .Note}}<span class="rnote">{{.Note}}</span>{{end}}</a></li>
 					{{end}}
 				</ul>

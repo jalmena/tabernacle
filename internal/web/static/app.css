@@ -1221,8 +1221,8 @@ input[type="file"].filepick:focus-visible { outline: 2px solid var(--accent); ou
 .readings a:hover { border-color: var(--ink-faint); }
 .readings .rname { font-weight: 600; color: var(--chord); }
 .readings .rnote { font-size: 0.75rem; color: var(--ink-soft); }
-/* The first reading is the likeliest one, and says so. */
-.readings li:first-child a { border-color: var(--accent); }
+/* The reading the rest of the page is about. */
+.readings a.on { border-color: var(--accent); background: var(--chord-bg); }
 
 .pickform { display: flex; gap: 0.4rem; margin: 0 0 0.6rem; flex-wrap: wrap; }
 .pickform input[type="text"], .pickform select {

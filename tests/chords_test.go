@@ -262,3 +262,32 @@ func TestTheShapesAreOneListEasiestFirst(t *testing.T) {
 		t.Error("the list does not say how it is ordered")
 	}
 }
+
+// The reading the rest of the page is about is the one marked, and clicking
+// another moves the mark rather than leaving it on the first.
+func TestTheChosenReadingIsMarked(t *testing.T) {
+	in := start(t, nil)
+	const grip = "0-3-2-2-1-0" // Am with E underneath, which is also C6 without its fifth
+
+	marked := regexp.MustCompile(`<a class="on" href="[^"]*" data-c="([^"]*)"`)
+
+	first := marked.FindStringSubmatch(in.page("/chords?grip=" + grip))
+	if first == nil {
+		t.Fatal("nothing is marked when no chord has been chosen")
+	}
+	if first[1] != "Am/E" {
+		t.Errorf("the likeliest reading is %s, want Am/E", first[1])
+	}
+
+	second := marked.FindStringSubmatch(in.page("/chords?c=C6%2FE&grip=" + grip))
+	if second == nil {
+		t.Fatal("nothing is marked after choosing a reading")
+	}
+	if second[1] != "C6/E" {
+		t.Errorf("the chosen reading is %s, want C6/E", second[1])
+	}
+	// Exactly one, or the mark says nothing.
+	if n := strings.Count(in.page("/chords?c=C6%2FE&grip="+grip), `<a class="on"`); n != 1 {
+		t.Errorf("%d readings are marked at once", n)
+	}
+}

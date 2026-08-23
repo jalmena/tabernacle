@@ -2,6 +2,7 @@ package render
 
 import (
 	"net/url"
+	"slices"
 	"strconv"
 
 	"github.com/jalmena/tabernacle/internal/chord"
@@ -70,6 +71,7 @@ type ReadingView struct {
 	Value string // the symbol as this package writes it, for a link to ask for
 	URL   string
 	Note  string // "sin la quinta", "con Mi en el bajo"
+	On    bool   // the reading the rest of the page is about
 }
 
 // LabShape is one diagram in the list of ways to hold a chord.
@@ -181,6 +183,20 @@ func Lab(o LabOptions) LabView {
 		for _, pc := range drawn.PitchClasses() {
 			v.Sounds = append(v.Sounds, chord.Spell(pc, chord.Sharps).Format(o.Notation))
 		}
+	}
+
+	// The reading the page is currently about is the one the shapes below belong
+	// to, and it says so. Failing that, the first: it is the likeliest name for
+	// what is drawn, which is a thing worth pointing at even before anybody has
+	// chosen.
+	if c, ok := parseSymbol(o); ok {
+		want := c.Format(chord.English)
+		for i := range v.Readings {
+			v.Readings[i].On = v.Readings[i].Value == want
+		}
+	}
+	if len(v.Readings) > 0 && !slices.ContainsFunc(v.Readings, func(r ReadingView) bool { return r.On }) {
+		v.Readings[0].On = true
 	}
 
 	here := drawn.Grip()
@@ -382,11 +398,18 @@ func voicingView(v voicing.Voicing, i, total int) VoicingView {
 
 // chooserFor builds the two discoverable ways in to a chord, for a reader who
 // would not think to type one.
-func chooserFor(o LabOptions) ([]Choice, []Choice) {
-	c, err := chord.ParseIn(o.Notation, o.Symbol)
-	if err != nil {
-		c, _ = chord.Parse(o.Symbol)
+// parseSymbol reads what was typed, in the reader's notation or in English,
+// reporting whether it was a chord at all.
+func parseSymbol(o LabOptions) (chord.Chord, bool) {
+	if c, err := chord.ParseIn(o.Notation, o.Symbol); err == nil {
+		return c, true
 	}
+	c, err := chord.Parse(o.Symbol)
+	return c, err == nil
+}
+
+func chooserFor(o LabOptions) ([]Choice, []Choice) {
+	c, _ := parseSymbol(o)
 	suffix := c.Suffix
 
 	roots := make([]Choice, 0, 12)
