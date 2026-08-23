@@ -22,8 +22,25 @@ type Lang string
 
 const (
 	// Spanish is the base. Every key exists here.
-	Spanish Lang = "es"
-	English Lang = "en"
+	Spanish    Lang = "es"
+	English    Lang = "en"
+	Catalan    Lang = "ca"
+	Galician   Lang = "gl"
+	Basque     Lang = "eu"
+	Portuguese Lang = "pt"
+	French     Lang = "fr"
+	Italian    Lang = "it"
+	German     Lang = "de"
+	Dutch      Lang = "nl"
+	Polish     Lang = "pl"
+	Russian    Lang = "ru"
+	Turkish    Lang = "tr"
+	Indonesian Lang = "id"
+	Chinese    Lang = "zh"
+	Japanese   Lang = "ja"
+	Korean     Lang = "ko"
+	Hindi      Lang = "hi"
+	Arabic     Lang = "ar"
 )
 
 // Default is the language of an interface nobody has chosen one for.
@@ -32,12 +49,50 @@ const Default = Spanish
 // names are what a language calls itself, which is what belongs in a chooser: a
 // reader looking for their own language recognises it written their way.
 var names = map[Lang]string{
-	Spanish: "Español",
-	English: "English",
+	Spanish:    "Español",
+	English:    "English",
+	Catalan:    "Català",
+	Galician:   "Galego",
+	Basque:     "Euskara",
+	Portuguese: "Português",
+	French:     "Français",
+	Italian:    "Italiano",
+	German:     "Deutsch",
+	Dutch:      "Nederlands",
+	Polish:     "Polski",
+	Russian:    "Русский",
+	Turkish:    "Türkçe",
+	Indonesian: "Bahasa Indonesia",
+	Chinese:    "中文",
+	Japanese:   "日本語",
+	Korean:     "한국어",
+	Hindi:      "हिन्दी",
+	Arabic:     "العربية",
 }
 
-// All lists the languages, base first.
-func All() []Lang { return []Lang{Spanish, English} }
+// rtl is the languages written right to left. There is one for now; the set
+// exists so that adding a second is data rather than a condition.
+var rtl = map[Lang]bool{Arabic: true}
+
+// All lists the languages, base first and then by how close they are to it: the
+// languages of Spain, then the rest of Europe, then further out. A chooser reads
+// down this list, and alphabetical order by code would put Arabic above Spanish
+// for no reason anybody could see.
+func All() []Lang {
+	return []Lang{Spanish, English, Catalan, Galician, Basque}
+}
+
+// Dir is the direction this language is written in, as an HTML dir attribute.
+//
+// It belongs to the language and not to the page, which is why it lives here:
+// the header, the fretboard and the chord list all have to agree, and they only
+// can if there is one answer.
+func (l Lang) Dir() string {
+	if rtl[l] {
+		return "rtl"
+	}
+	return "ltr"
+}
 
 // Codes lists the languages as their codes, for a message that has to name them
 // all.

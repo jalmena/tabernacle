@@ -64,12 +64,13 @@
 			<form class="stack" method="post" action="/settings/look">
 				<fieldset class="choices">
 					<legend>{{$.T "settings.language"}}</legend>
-					<div class="segmented">
+					{{/* A list, not a row of pills: there are more languages than
+					     fit across a card, and a language is picked once. */}}
+					<select name="lang" class="langpick">
 						{{range .Languages}}
-							<label><input type="radio" name="lang" value="{{.Value}}"
-							              {{if .On}}checked{{end}}><span>{{.Label}}</span></label>
+							<option value="{{.Value}}" {{if .On}}selected{{end}} lang="{{.Value}}">{{.Label}}</option>
 						{{end}}
-					</div>
+					</select>
 				</fieldset>
 				<fieldset class="choices">
 					<legend>{{$.T "settings.notation"}}</legend>

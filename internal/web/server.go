@@ -306,6 +306,10 @@ func (p page) T(key string, args ...any) string { return p.Print.T(key, args...)
 // Lang is the language this page is in, for the html element and the chooser.
 func (p page) Lang() string { return string(p.Print.Lang()) }
 
+// Dir is which way that language is written, for the html element. Every
+// mirrored thing on the page follows from this one attribute.
+func (p page) Dir() string { return p.Print.Lang().Dir() }
+
 // page builds the shell every template receives.
 //
 // The title is a catalogue key rather than a sentence, because a browser tab is

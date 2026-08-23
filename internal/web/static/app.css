@@ -1282,3 +1282,15 @@ input[type="file"].filepick:focus-visible { outline: 2px solid var(--accent); ou
 .labshape:hover { border-color: var(--rule); background: var(--paper-raised); }
 .labmore { margin: 0.9rem 0 0; }
 .labshape.on { border-color: var(--accent); background: var(--chord-bg); }
+
+/* The language chooser. A select rather than a row of pills, because there are
+ * more languages than fit across a card. */
+.langpick {
+	min-height: 2.75rem;
+	padding: 0 0.6rem;
+	font: inherit;
+	color: var(--ink);
+	background: var(--paper-raised);
+	border: 1px solid var(--rule);
+	border-radius: var(--radius);
+}

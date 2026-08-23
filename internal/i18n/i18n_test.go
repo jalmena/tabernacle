@@ -43,37 +43,35 @@ func TestPlaceholdersMatchAcrossLanguages(t *testing.T) {
 	}
 }
 
-// A translation that is the same string as the base is usually a key somebody
-// copied and forgot. Not always, so the ones that genuinely coincide are named
-// here and the rest are a failure.
-func TestTranslationsAreNotCopies(t *testing.T) {
-	// Keys whose value is allowed to be the same in any language, and why.
-	same := map[string]bool{
-		"settings.theme":  true, // "tema" and "theme" are the same word often enough
-		"notation.abc":    true, // note names, not words
-		"notation.doremi": true, // the same, in the other naming
-		"sheet.reset":     true, // "Original" is borrowed as it stands in most of these
-		"parse.field":     true, // a passthrough for a message from elsewhere
-		"why.other":       true, // the same
-	}
+// A language file that is word for word the Spanish is a copy somebody made and
+// never translated.
+//
+// Judged as a share and not key by key, because between Spanish and Catalan or
+// Galician a great many single words genuinely coincide — "Administrador" is
+// "Administrador" — and a list of those exceptions would be longer than the
+// thing it guards. What no real translation does is agree on half the file.
+func TestNoLanguageIsACopyOfTheBase(t *testing.T) {
+	const tooMuch = 0.40
 	for _, l := range All() {
 		if l == Spanish {
 			continue
 		}
+		same := 0
 		for _, key := range Keys() {
-			if same[key] {
-				continue
+			if catalogue[l][key] == spanish[key] {
+				same++
 			}
-			if catalogue[l][key] == catalogue[Spanish][key] {
-				t.Errorf("%s: %q is word for word the Spanish: %q", l, key, catalogue[Spanish][key])
-			}
+		}
+		if share := float64(same) / float64(len(Keys())); share > tooMuch {
+			t.Errorf("%s repeats the Spanish word for word in %.0f%% of its keys, which is a copy rather than a translation",
+				l, share*100)
 		}
 	}
 }
 
 // A language that is not one of ours is not one of ours, whatever it looks like.
 func TestValid(t *testing.T) {
-	for in, want := range map[Lang]bool{"es": true, "en": true, "": false, "fr": false, "EN": false} {
+	for in, want := range map[Lang]bool{"es": true, "en": true, "ca": true, "": false, "xx": false, "EN": false} {
 		if got := in.Valid(); got != want {
 			t.Errorf("Lang(%q).Valid() = %v, want %v", in, got, want)
 		}
