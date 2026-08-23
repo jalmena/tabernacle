@@ -247,22 +247,37 @@ fifty hand-typed shapes on its own, and asserts the list of exceptions is
 
 ### The order shapes are shown in
 
-Not the order a song sheet uses. A reference lists: the dataset's shape first,
-then the fullest, then the easiest.
+Not the order a song sheet uses, and not divided up. Somebody learning a chord
+wants the one they can play today and then the next one, which is an order rather
+than a set of categories.
 
-Fullness comes before cost deliberately. Cost measures how hard a grip is to
-hold, and by that measure the thinnest shape always wins — for `Csus4` it puts
-two notes on two strings ahead of the voicing everyone is taught, and for `F` it
-sinks the barre below half a dozen grips nobody has played. A reference is
-answering "how do I play this chord", and the answer is the whole chord.
+1. **A shape written down for this exact chord**, easiest of those first. A
+   curated entry names a chord and a grip together — somebody decided that this
+   is how this chord is held — and there is nothing to weigh that against.
+2. **Everything else**: fewest muted strings inside the shape, then fullest, then
+   easiest.
 
-Shapes are then grouped by the window a diagram draws, so every picture under one
-heading shows the same stretch of neck, and each place shows its easiest three
-with the real total beside it.
+The distinction in the first rule is between the dataset's two kinds of entry,
+and it matters. A movable template slid until its root lands on the right note is
+arithmetic — useful, often the only answer high up the neck, but no reason to put
+a barre at the eighth fret ahead of an open shape a beginner could hold today.
+`Csus4` has no curated entry, and treating its slid `sus4` template as authority
+led with a barre when everyone plays `x 3 3 0 1 1`.
 
-Inversions are never mixed in with the chord. A diagram captioned `C` whose
-lowest note is E is a lie by omission, and the chord already has a name for that,
-so `C/E` is offered as its own page.
+Fullness comes before cost, and stops counting once the chord is whole. Cost
+measures how hard a grip is to hold, and by that measure the thinnest shape
+always wins: for `Csus4` it puts two notes on two strings ahead of the voicing
+everyone is taught. Whole means every note plus one doubling, which depends on
+the chord — a triad is whole on four strings, a power chord on three. Counting
+further would rank a six-string barre above an open shape; counting less would
+rank two notes above the whole chord.
+
+The list is trimmed to twelve, with the real total printed beside it, and asking
+for more raises the limit rather than removing it.
+
+Inversions are never mixed in. A diagram captioned `C` whose lowest note is E is
+a lie by omission, and the chord already has a name for that, so `C/E` is offered
+as its own page.
 
 ## Identifying a shape
 
@@ -298,8 +313,10 @@ thirty-six clickable SVG circles would be worse at every one of those and useles
 with JavaScript off.
 
 It is held upright, strings running down the page with the sixth on the left,
-which is how a chord chart is drawn and therefore how every diagram beside it is
-drawn — a shape can be copied from a picture onto the board fret for fret. The
+narrower than it is tall, which is how a chord chart is drawn and therefore how
+every diagram beside it is drawn — a shape can be copied from a picture onto the
+board fret for fret. The window's first fret is named beside its own bar, which
+is where a chord chart puts it and is why the other four need no number. The
 outside columns draw half a fret line each, so the grid ends on the sixth and the
 first string rather than half a column past them.
 
@@ -308,11 +325,29 @@ one namespace, and `.top` already belongs to the page header: a cell marked with
 that name quietly inherits a sticky position, padding and a bottom border, which
 is a stray line across the fretboard that no test can see.
 
-All of the state is in the query — `?c=`, `?grip=`, `?start=`, `?all=` — so every
-view can be linked to and the back button works. The script is an enhancement: it
-fetches the same region the page renders and swaps it in, and never replaces the
-neck, which is what keeps the keyboard focus where the reader left it. A test
-asserts the fragment and the page produce identical markup.
+**What the two halves do to each other.** Naming a chord puts its easiest shape on
+the neck, because a reader who asks for F wants to see F and not an empty grid
+beside a list of pictures of it. Drawing on the neck names what the notes are. An
+empty page starts with the six strings ringing open, which is what a guitar does
+when nobody is holding it — not silent, which is what a row of crosses would say.
+
+**Taking a finger off.** Pressing the dot that is already there leaves the string
+open. Only the × silences it: a string you have stopped holding is not a string
+you have muted.
+
+**The script does not navigate.** It fetches the same region the server renders
+and swaps it in, so trying chords is a continuous thing rather than a series of
+pages, and it leaves the address bar alone — the URL a reader arrived on is still
+the one they can share, and it does not turn into a log of every dot they tried.
+Every control underneath is still a link or a GET form that works on its own, and
+a test asserts the fragment and the page produce identical markup.
+
+`TestTheScriptLooksForThingsThatExist` reads the selectors out of `app.js` and
+checks each one against the rendered pages. What breaks in a progressive
+enhancement is the join between the markup and the script, and nothing else looks
+at it: splitting the neck into one radio group per string left the script
+listening for `input[name="s"]`, and renaming the region it swaps left it looking
+for `#chordresult`. Both silently did nothing while every other test passed.
 
 The result diagrams stay SVG. The editor is a control and the variants are
 pictures; they answer different questions.

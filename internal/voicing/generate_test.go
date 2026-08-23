@@ -138,21 +138,40 @@ func barresFinger(v Voicing, f Finger) bool {
 	return false
 }
 
-// The shapes are ordered: the shape a person wrote down first, then the fullest,
-// then the easiest.
-func TestTheCuratedShapeLeadsAndTheRestAreFullestFirst(t *testing.T) {
-	// The documented sort key, read straight off the list a reader is shown.
-	order := func(v Voicing) []int {
-		return []int{curatedRank(v), mutedInside(v.Frets), silent(v), v.Cost}
+// The shapes are ordered: what somebody wrote down for this chord first, easiest
+// of those first, and then everything else fullest first and easiest within
+// that.
+func TestTheWrittenShapeLeadsAndTheRestAreFullestFirst(t *testing.T) {
+	ds, err := load()
+	if err != nil {
+		t.Fatal(err)
 	}
 	opts := GenerateOptions{Tuning: Standard()}
 	for _, sym := range []string{"C", "Am7", "F", "G7", "Bm"} {
-		got := shapesFor(requirement(t, sym), opts)
+		req := requirement(t, sym)
+		written := make(map[string]bool)
+		for _, v := range ds.curated[key{root: req.Root, quality: req.Quality, bass: req.Bass}] {
+			written[fretKey(v.Frets)] = true
+		}
+		if len(written) == 0 {
+			t.Fatalf("%s is not in the curated dataset, so this proves nothing", sym)
+		}
+
+		got := shapesFor(req, opts)
 		if len(got) < 5 {
 			t.Fatalf("%s produced only %d shapes", sym, len(got))
 		}
-		if got[0].Shape == "" {
-			t.Errorf("%s leads with a generated shape, not the curated one", sym)
+		if !written[fretKey(got[0].Frets)] {
+			t.Errorf("%s leads with %s, which nobody wrote down", sym, got[0].Grip())
+		}
+
+		// The documented sort key, read straight off the list a reader is shown.
+		full := fullness(req)
+		order := func(v Voicing) []int {
+			if written[fretKey(v.Frets)] {
+				return []int{0, 0, 0, v.Cost}
+			}
+			return []int{1, mutedInside(v.Frets), -full(v), v.Cost}
 		}
 		for i := 1; i < len(got); i++ {
 			if slices.Compare(order(got[i-1]), order(got[i])) > 0 {

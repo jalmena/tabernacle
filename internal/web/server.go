@@ -96,6 +96,7 @@ func funcs() template.FuncMap {
 			return strconv.Itoa(n)
 		},
 		"add": func(a, b int) int { return a + b },
+		"sub": func(a, b int) int { return a - b },
 		"plural": func(n int, one, many string) string {
 			if n == 1 {
 				return one

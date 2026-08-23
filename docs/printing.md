@@ -50,9 +50,33 @@ these and look at them:
 - [ ] Read one at arm's length, standing, on a music stand. Are the chords
       findable at a glance?
 
+## Two columns, in a songbook
+
+A single sheet is one column: two are harder to follow while playing, and a sheet
+on a music stand has room.
+
+A songbook is a different object. A song too long for one side is set in two
+columns, which hold about twice as much — the difference between seeing a song
+whole and turning the page over in the middle of a verse. The length is estimated
+from the rendered lines, counting a chord line and the words under it as two.
+
+A stanza may run over a page or a column. What may not is a heading separated
+from the lines it introduces: the heading and the first two lines are one
+unbreakable piece, said in the markup rather than with `break-after: avoid`, which
+print engines honour unevenly and hardly at all inside columns.
+
+## Headers and footers
+
+The document prints none: no page numbers, no running titles, nothing but the
+songs.
+
+The line of small print some browsers add at the top and bottom of every sheet —
+the URL, the date, the page number — is not ours and no stylesheet can remove it.
+It is a checkbox in the print dialog, usually under *More settings* → *Headers
+and footers*.
+
 ## Known limitations
 
-- Column layout is not offered. Two columns fit more on a page and are harder to
-  follow while playing, and the second is what matters.
-- Page numbers and repeated headers on later pages are not printed. Worth adding
-  if long songs turn out to be common in practice.
+- Page numbers and repeated headers on later pages are not printed, in a songbook
+  either. Worth adding if a book of sixty songs turns out to want an index that
+  points somewhere.

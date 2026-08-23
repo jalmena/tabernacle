@@ -387,51 +387,163 @@
 
 /* The chord page.
  *
- * The neck is a plain GET form and works without any of this: pressing
- * Identificar reloads the page with the shape in the URL. What the script adds
- * is that moving a finger answers immediately, by fetching the part of the page
- * that depends on the shape and swapping it in.
- *
- * The neck itself is never replaced, which is what keeps the keyboard focus on
- * the radio button the reader just moved to. */
+ * Everything here works without it: the neck is a GET form, the chooser is a
+ * GET form, and every shape is a link. What the script adds is that none of
+ * that navigates. It fetches the same region the server renders and swaps it
+ * in, so trying chords is a continuous thing rather than a series of pages, and
+ * it leaves the address bar alone — the URL a reader arrived on is still the one
+ * they can share, and it does not turn into a log of every dot they tried. */
 (function () {
 	"use strict";
 
-	var board = document.getElementById("fretboard");
-	var result = document.getElementById("chordresult");
-	if (!board || !result || !window.fetch || !window.history) return;
+	var lab = document.getElementById("chordlab");
+	if (!lab || !window.fetch || !window.AbortController) return;
 
-	var timer = null;
 	var pending = null;
+	var timer = null;
+	/* What each string was set to before the current click, which is the only way
+	 * to know that a radio was clicked while already chosen. */
+	var was = {};
 
-	function state() {
-		var params = new URLSearchParams(new FormData(board));
-		return params.toString();
+	function board() { return document.getElementById("fretboard"); }
+
+	function remember() {
+		was = {};
+		var b = board();
+		if (!b) return;
+		b.querySelectorAll(".boardcell input:checked").forEach(function (el) {
+			was[el.name] = el.value;
+		});
+	}
+	remember();
+
+	function fromBoard(over) {
+		var b = board();
+		var p = b ? new URLSearchParams(new FormData(b)) : new URLSearchParams();
+		for (var k in over) {
+			if (over[k] === null) p.delete(k);
+			else p.set(k, over[k]);
+		}
+		return p;
 	}
 
-	function refresh() {
-		var query = state();
+	/* A chord chosen by name arrives with no shape, which is what tells the
+	 * server to put the chord's easiest shape on the neck. */
+	function forChord(symbol) {
+		var p = new URLSearchParams();
+		p.set("c", symbol);
+		var b = board();
+		if (b && b.elements.all && b.elements.all.value) p.set("all", "1");
+		return p;
+	}
+
+	function show(params, focus) {
 		if (pending) pending.abort();
 		pending = new AbortController();
-		fetch("/chords/fragment?" + query, {
+		fetch("/chords/fragment?" + params.toString(), {
 			signal: pending.signal,
 			headers: { "Accept": "text/html" },
 		})
 			.then(function (r) { return r.ok ? r.text() : Promise.reject(r.status); })
 			.then(function (html) {
-				result.innerHTML = html;
-				history.replaceState(null, "", "/chords?" + query);
+				lab.innerHTML = html;
+				remember();
+				if (focus) {
+					var el = lab.querySelector(focus);
+					if (el) el.focus();
+				}
 			})
-			/* A failed refresh leaves the last good answer on screen. The form
-			 * still submits the ordinary way, so nothing is unreachable. */
+			/* A failed refresh leaves the last good answer on screen, and every
+			 * control is still a link or a form that works on its own. */
 			.catch(function () {});
 	}
 
-	board.addEventListener("change", function (e) {
-		if (!e.target.matches(".boardcell input")) return;
+	function later(params, focus) {
 		clearTimeout(timer);
-		/* Long enough that dragging across a string is one request rather than
-		 * six, short enough to feel like the page is keeping up. */
-		timer = setTimeout(refresh, 120);
+		/* Long enough that running down a string is one request rather than five,
+		 * short enough to feel like the page is keeping up. */
+		timer = setTimeout(function () { show(params, focus); }, 120);
+	}
+
+	function selector(input) {
+		return '.boardcell input[name="' + input.name + '"][value="' + input.value + '"]';
+	}
+
+	lab.addEventListener("click", function (e) {
+		var cell = e.target.closest(".boardcell input");
+		if (cell) {
+			/* Pressing the dot that is already there takes the finger off, which
+			 * leaves the string ringing open. Only the × silences it: a string
+			 * you have stopped holding is not a string you have muted. */
+			if (cell.closest(".boardcell").classList.contains("fret") &&
+				was[cell.name] === cell.value) {
+				var open = board().querySelector(
+					'.boardcell.open input[name="' + cell.name + '"]');
+				if (open) open.checked = true;
+			}
+			was[cell.name] = board().querySelector(
+				'.boardcell input[name="' + cell.name + '"]:checked').value;
+			later(fromBoard({}), selector(cell));
+			return;
+		}
+
+		var move = e.target.closest(".boardmove[data-start]");
+		if (move) {
+			e.preventDefault();
+			show(fromBoard({ start: move.dataset.start }),
+				'.boardmove[data-start="' + move.dataset.start + '"]');
+			return;
+		}
+
+		var shape = e.target.closest("[data-grip]");
+		if (shape) {
+			e.preventDefault();
+			var p = fromBoard({ start: shape.dataset.start });
+			/* The shape's own grip replaces what is on the neck, so the neck's
+			 * strings must not also be sent: the server prefers them. */
+			for (var i = 0; i < 8; i++) p.delete("s" + i);
+			p.set("grip", shape.dataset.grip);
+			show(p, shape.classList.contains("labshape") ? ".labshape.on" : ".boardclear");
+			return;
+		}
+
+		var pick = e.target.closest("[data-c]");
+		if (pick) {
+			e.preventDefault();
+			show(forChord(pick.dataset.c), "#csym");
+			return;
+		}
+
+		var more = e.target.closest(".labmore a");
+		if (more) {
+			e.preventDefault();
+			show(fromBoard({ all: "1" }), ".labmore a");
+		}
+	});
+
+	/* Arrow keys move between radios without a click, so the neck listens for
+	 * both. The two agree because they ask for the same thing. */
+	lab.addEventListener("change", function (e) {
+		var input = e.target.closest(".boardcell input");
+		if (!input) return;
+		was[input.name] = input.value;
+		later(fromBoard({}), selector(input));
+	});
+
+	lab.addEventListener("submit", function (e) {
+		var form = e.target.closest("form");
+		if (!form) return;
+		e.preventDefault();
+		if (form.id === "fretboard") {
+			show(fromBoard({}), null);
+			return;
+		}
+		var field = form.querySelector("[name=c]");
+		show(forChord(field ? field.value : ""), "#csym");
+	});
+
+	lab.addEventListener("change", function (e) {
+		if (e.target.id !== "cqual") return;
+		show(forChord(e.target.value), "#cqual");
 	});
 })();

@@ -15,7 +15,7 @@ func TestTheChordPageIsReadableByAnyone(t *testing.T) {
 	anon := in.anon()
 
 	body := anon.page("/chords?c=Am7")
-	for _, want := range []string{"Acordes", "Am7", "Primera posición", "<svg"} {
+	for _, want := range []string{"Acordes", "Am7", "posiciones", "<svg"} {
 		if !strings.Contains(body, want) {
 			t.Errorf("the chord page is missing %q", want)
 		}
@@ -71,13 +71,13 @@ func TestTheFragmentAndThePageAgree(t *testing.T) {
 	}
 }
 
-var resultBlock = regexp.MustCompile(`(?s)<div id="chordresult">(.*)</div>\s*</main>`)
+var resultBlock = regexp.MustCompile(`(?s)<div id="chordlab">(.*)</div>\s*</main>`)
 
 func resultRegion(t *testing.T, body string) string {
 	t.Helper()
 	m := resultBlock.FindStringSubmatch(body)
 	if m == nil {
-		t.Fatal("the page has no #chordresult region")
+		t.Fatal("the page has no #chordlab region")
 	}
 	return strings.TrimSpace(m[1])
 }
@@ -156,7 +156,7 @@ func TestTheChordSectionIsInTheHeader(t *testing.T) {
 // the one they are taught first.
 func TestTheChordPageLeadsWithTheShapeEveryoneKnows(t *testing.T) {
 	in := start(t, nil)
-	first := regexp.MustCompile(`class="labshape[^"]*" href="[^"]*grip=([x0-9-]+)`)
+	first := regexp.MustCompile(`class="labshape[^"]*"[^>]*data-grip="([x0-9-]+)"`)
 	for sym, want := range map[string]string{
 		"C":  "x-3-2-0-1-0",
 		"F":  "1-3-3-2-1-1",
@@ -191,5 +191,63 @@ func TestInversionsAreOfferedSeparately(t *testing.T) {
 	over := in.page("/chords?c=C/E")
 	if !strings.Contains(over, "<h2>C/E") {
 		t.Errorf("the C/E page is not headed C/E")
+	}
+}
+
+// An empty page starts with the six strings ringing open, which is what a guitar
+// does when nobody is holding it — not silent, which is what a row of crosses
+// would say.
+func TestTheChordPageStartsWithTheStringsOpen(t *testing.T) {
+	in := start(t, nil)
+	body := in.page("/chords")
+	for i := range 6 {
+		want := `name="s` + string(rune('0'+i)) + `" value="0" checked`
+		if !strings.Contains(body, want) {
+			t.Errorf("string %d does not start open", i)
+		}
+	}
+}
+
+// Naming a chord puts it on the neck. A reader who asks for F wants to see F,
+// not an empty grid beside a list of pictures of it.
+func TestNamingAChordDrawsIt(t *testing.T) {
+	in := start(t, nil)
+	for sym, want := range map[string][]string{
+		"F":  {`name="s0" value="1" checked`, `name="s1" value="3" checked`},
+		"Am": {`name="s0" value="x" checked`, `name="s2" value="2" checked`},
+	} {
+		body := in.page("/chords?c=" + sym)
+		for _, w := range want {
+			if !strings.Contains(body, w) {
+				t.Errorf("%s did not reach the neck: missing %s", sym, w)
+			}
+		}
+	}
+	// And a shape asked for by name wins over the chord's own.
+	drawn := in.page("/chords?c=F&grip=x-x-3-2-1-1")
+	if !strings.Contains(drawn, `name="s0" value="x" checked`) {
+		t.Error("an explicit shape did not reach the neck")
+	}
+}
+
+// The shapes are one list, easiest first, and not a set of headings to read
+// through. Somebody learning a chord wants the one they can play today and then
+// the next one.
+func TestTheShapesAreOneListEasiestFirst(t *testing.T) {
+	in := start(t, nil)
+	body := in.page("/chords?c=Am7")
+
+	if strings.Contains(body, "Primera posición") || strings.Contains(body, "<h3>Traste") {
+		t.Error("the shapes are still divided into positions")
+	}
+	if n := strings.Count(body, `class="shaperow"`); n != 1 {
+		t.Errorf("the shapes are in %d rows, want one list", n)
+	}
+	if n := strings.Count(body, "class=\"labshape"); n < 8 {
+		t.Errorf("the list holds only %d shapes", n)
+	}
+	// The real total is printed, so a trimmed list does not read as all there is.
+	if !strings.Contains(body, "posiciones, de la más fácil en adelante") {
+		t.Error("the list does not say how it is ordered")
 	}
 }

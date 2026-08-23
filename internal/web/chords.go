@@ -51,10 +51,9 @@ func (s *Server) labFor(r *http.Request) render.LabView {
 	}
 	grip := gripFromQuery(q.Get("grip"), q)
 
+	// Zero means "no window asked for", which lets the page open on whatever
+	// window shows the chord it was given.
 	start, _ := strconv.Atoi(q.Get("start"))
-	if start == 0 {
-		start = 1
-	}
 
 	return render.Lab(render.LabOptions{
 		Notation: s.notationFor(r, ""),

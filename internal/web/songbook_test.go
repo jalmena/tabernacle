@@ -214,25 +214,45 @@ func TestALongSongIsSetInTwoColumns(t *testing.T) {
 	}
 }
 
-// A heading never leaves its stanza behind.
+// A heading never leaves its opening lines behind.
 //
+// The stanza itself may run over a page — that is what lets a long song fill one
+// — but a subtitle stranded at the foot of a column tells the reader nothing.
 // Asserted on the markup rather than on a stylesheet rule, because the rule that
-// would express it — break-after: avoid — is honoured unevenly by print engines
-// and hardly at all inside columns. Wrapping the two in one box is the guarantee.
-func TestAHeadingTravelsWithItsStanza(t *testing.T) {
-	ts := newTestServer(t, threeSongs())
-	body := ts.get(t, "/songbook/print?s=otro-segunda").Body.String()
+// would express it, break-after: avoid, is honoured unevenly by print engines
+// and hardly at all inside columns. Wrapping is the guarantee.
+func TestAHeadingTravelsWithItsOpeningLines(t *testing.T) {
+	ts := newTestServer(t, map[string]string{
+		"Otro/Larga.song": longSong(),
+	})
+	body := ts.get(t, "/songbook/print?s=otro-larga").Body.String()
 
-	opening := regexp.MustCompile(`(?s)<div class="opening">(.*?)</div>\s*</section>`)
+	opening := regexp.MustCompile(`(?s)<div class="opening">(.*?)\n\t*</div>`)
 	m := opening.FindStringSubmatch(body)
 	if m == nil {
-		t.Fatal("the heading and its stanza are not wrapped together")
+		t.Fatal("the heading and its opening lines are not wrapped together")
 	}
 	if !strings.Contains(m[1], "<h2>Estrofa 1</h2>") {
 		t.Error("the wrapper does not hold the heading")
 	}
-	if !strings.Contains(m[1], `class="block"`) {
-		t.Error("the wrapper does not hold the stanza")
+	if got := strings.Count(m[1], `<p class="line`); got != 2 {
+		t.Errorf("the wrapper holds %d lines, want the first two", got)
+	}
+	// And the rest of that stanza carries on outside it, free to break.
+	if !strings.Contains(body, `class="block split"`) {
+		t.Error("the stanza was not split")
+	}
+}
+
+// A short stanza is not split: there is nothing to leave behind.
+func TestAShortStanzaStaysWhole(t *testing.T) {
+	ts := newTestServer(t, threeSongs())
+	body := ts.get(t, "/songbook/print?s=otro-segunda").Body.String()
+	if strings.Contains(body, "block split") {
+		t.Error("a two-line stanza was split")
+	}
+	if !strings.Contains(body, "<h2>Estrofa 1</h2>") {
+		t.Error("the heading is missing")
 	}
 }
 

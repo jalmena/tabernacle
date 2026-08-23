@@ -108,25 +108,44 @@ func shapesFor(r Requirement, opts GenerateOptions) []Voicing {
 		walk(0, 0, 0)
 	}
 
-	adoptDataset(r, opts, out)
+	written := adoptDataset(r, opts, out)
+	full := fullness(r)
+
 	// The order a chord reference wants, which is not the order a song sheet
-	// wants. A hand-written shape leads, because where somebody has already
-	// decided what the shape for this chord is, that is the answer. Then the
-	// fullest, then the easiest.
+	// wants.
 	//
-	// Fullness comes before cost deliberately. Cost measures how hard a grip is
-	// to hold, and by that measure the thinnest shape always wins: for Csus4 it
-	// puts two notes on two strings ahead of the voicing everyone is taught, and
-	// for F it sinks the barre below half a dozen grips nobody has ever played.
-	// A reference is answering "how do I play this chord", and the answer is the
-	// whole chord.
+	// A shape somebody wrote down for this exact chord comes first, easiest of
+	// those first: the dataset saying "C is x 3 2 0 1 0" settles the question,
+	// and there is nothing to weigh it against. Everything else — a movable
+	// template slid up to this root as much as a shape the search found — is a
+	// derivation, and derivations compete: fullest, then easiest.
+	//
+	// Fullness before cost is deliberate down there, and it stops counting once
+	// the chord is whole. Cost measures how hard a grip is to hold, and by that
+	// measure the thinnest shape always wins: for Csus4 it would put two notes
+	// on two strings ahead of the voicing everyone is taught. Past the point
+	// where every note sounds and one is doubled, another string adds nothing a
+	// reader is looking for, and rewarding it would hand first place to a barre
+	// at the eighth fret over an open shape a beginner could hold today.
 	slices.SortFunc(out, func(a, b Voicing) int {
+		ka, kb := fretKey(a.Frets), fretKey(b.Frets)
+		if written[ka] != written[kb] {
+			if written[ka] {
+				return -1
+			}
+			return 1
+		}
+		if written[ka] {
+			if d := cmp.Compare(a.Cost, b.Cost); d != 0 {
+				return d
+			}
+			return cmp.Compare(ka, kb)
+		}
 		for _, d := range []int{
-			cmp.Compare(curatedRank(a), curatedRank(b)),
 			cmp.Compare(mutedInside(a.Frets), mutedInside(b.Frets)),
-			cmp.Compare(silent(a), silent(b)),
+			cmp.Compare(full(b), full(a)),
 			cmp.Compare(a.Cost, b.Cost),
-			cmp.Compare(fretKey(a.Frets), fretKey(b.Frets)),
+			cmp.Compare(ka, kb),
 		} {
 			if d != 0 {
 				return d
@@ -137,24 +156,29 @@ func shapesFor(r Requirement, opts GenerateOptions) []Voicing {
 	return out
 }
 
-// curatedRank is 0 for a shape that came from the dataset and 1 for one the
-// generator worked out. Only an adopted shape carries a name.
-func curatedRank(v Voicing) int {
-	if v.Shape != "" {
-		return 0
-	}
-	return 1
-}
-
-// silent counts the strings that make no sound.
-func silent(v Voicing) int {
+// sounded counts the strings that make a note.
+func sounded(v Voicing) int {
 	n := 0
 	for _, f := range v.Frets {
-		if f == Muted {
+		if f != Muted {
 			n++
 		}
 	}
 	return n
+}
+
+// fullness measures how complete a voicing sounds, and stops counting once the
+// chord is whole.
+//
+// Whole means every note of the chord plus one doubling, which is the point past
+// which another string can only repeat something already sounding. It depends on
+// the chord: a triad is whole on four strings, and a power chord — two notes —
+// on three. Counting further would rank a six-string barre above the open shape
+// a player actually wants; counting less would rank two notes on two strings
+// above the whole chord.
+func fullness(r Requirement) func(Voicing) int {
+	whole := min(4, len(r.Quality.Intervals())+1)
+	return func(v Voicing) int { return min(sounded(v), whole) }
 }
 
 func popcount(x int) int {
@@ -262,31 +286,43 @@ func barreFor(v Voicing, fretted int) (Barre, bool) {
 }
 
 // adoptDataset replaces a generated shape with the hand-written one when they
-// are the same grip.
+// are the same grip, and reports which of them were written for this exact
+// chord.
 //
 // The generator's fingerings are correct; the dataset's are idiomatic, and they
 // carry the CAGED name that makes a shape recognisable. Where a person has
-// already decided how a shape is held, that decision wins — and because only an
-// adopted shape ends up with a name, being adopted is also what puts it at the
-// front of the list.
-func adoptDataset(r Requirement, opts GenerateOptions, out []Voicing) {
+// already decided how a shape is held, that decision wins.
+//
+// The two kinds of entry are not equally authoritative and the set says which is
+// which. A curated entry names a chord and a grip together: somebody decided
+// that this is how this chord is held. A movable template is a shape slid until
+// its root lands on the right note, which is arithmetic — useful, often the only
+// answer high up the neck, but no reason to put a barre at the eighth fret ahead
+// of an open shape a beginner could hold today.
+func adoptDataset(r Requirement, opts GenerateOptions, out []Voicing) map[string]bool {
 	ds, err := load()
 	if err != nil {
-		return
+		return nil
 	}
-	known := gather(ds, key{root: r.Root, quality: r.Quality, bass: r.Bass}, opts.tuning())
+	k := key{root: r.Root, quality: r.Quality, bass: r.Bass}
+	known := gather(ds, k, opts.tuning())
 	if len(known) == 0 {
-		return
+		return nil
 	}
 	byGrip := make(map[string]Voicing, len(known))
 	for _, v := range dedupe(known) {
 		byGrip[fretKey(v.Frets)] = v
+	}
+	written := make(map[string]bool, len(ds.curated[k]))
+	for _, v := range ds.curated[k] {
+		written[fretKey(v.Frets)] = true
 	}
 	for i, v := range out {
 		if c, ok := byGrip[fretKey(v.Frets)]; ok {
 			out[i] = c
 		}
 	}
+	return written
 }
 
 // Group is every way of playing one written chord — the chord itself, or one of

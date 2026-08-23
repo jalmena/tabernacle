@@ -1,4 +1,3 @@
-{{/* Only the part that depends on the shape. The script replaces #chordresult
-     with this and never touches the neck, which is what keeps the keyboard
-     focus where the reader left it. */}}
-{{template "chordresult" .}}
+{{/* The whole of the chord page below the heading. The script swaps this in, so
+     nothing here may depend on anything outside it. */}}
+{{template "chordlab" .}}

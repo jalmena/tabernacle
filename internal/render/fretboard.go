@@ -1,9 +1,7 @@
 package render
 
 import (
-	"cmp"
 	"net/url"
-	"slices"
 	"strconv"
 
 	"github.com/jalmena/tabernacle/internal/chord"
@@ -60,7 +58,6 @@ type StringRow struct {
 // at all.
 type FretboardView struct {
 	Start   int
-	Frets   []int // the fret numbers in the window, for the gutter
 	Strings []StringRow
 	Grip    string
 	Down    string // where the window slides, empty at the end of the neck
@@ -74,56 +71,38 @@ type ReadingView struct {
 	Note string // "sin la quinta", "con Mi en el bajo"
 }
 
-// PositionView is the shapes drawn on one window of the neck.
-//
-// Grouped by the window a diagram draws rather than by the lowest fretted note,
-// so that every picture under one heading shows the same stretch of neck and the
-// eye can compare them. Each shape keeps its own caption: the heading says where
-// the hand goes, the caption says how it sits there.
-type PositionView struct {
-	Name   string // "Primera posición", "Traste 5"
-	Total  int
-	Shapes []LabShape
-	start  int
-}
-
 // LabShape is one diagram in the list of ways to hold a chord.
-//
-// Note carries the shape's own caption only when it says something the heading
-// above it does not: three pictures under "Primera posición" each labelled
-// "Posición abierta" is noise, but "Cejilla en el traste 5" is the thing a
-// player most needs to know before trying it.
 type LabShape struct {
 	Shape VoicingView
-	Note  string
+	Note  string // where on the neck it sits, and whether it is barred
+	Grip  string
+	Start int // the window the neck should open on to show it whole
 	URL   string
 	On    bool // this is the shape currently on the neck
-}
-
-// GroupView is every shape for one written chord.
-type GroupView struct {
-	Name      string
-	Total     int
-	Positions []PositionView
 }
 
 // InversionView points at the same chord over a different bass, which is a
 // different chord and gets its own page rather than being piled onto this one.
 type InversionView struct {
 	Name  string
+	Value string // the symbol as this package writes it, for a link to ask for
 	URL   string
 	Total int
 }
 
 // LabView is the whole chord page.
 type LabView struct {
-	Symbol     string // what was asked for, as written
-	Chord      string // what it was understood as, formatted
-	Problem    string // an honest note when the input made no sense
-	Board      FretboardView
-	Readings   []ReadingView
-	Sounds     []string // the notes drawn, when none of them make a chord
-	Group      *GroupView
+	Symbol   string // what was asked for, as written
+	Chord    string // what it was understood as, formatted
+	Problem  string // an honest note when the input made no sense
+	Board    FretboardView
+	Readings []ReadingView
+	Sounds   []string // the notes drawn, when none of them make a chord
+	// Shapes is every way of holding the chord, easiest first and undivided:
+	// somebody learning a chord wants the one they can play today and then the
+	// next one, which is an order rather than a set of categories.
+	Shapes     []LabShape
+	Total      int
 	Inversions []InversionView
 	All        bool
 	AllURL     string
@@ -152,10 +131,32 @@ const maxStart = 12
 
 // Lab answers the chord page: what the reader drew, and every way to play what
 // they asked for.
+//
+// The two halves feed each other. Naming a chord puts its easiest shape on the
+// neck, because a reader who asks for F wants to see F and not an empty grid;
+// drawing on the neck names what the notes are. An empty page starts with the
+// six strings ringing open, which is what a guitar does when nobody is holding
+// it.
 func Lab(o LabOptions) LabView {
 	v := LabView{Symbol: o.Symbol, All: o.All}
+	v.Roots, v.Qualities = chooserFor(o)
+	v.Shapes, v.Total, v.Inversions, v.Chord, v.Problem = variantsFor(o)
 
+	frets, ok := voicing.ParseGrip(o.Grip)
+	if !ok || len(frets) != voicing.Standard().Strings() {
+		frets = nil
+	}
 	start := o.Start
+	switch {
+	case frets != nil:
+	case len(v.Shapes) > 0:
+		frets, _ = voicing.ParseGrip(v.Shapes[0].Grip)
+		if start == 0 {
+			start = v.Shapes[0].Start
+		}
+	default:
+		frets = make([]voicing.Fret, voicing.Standard().Strings())
+	}
 	if start < 1 {
 		start = 1
 	}
@@ -163,13 +164,6 @@ func Lab(o LabOptions) LabView {
 		start = maxStart
 	}
 
-	frets, ok := voicing.ParseGrip(o.Grip)
-	if !ok || len(frets) != voicing.Standard().Strings() {
-		frets = make([]voicing.Fret, voicing.Standard().Strings())
-		for i := range frets {
-			frets[i] = voicing.Muted
-		}
-	}
 	drawn := voicing.Voicing{Tuning: voicing.Standard(), Frets: frets}
 	v.Board = boardFor(drawn, start, o)
 
@@ -186,10 +180,12 @@ func Lab(o LabOptions) LabView {
 		}
 	}
 
-	v.Roots, v.Qualities = chooserFor(o)
-	v.Group, v.Inversions, v.Chord, v.Problem = variantsFor(o)
-	if v.Group != nil && !o.All {
-		v.AllURL = labURL(o.Symbol, drawn.Grip(), start, true)
+	here := drawn.Grip()
+	for i := range v.Shapes {
+		v.Shapes[i].On = v.Shapes[i].Grip == here
+	}
+	if v.Total > len(v.Shapes) {
+		v.AllURL = labURL(o.Symbol, here, start, true)
 	}
 	return v
 }
@@ -203,9 +199,6 @@ func boardFor(v voicing.Voicing, start int, o LabOptions) FretboardView {
 	if start < maxStart {
 		b.Up = labURLAt(o, v.Grip(), start+1)
 	}
-	for n := start; n < start+labFrets; n++ {
-		b.Frets = append(b.Frets, n)
-	}
 	for i, f := range v.Frets {
 		row := StringRow{
 			Index: i,
@@ -217,12 +210,12 @@ func boardFor(v voicing.Voicing, start int, o LabOptions) FretboardView {
 		if i < len(stringNames) && len(v.Frets) == len(stringNames) {
 			row.Name = stringNames[i]
 		}
-		for j, n := range b.Frets {
+		for n := start; n < start+labFrets; n++ {
 			row.Cells = append(row.Cells, FretCell{
 				Fret: n,
 				On:   int(f) == n,
-				Top:  j == 0 && start > 1,
-				Nut:  j == 0 && start == 1,
+				Top:  n == start && start > 1,
+				Nut:  n == start && start == 1,
 			})
 		}
 		b.Strings = append(b.Strings, row)
@@ -270,23 +263,23 @@ func joinWords(parts []string) string {
 }
 
 // variantsFor works out every way to play the chord that was asked for.
-func variantsFor(o LabOptions) (*GroupView, []InversionView, string, string) {
+func variantsFor(o LabOptions) ([]LabShape, int, []InversionView, string, string) {
 	if o.Symbol == "" {
-		return nil, nil, "", ""
+		return nil, 0, nil, "", ""
 	}
 	c, err := chord.ParseIn(o.Notation, o.Symbol)
 	if err != nil {
 		if c, err = chord.Parse(o.Symbol); err != nil {
-			return nil, nil, "", "No se entiende «" + o.Symbol + "» como un acorde."
+			return nil, 0, nil, "", "No se entiende «" + o.Symbol + "» como un acorde."
 		}
 	}
 	name := c.Format(o.Notation)
 	g, ok := voicing.Generate(c, voicing.GenerateOptions{})
 	if !ok {
-		return nil, nil, name, "No se sabe formar " + name + " en la guitarra."
+		return nil, 0, nil, name, "No se sabe formar " + name + " en la guitarra."
 	}
 	if len(g.Root.Shapes) == 0 && len(g.Inversions) == 0 {
-		return nil, nil, name, "No hay ninguna forma de " + name + " que una mano alcance."
+		return nil, 0, nil, name, "No hay ninguna forma de " + name + " que una mano alcance."
 	}
 
 	var invs []InversionView
@@ -294,9 +287,11 @@ func variantsFor(o LabOptions) (*GroupView, []InversionView, string, string) {
 		if len(inv.Shapes) == 0 {
 			continue
 		}
+		sym := inv.Chord.Format(chord.English)
 		invs = append(invs, InversionView{
 			Name:  inv.Chord.Format(o.Notation),
-			URL:   labURL(inv.Chord.Format(chord.English), "", 1, o.All),
+			Value: sym,
+			URL:   labURL(sym, "", 0, o.All),
 			Total: len(inv.Shapes),
 		})
 	}
@@ -304,85 +299,46 @@ func variantsFor(o LabOptions) (*GroupView, []InversionView, string, string) {
 		// Every way of holding it puts something other than the root underneath,
 		// so there is nothing to show here and the honest thing is to name the
 		// chord that does describe those shapes.
-		return nil, invs, name, "Toda forma de " + name + " deja otra nota en el bajo."
+		return nil, 0, invs, name, "Toda forma de " + name + " deja otra nota en el bajo."
 	}
-	gv := groupView(name, g.Root.Shapes, o)
-	return &gv, invs, name, ""
+	shapes := shapeList(g.Root.Shapes, o)
+	return shapes, len(g.Root.Shapes), invs, name, ""
 }
 
-// perPosition is how many shapes one window of the neck is worth showing.
+// howMany is the length of the list of shapes.
 //
-// Three is enough to see that a place has choices without turning the page into
-// a wall of diagrams; asking for more raises it rather than removing the limit,
-// because forty pictures of the same fret is not an answer to any question.
+// Twelve is enough to reach past the first position and see that the chord has a
+// life further up the neck, without the page becoming a catalogue. Asking for
+// more raises it rather than removing the limit: two hundred diagrams of one
+// chord is not an answer to any question, and the real total is printed either
+// way.
 const (
-	perPosition    = 3
-	perPositionAll = 10
+	howMany    = 12
+	howManyAll = 48
 )
 
-func groupView(name string, vs []voicing.Voicing, o LabOptions) GroupView {
-	keep := perPosition
+// shapeList describes the shapes in the order they are already in — easiest
+// first — and stops when the page has enough.
+func shapeList(vs []voicing.Voicing, o LabOptions) []LabShape {
+	keep := howMany
 	if o.All {
-		keep = perPositionAll
+		keep = howManyAll
 	}
-	gv := GroupView{Name: name, Total: len(vs)}
-	at := make(map[int]int)
-	for _, v := range vs {
-		w := windowFor(v)
-		i, ok := at[w.Start]
-		if !ok {
-			gv.Positions = append(gv.Positions, PositionView{Name: windowName(w.Start), start: w.Start})
-			i = len(gv.Positions) - 1
-			at[w.Start] = i
-		}
-		p := &gv.Positions[i]
-		p.Total++
-		if len(p.Shapes) < keep {
-			view := voicingView(v, len(p.Shapes), 0)
-			note := ""
-			if captionAdds(v) {
-				note = view.Name
-			}
-			p.Shapes = append(p.Shapes, LabShape{
-				Shape: view,
-				Note:  note,
-				URL:   labURL(o.Symbol, v.Grip(), startFor(v), o.All),
-				On:    v.Grip() == o.Grip,
-			})
-		}
+	if keep > len(vs) {
+		keep = len(vs)
 	}
-	for i := range gv.Positions {
-		for j := range gv.Positions[i].Shapes {
-			gv.Positions[i].Shapes[j].Shape.Total = len(gv.Positions[i].Shapes)
-		}
+	out := make([]LabShape, 0, keep)
+	for i, v := range vs[:keep] {
+		view := voicingView(v, i, keep)
+		out = append(out, LabShape{
+			Shape: view,
+			Note:  view.Name,
+			Grip:  v.Grip(),
+			Start: startFor(v),
+			URL:   labURL(o.Symbol, v.Grip(), startFor(v), o.All),
+		})
 	}
-	slices.SortFunc(gv.Positions, func(a, b PositionView) int { return cmp.Compare(a.start, b.start) })
-	return gv
-}
-
-// captionAdds reports whether a shape's own caption says something its heading
-// does not.
-//
-// The heading already gives the place, so "Posición abierta" under "Primera
-// posición" and "Traste 5" under "Traste 5" are the same fact twice. A barre and
-// an all-open shape are the two that are worth naming: they are what a player
-// most wants to know before trying the grip.
-func captionAdds(v voicing.Voicing) bool {
-	switch windowFor(v).how {
-	case barred, allOpen:
-		return true
-	default:
-		return false
-	}
-}
-
-// windowName says where on the neck a window sits. The nut end is named rather
-// than numbered because that is what a player calls it.
-func windowName(start int) string {
-	if start <= 1 {
-		return "Primera posición"
-	}
-	return "Traste " + strconv.Itoa(start)
+	return out
 }
 
 // startFor is where the board should open so that a shape clicked in the list

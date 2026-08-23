@@ -292,6 +292,9 @@ a:hover { text-decoration-thickness: 2px; }
 /* Everywhere, not only on paper: the songbook's two-column preview breaks
  * across columns on screen too, and the preview is meant to be what prints. */
 .opening { break-inside: avoid; page-break-inside: avoid; }
+/* A stanza split so its opening lines could stay with the heading is still one
+ * stanza, and must not grow a gap in the middle of itself. */
+.block.split { margin-bottom: 0; }
 
 .line {
 	/* Preserves the spacing the writer put in the file, and still lets the line
@@ -613,9 +616,10 @@ body.printing .transposed {
 	.transposed { font-size: 9.5pt; }
 	.section h2 { font-size: 8.5pt; }
 
-	/* Keep a stanza whole and never leave a heading alone at the foot of a page.
-	 * Both are what separate a printout from a song sheet worth filing. */
-	.block, .tab { break-inside: avoid; page-break-inside: avoid; }
+	/* A stanza may run over a page; tablature may not, because it is a grid and
+	 * half a grid is unreadable. What holds a printout together is the .opening
+	 * rule above: a heading is never left without the lines it introduces. */
+	.tab { break-inside: avoid; page-break-inside: avoid; }
 
 	/* On paper the column fills to the foot of the page before the next one
 	 * starts, so the sheet reads down and then across. Balancing is right on
@@ -1028,42 +1032,52 @@ input[type="file"].filepick:focus-visible { outline: 2px solid var(--accent); ou
 .lede { margin: -0.5rem 0 1.5rem; color: var(--ink-soft); max-width: 42rem; }
 .empty-inline { color: var(--ink-soft); margin: 0.25rem 0 0; }
 
-.board {
-	/* One set of row heights, shared by the strings and the fret-number gutter
-	 * beside them, so the numbers line up with the frets they name. */
-	--cell: 2.2rem;
-	--mark: 1.35rem;
-	--name: 1.1rem;
+/* The chord page: the neck and the chord chooser side by side, so both are one
+ * glance apart, and the shapes they produce underneath. */
+.lab {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 1.25rem;
+	/* Both cards the same height as well as the same width: they are two halves
+	 * of one control, not a tall thing beside a short one. */
+	align-items: stretch;
+	margin: 0 0 1.75rem;
+}
+@media (max-width: 48rem) {
+	.lab { grid-template-columns: 1fr; }
+}
+.labcard {
 	background: var(--paper-raised);
 	border: 1px solid var(--rule);
 	border-radius: var(--radius);
-	padding: 1rem;
-	margin: 0 0 1.5rem;
-	max-width: 22rem;
+	padding: 1rem 1.1rem 1.2rem;
+	min-width: 0;
+}
+.labcard h2 { margin: 0 0 0.75rem; font-size: 1rem; }
+
+.board {
+	/* One set of row heights, shared by the neck and the fret number beside it.
+	 * The cell is taller than a string column is wide, which is what makes the
+	 * grid read as an upright neck at a glance rather than as a table. */
+	--cell: 3rem;
+	--mark: 1.35rem;
+	--name: 1.1rem;
+	margin: 0;
 }
 .boardhead {
 	display: flex;
 	align-items: baseline;
 	justify-content: space-between;
 	gap: 0.75rem;
-	flex-wrap: wrap;
 }
 .boardhead h2 { margin: 0; font-size: 1rem; }
-.boardwindow {
-	display: flex;
-	align-items: center;
-	gap: 0.4rem;
-	margin: 0;
-	font-size: 0.8125rem;
-	color: var(--ink-soft);
-	font-variant-numeric: tabular-nums;
-}
+.boardwindow { display: flex; align-items: center; gap: 0.35rem; margin: 0; }
 .boardmove {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	width: 1.9rem;
-	height: 1.9rem;
+	width: 2rem;
+	height: 2rem;
 	border: 1px solid var(--rule);
 	border-radius: var(--radius);
 	text-decoration: none;
@@ -1074,23 +1088,27 @@ input[type="file"].filepick:focus-visible { outline: 2px solid var(--accent); ou
 .boardmove:hover { border-color: var(--ink-faint); }
 .boardmove.off { color: var(--ink-faint); opacity: 0.4; }
 
-.boardgrid { display: flex; gap: 0.4rem; margin: 1rem 0; }
+.boardgrid { display: flex; justify-content: center; gap: 0.3rem; margin: 0.9rem 0 1rem; }
 .boardnums {
 	display: flex;
 	flex-direction: column;
-	width: 1.2rem;
-	font-size: 0.6875rem;
+	width: 1.1rem;
+	font-size: 0.75rem;
 	color: var(--ink-faint);
 	font-variant-numeric: tabular-nums;
 }
 .boardnums .numspace { height: calc(var(--name) + var(--mark) * 2); }
-.boardnums span:not(.numspace) {
+/* The window's first fret is named beside its own bar, which is where a chord
+ * chart puts it, and is why the other four need no number at all. */
+.boardnums .startfret {
 	display: flex;
-	align-items: center;
+	align-items: flex-start;
 	justify-content: flex-end;
-	height: var(--cell);
+	line-height: 1;
 }
-.boardstrings { display: flex; flex: 1 1 auto; }
+/* Narrower than it is tall, so the grid reads as an upright neck at a
+ * glance and never as a table. */
+.boardstrings { display: flex; flex: 0 1 12.5rem; }
 .boardstring { flex: 1 1 0; min-inline-size: 0; border: 0; margin: 0; padding: 0; }
 .stringname {
 	height: var(--name);
@@ -1166,27 +1184,34 @@ input[type="file"].filepick:focus-visible { outline: 2px solid var(--accent); ou
 .boardstring.edge-r .boardcell.fret.nut::before { right: 50%; }
 
 .boardcell.fret input:hover {
-	background: radial-gradient(circle at center, var(--chord-bg) 0 0.5rem, transparent 0.5rem);
+	background: radial-gradient(circle at center, var(--chord-bg) 0 0.55rem, transparent 0.55rem);
 }
 .boardcell.fret input:checked {
-	background: radial-gradient(circle at center, var(--accent) 0 0.5rem, transparent 0.5rem);
+	background: radial-gradient(circle at center, var(--accent) 0 0.55rem, transparent 0.55rem);
 }
 
-.boardfoot { display: flex; gap: 0.5rem; }
+.boardfoot { display: flex; gap: 0.5rem; justify-content: center; }
 
-.labread, .labpick, .labshapes { margin: 0 0 2rem; }
-.labread h2, .labpick h2, .labshapes h2 { font-size: 1rem; margin: 0 0 0.6rem; }
-.labshapes h2 .count { display: inline; margin-left: 0.4rem; font-weight: 400; }
+.labread { margin: 1.25rem 0 0; border-top: 1px solid var(--rule); padding-top: 0.9rem; }
+.labread h3, .invhead {
+	margin: 0 0 0.5rem;
+	font-size: 0.8125rem;
+	font-weight: 650;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var(--ink-soft);
+}
+.invhead { margin-top: 1.25rem; }
 
 .readings { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.4rem; }
 .readings a {
 	display: flex;
 	flex-direction: column;
 	gap: 0.1rem;
-	padding: 0.45rem 0.7rem;
+	padding: 0.4rem 0.65rem;
 	border: 1px solid var(--rule);
 	border-radius: var(--radius);
-	background: var(--paper-raised);
+	background: var(--paper);
 	text-decoration: none;
 }
 .readings a:hover { border-color: var(--ink-faint); }
@@ -1197,12 +1222,13 @@ input[type="file"].filepick:focus-visible { outline: 2px solid var(--accent); ou
 
 .pickform { display: flex; gap: 0.4rem; margin: 0 0 0.6rem; flex-wrap: wrap; }
 .pickform input[type="text"], .pickform select {
-	flex: 1 1 12rem;
+	flex: 1 1 8rem;
+	min-width: 0;
 	min-height: 2.75rem;
 	padding: 0 0.6rem;
 	font: inherit;
 	color: var(--ink);
-	background: var(--paper-raised);
+	background: var(--paper);
 	border: 1px solid var(--rule);
 	border-radius: var(--radius);
 }
@@ -1211,8 +1237,8 @@ input[type="file"].filepick:focus-visible { outline: 2px solid var(--accent); ou
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	min-width: 2.5rem;
-	min-height: 2.25rem;
+	min-width: 2.4rem;
+	min-height: 2.2rem;
 	padding: 0 0.4rem;
 	border: 1px solid var(--rule);
 	border-radius: var(--radius);
@@ -1222,11 +1248,11 @@ input[type="file"].filepick:focus-visible { outline: 2px solid var(--accent); ou
 }
 .rootlink:hover { border-color: var(--ink-faint); }
 .rootlink.on { background: var(--chord-bg); border-color: var(--accent); color: var(--chord); }
+.rootlink .count { display: inline; margin: 0 0 0 0.3rem; font-size: 0.75rem; }
 
-.labpos { margin: 0 0 1.25rem; }
-.labpos h3 { font-size: 0.875rem; font-weight: 600; color: var(--ink-soft); margin: 0 0 0.5rem; }
-.labpos h3 .count { display: inline; margin-left: 0.4rem; font-weight: 400; }
-.shaperow { display: flex; flex-wrap: wrap; gap: 1rem; }
+.labshapes h2 { font-size: 1rem; margin: 0 0 0.9rem; }
+.labshapes h2 .count { display: inline; margin-left: 0.4rem; font-weight: 400; }
+.shaperow { display: flex; flex-wrap: wrap; gap: 0.75rem; }
 .labshape {
 	display: block;
 	text-align: center;
@@ -1237,7 +1263,5 @@ input[type="file"].filepick:focus-visible { outline: 2px solid var(--accent); ou
 	border-radius: var(--radius);
 }
 .labshape:hover { border-color: var(--rule); background: var(--paper-raised); }
-.labmore { margin: 0.5rem 0 0; }
-.invhead { font-size: 0.875rem; font-weight: 600; color: var(--ink-soft); margin: 1.5rem 0 0.5rem; }
-.rootlink .count { display: inline; margin: 0 0 0 0.3rem; font-size: 0.75rem; }
+.labmore { margin: 0.9rem 0 0; }
 .labshape.on { border-color: var(--accent); background: var(--chord-bg); }
