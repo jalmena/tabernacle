@@ -428,7 +428,7 @@
 	}
 
 	board.addEventListener("change", function (e) {
-		if (!e.target.matches('input[name="s"]')) return;
+		if (!e.target.matches(".boardcell input")) return;
 		clearTimeout(timer);
 		/* Long enough that dragging across a string is one request rather than
 		 * six, short enough to feel like the page is keeping up. */

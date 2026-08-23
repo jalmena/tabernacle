@@ -297,6 +297,17 @@ arrow keys, label them for a screen reader and submit them without any script;
 thirty-six clickable SVG circles would be worse at every one of those and useless
 with JavaScript off.
 
+It is held upright, strings running down the page with the sixth on the left,
+which is how a chord chart is drawn and therefore how every diagram beside it is
+drawn — a shape can be copied from a picture onto the board fret for fret. The
+outside columns draw half a fret line each, so the grid ends on the sixth and the
+first string rather than half a column past them.
+
+The modifier classes on those cells are deliberately specific. The stylesheet is
+one namespace, and `.top` already belongs to the page header: a cell marked with
+that name quietly inherits a sticky position, padding and a bottom border, which
+is a stray line across the fretboard that no test can see.
+
 All of the state is in the query — `?c=`, `?grip=`, `?start=`, `?all=` — so every
 view can be linked to and the back button works. The script is an enhancement: it
 fetches the same region the page renders and swaps it in, and never replaces the

@@ -254,31 +254,38 @@
 	</div>
 
 	<div class="boardgrid" role="group" aria-label="Posición en el mástil">
-		{{range .Board.Strings}}
-			{{/* One radio group per string, which is what a name does. Sharing a
-			     name across the whole neck would make it a single group and let
-			     only one string at a time be set. */}}
-			{{$s := .Index}}
-			<fieldset class="boardstring">
-				<legend>{{.Name}}</legend>
-				<label class="boardcell mute" title="No suena">
-					<input type="radio" name="s{{.Index}}" value="x" {{if .Muted}}checked{{end}}>
-					<span aria-hidden="true">×</span>
-					<span class="sr">{{.Name}} cuerda, no suena</span>
-				</label>
-				<label class="boardcell open" title="Al aire">
-					<input type="radio" name="s{{.Index}}" value="0" {{if .Open}}checked{{end}}>
-					<span aria-hidden="true">○</span>
-					<span class="sr">{{.Name}} cuerda, al aire</span>
-				</label>
-				{{range .Cells}}
-					<label class="boardcell" title="Traste {{.Fret}}">
-						<input type="radio" name="s{{$s}}" value="{{.Fret}}" {{if .On}}checked{{end}}>
-						<span class="sr">traste {{.Fret}}</span>
+		<div class="boardnums" aria-hidden="true">
+			<span class="numspace"></span>
+			{{range .Board.Frets}}<span>{{.}}</span>{{end}}
+		</div>
+		<div class="boardstrings">
+			{{range .Board.Strings}}
+				{{$s := .Index}}
+				{{/* One radio group per string, which is what a name does. Sharing a
+				     name across the whole neck would make it a single group and let
+				     only one string at a time be set. */}}
+				<fieldset class="boardstring{{if .First}} edge-l{{end}}{{if .Last}} edge-r{{end}}">
+					<legend class="sr">{{.Name}} cuerda</legend>
+					<p class="stringname" aria-hidden="true">{{.Name}}</p>
+					<label class="boardcell mute" title="No suena">
+						<input type="radio" name="s{{$s}}" value="x" {{if .Muted}}checked{{end}}>
+						<span aria-hidden="true">×</span>
+						<span class="sr">{{.Name}} cuerda, no suena</span>
 					</label>
-				{{end}}
-			</fieldset>
-		{{end}}
+					<label class="boardcell open" title="Al aire">
+						<input type="radio" name="s{{$s}}" value="0" {{if .Open}}checked{{end}}>
+						<span aria-hidden="true">○</span>
+						<span class="sr">{{.Name}} cuerda, al aire</span>
+					</label>
+					{{range .Cells}}
+						<label class="boardcell fret{{if .Top}} firstfret{{end}}{{if .Nut}} nut{{end}}" title="Traste {{.Fret}}">
+							<input type="radio" name="s{{$s}}" value="{{.Fret}}" {{if .On}}checked{{end}}>
+							<span class="sr">traste {{.Fret}}</span>
+						</label>
+					{{end}}
+				</fieldset>
+			{{end}}
+		</div>
 	</div>
 
 	<div class="boardfoot">

@@ -20,9 +20,15 @@ type LabOptions struct {
 }
 
 // FretCell is one place a finger can go.
+//
+// Top and Nut are about the line drawn above the cell, which only the first fret
+// of the window has: the nut when the window starts at the first fret, an
+// ordinary fret line when it starts anywhere else.
 type FretCell struct {
 	Fret int
 	On   bool
+	Top  bool
+	Nut  bool
 }
 
 // StringRow is one string of the editable neck.
@@ -35,16 +41,26 @@ type StringRow struct {
 	Muted bool
 	Open  bool
 	Cells []FretCell
+	// First and Last mark the outside strings, which draw half a fret line each
+	// so that the grid ends on the sixth and the first rather than half a column
+	// past them.
+	First bool
+	Last  bool
 }
 
 // FretboardView is the editable neck.
 //
-// Five frets, because that is what a diagram draws and the board has to match
-// the pictures beside it. It is a form control and not a drawing: the choices
-// are radio buttons, so the neck can be played with by keyboard, read aloud, and
-// used with no JavaScript at all.
+// Held upright, strings running down the page with the sixth on the left, which
+// is how a chord chart is drawn and therefore how the diagrams beside it are
+// drawn. Five frets, the same five a diagram shows, so a shape can be copied
+// from a picture onto the board fret for fret.
+//
+// It is a form control and not a drawing: the choices are radio buttons, so the
+// neck can be played with by keyboard, read aloud, and used with no JavaScript
+// at all.
 type FretboardView struct {
 	Start   int
+	Frets   []int // the fret numbers in the window, for the gutter
 	Strings []StringRow
 	Grip    string
 	Down    string // where the window slides, empty at the end of the neck
@@ -187,17 +203,27 @@ func boardFor(v voicing.Voicing, start int, o LabOptions) FretboardView {
 	if start < maxStart {
 		b.Up = labURLAt(o, v.Grip(), start+1)
 	}
+	for n := start; n < start+labFrets; n++ {
+		b.Frets = append(b.Frets, n)
+	}
 	for i, f := range v.Frets {
 		row := StringRow{
 			Index: i,
 			Muted: f == voicing.Muted,
 			Open:  f == voicing.Open,
+			First: i == 0,
+			Last:  i == len(v.Frets)-1,
 		}
 		if i < len(stringNames) && len(v.Frets) == len(stringNames) {
 			row.Name = stringNames[i]
 		}
-		for n := start; n < start+labFrets; n++ {
-			row.Cells = append(row.Cells, FretCell{Fret: n, On: int(f) == n})
+		for j, n := range b.Frets {
+			row.Cells = append(row.Cells, FretCell{
+				Fret: n,
+				On:   int(f) == n,
+				Top:  j == 0 && start > 1,
+				Nut:  j == 0 && start == 1,
+			})
 		}
 		b.Strings = append(b.Strings, row)
 	}
