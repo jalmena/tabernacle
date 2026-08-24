@@ -353,7 +353,7 @@ var polish = map[string]string{
 	"fail.nothing.detail":        "Nie ma żadnej transpozycji do zapisania w pliku.",
 	"problem.nametaken":          "Ta nazwa jest zajęta.",
 	"problem.nameinvalid":        "Nazwa ma od 2 do 32 liter, cyfr, kropek, myślników albo podkreśleń.",
-	"problem.passwordshort":      "Hasło potrzebuje przynajmniej 10 znaków.",
+	"problem.passwordshort":      "Hasło potrzebuje przynajmniej %d znaków.",
 	"problem.badpassword":        "Obecne hasło jest nieprawidłowe.",
 	"problem.notheme":            "Taki wygląd nie istnieje.",
 	"problem.nolang":             "Taki język nie istnieje.",

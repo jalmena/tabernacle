@@ -353,7 +353,7 @@ var french = map[string]string{
 	"fail.nothing.detail":        "Il n'y a aucune transposition à écrire dans le fichier.",
 	"problem.nametaken":          "Ce nom est déjà pris.",
 	"problem.nameinvalid":        "Un nom fait de 2 à 32 lettres, chiffres, points, tirets ou tirets bas.",
-	"problem.passwordshort":      "Un mot de passe demande au moins 10 caractères.",
+	"problem.passwordshort":      "Un mot de passe demande au moins %d caractères.",
 	"problem.badpassword":        "Le mot de passe actuel n'est pas le bon.",
 	"problem.notheme":            "Ce thème n'existe pas.",
 	"problem.nolang":             "Cette langue n'existe pas.",

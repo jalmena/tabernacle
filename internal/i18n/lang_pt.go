@@ -353,7 +353,7 @@ var portuguese = map[string]string{
 	"fail.nothing.detail":        "Não há nenhuma transposição para escrever no ficheiro.",
 	"problem.nametaken":          "Esse nome já está ocupado.",
 	"problem.nameinvalid":        "Um nome tem entre 2 e 32 letras, dígitos, pontos, hífenes ou sublinhados.",
-	"problem.passwordshort":      "Uma palavra-passe precisa de pelo menos 10 caracteres.",
+	"problem.passwordshort":      "Uma palavra-passe precisa de pelo menos %d caracteres.",
 	"problem.badpassword":        "A palavra-passe atual não está certa.",
 	"problem.notheme":            "Esse tema não existe.",
 	"problem.nolang":             "Esse idioma não existe.",

@@ -353,7 +353,7 @@ var arabic = map[string]string{
 	"fail.nothing.detail":        "لا يوجد نقل مقام يُكتب في الملف.",
 	"problem.nametaken":          "هذا الاسم مأخوذ.",
 	"problem.nameinvalid":        "الاسم من حرفين إلى ٣٢ حرفًا أو رقمًا أو نقطة أو شرطة أو شرطة سفلية.",
-	"problem.passwordshort":      "كلمة السر تحتاج ١٠ محارف على الأقل.",
+	"problem.passwordshort":      "كلمة السر تحتاج %d محارف على الأقل.",
 	"problem.badpassword":        "كلمة السر الحالية غير صحيحة.",
 	"problem.notheme":            "لا وجود لهذا المظهر.",
 	"problem.nolang":             "لا وجود لهذه اللغة.",

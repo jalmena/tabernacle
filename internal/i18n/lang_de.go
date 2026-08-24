@@ -353,7 +353,7 @@ var german = map[string]string{
 	"fail.nothing.detail":        "Es gibt keine Transposition, die in die Datei zu schreiben wäre.",
 	"problem.nametaken":          "Dieser Name ist vergeben.",
 	"problem.nameinvalid":        "Ein Name hat 2 bis 32 Buchstaben, Ziffern, Punkte, Bindestriche oder Unterstriche.",
-	"problem.passwordshort":      "Ein Passwort braucht mindestens 10 Zeichen.",
+	"problem.passwordshort":      "Ein Passwort braucht mindestens %d Zeichen.",
 	"problem.badpassword":        "Das aktuelle Passwort stimmt nicht.",
 	"problem.notheme":            "Dieses Erscheinungsbild gibt es nicht.",
 	"problem.nolang":             "Diese Sprache gibt es nicht.",

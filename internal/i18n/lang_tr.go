@@ -353,7 +353,7 @@ var turkish = map[string]string{
 	"fail.nothing.detail":        "Dosyaya yazılacak bir transpozisyon yok.",
 	"problem.nametaken":          "Bu ad alınmış.",
 	"problem.nameinvalid":        "Bir ad 2 ile 32 arasında harf, rakam, nokta, tire ya da alt çizgiden oluşur.",
-	"problem.passwordshort":      "Parola en az 10 karakter ister.",
+	"problem.passwordshort":      "Parola en az %d karakter ister.",
 	"problem.badpassword":        "Şimdiki parola doğru değil.",
 	"problem.notheme":            "Böyle bir tema yok.",
 	"problem.nolang":             "Böyle bir dil yok.",

@@ -353,7 +353,7 @@ var japanese = map[string]string{
 	"fail.nothing.detail":        "ファイルに書き込む移調がありません。",
 	"problem.nametaken":          "その名前はすでに使われています。",
 	"problem.nameinvalid":        "名前は2〜32文字の英数字、点、ハイフン、下線です。",
-	"problem.passwordshort":      "パスワードは10文字以上必要です。",
+	"problem.passwordshort":      "パスワードは%d文字以上必要です。",
 	"problem.badpassword":        "今のパスワードが違います。",
 	"problem.notheme":            "そのテーマはありません。",
 	"problem.nolang":             "その言語はありません。",

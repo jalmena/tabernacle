@@ -353,7 +353,7 @@ var indonesian = map[string]string{
 	"fail.nothing.detail":        "Tidak ada transposisi yang perlu ditulis ke berkas.",
 	"problem.nametaken":          "Nama itu sudah dipakai.",
 	"problem.nameinvalid":        "Sebuah nama terdiri dari 2 sampai 32 huruf, angka, titik, tanda hubung atau garis bawah.",
-	"problem.passwordshort":      "Kata sandi butuh setidaknya 10 karakter.",
+	"problem.passwordshort":      "Kata sandi butuh setidaknya %d karakter.",
 	"problem.badpassword":        "Kata sandi sekarang salah.",
 	"problem.notheme":            "Tema itu tidak ada.",
 	"problem.nolang":             "Bahasa itu tidak ada.",

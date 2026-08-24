@@ -24,11 +24,18 @@ import (
 // stored in every hash, so raising it later is one number and no migration.
 const DefaultCost = 600_000
 
-// minPasswordRunes is the only rule about passwords.
+// MinPasswordRunes is the only rule about passwords.
 //
 // Length is the property that matters; composition rules mostly teach people to
-// write Password1! and reuse it.
-const minPasswordRunes = 10
+// write Password1! and reuse it. Eight is the floor rather than a
+// recommendation: the cost of a guess here is a PBKDF2 derivation at
+// DefaultCost, and the login handler rations attempts, so the arithmetic that
+// makes a short password dangerous elsewhere does not hold.
+//
+// It is exported so the sentence the reader sees can name it instead of
+// repeating it in nineteen languages, where the number and the rule would
+// eventually disagree.
+const MinPasswordRunes = 8
 
 const (
 	hashAlgorithm = "pbkdf2-sha256"

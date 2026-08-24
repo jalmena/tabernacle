@@ -181,6 +181,32 @@ func TestAShortPasswordIsRefused(t *testing.T) {
 	}
 }
 
+// The boundary itself, so the rule is asserted rather than incidentally true:
+// the test above passes under any minimum above five.
+func TestThePasswordMinimumIsExactlyWhereItSays(t *testing.T) {
+	s := open(t)
+
+	short := strings.Repeat("a", MinPasswordRunes-1)
+	if _, err := s.Create("corto", short, RoleAdmin); !errors.Is(err, ErrPasswordTooShort) {
+		t.Errorf("%d characters gave %v, want ErrPasswordTooShort", len(short), err)
+	}
+
+	exact := strings.Repeat("a", MinPasswordRunes)
+	if _, err := s.Create("justo", exact, RoleAdmin); err != nil {
+		t.Errorf("%d characters gave %v, want it accepted", len(exact), err)
+	}
+
+	// Runes, not bytes: a password of accented letters is as long as it looks.
+	accented := strings.Repeat("ñ", MinPasswordRunes)
+	if _, err := s.Create("acentos", accented, RoleUser); err != nil {
+		t.Errorf("%d accented characters gave %v, want it accepted", MinPasswordRunes, err)
+	}
+	tooFew := strings.Repeat("ñ", MinPasswordRunes-1)
+	if _, err := s.Create("pocos", tooFew, RoleUser); !errors.Is(err, ErrPasswordTooShort) {
+		t.Errorf("%d accented characters gave %v, want ErrPasswordTooShort", MinPasswordRunes-1, err)
+	}
+}
+
 // Changing a password logs out every other device, which is the only thing that
 // makes changing it worth doing.
 func TestChangingAPasswordBumpsTheEpoch(t *testing.T) {

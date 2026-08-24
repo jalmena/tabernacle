@@ -353,7 +353,7 @@ var catalan = map[string]string{
 	"fail.nothing.detail":        "No hi ha cap transposició per escriure al fitxer.",
 	"problem.nametaken":          "Aquest nom ja està agafat.",
 	"problem.nameinvalid":        "Un nom té entre 2 i 32 lletres, xifres, punts, guions o guions baixos.",
-	"problem.passwordshort":      "Una contrasenya necessita almenys 10 caràcters.",
+	"problem.passwordshort":      "Una contrasenya necessita almenys %d caràcters.",
 	"problem.badpassword":        "La contrasenya actual no és correcta.",
 	"problem.notheme":            "Aquest tema no existeix.",
 	"problem.nolang":             "Aquest idioma no existeix.",

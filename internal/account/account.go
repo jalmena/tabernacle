@@ -57,7 +57,7 @@ var (
 	ErrNotFound         = errors.New("account: no such account")
 	ErrNameTaken        = errors.New("account: that name is already in use")
 	ErrNameInvalid      = errors.New("account: that name cannot be used")
-	ErrPasswordTooShort = fmt.Errorf("account: a password needs at least %d characters", minPasswordRunes)
+	ErrPasswordTooShort = fmt.Errorf("account: a password needs at least %d characters", MinPasswordRunes)
 	ErrThemeInvalid     = errors.New("account: no such theme")
 	ErrLangInvalid      = errors.New("account: no such language")
 	ErrNotationInvalid  = errors.New("account: no such notation")
@@ -635,7 +635,7 @@ func validTheme(theme string) bool {
 }
 
 func checkPassword(password string) error {
-	if len([]rune(password)) < minPasswordRunes {
+	if len([]rune(password)) < MinPasswordRunes {
 		return ErrPasswordTooShort
 	}
 	return nil

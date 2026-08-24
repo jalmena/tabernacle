@@ -353,7 +353,7 @@ var russian = map[string]string{
 	"fail.nothing.detail":        "Нет транспозиции, которую нужно было бы записать в файл.",
 	"problem.nametaken":          "Это имя уже занято.",
 	"problem.nameinvalid":        "Имя — от 2 до 32 букв, цифр, точек, дефисов или подчёркиваний.",
-	"problem.passwordshort":      "Пароль должен быть не короче 10 знаков.",
+	"problem.passwordshort":      "Пароль должен быть не короче %d знаков.",
 	"problem.badpassword":        "Текущий пароль неверен.",
 	"problem.notheme":            "Такой темы нет.",
 	"problem.nolang":             "Такого языка нет.",

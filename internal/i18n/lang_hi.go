@@ -353,7 +353,7 @@ var hindi = map[string]string{
 	"fail.nothing.detail":        "फ़ाइल में लिखने के लिए कोई सुर-परिवर्तन नहीं है।",
 	"problem.nametaken":          "यह नाम पहले से लिया जा चुका है।",
 	"problem.nameinvalid":        "नाम में 2 से 32 अक्षर, अंक, बिंदु, हाइफ़न या अंडरस्कोर होते हैं।",
-	"problem.passwordshort":      "पासवर्ड में कम से कम 10 अक्षर चाहिए।",
+	"problem.passwordshort":      "पासवर्ड में कम से कम %d अक्षर चाहिए।",
 	"problem.badpassword":        "मौजूदा पासवर्ड सही नहीं है।",
 	"problem.notheme":            "ऐसा कोई रंगरूप नहीं है।",
 	"problem.nolang":             "ऐसी कोई भाषा नहीं है।",

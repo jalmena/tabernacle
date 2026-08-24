@@ -417,7 +417,7 @@ func accountProblem(say *i18n.Printer, err error) string {
 	case errors.Is(err, account.ErrNameInvalid):
 		return say.T("problem.nameinvalid")
 	case errors.Is(err, account.ErrPasswordTooShort):
-		return say.T("problem.passwordshort")
+		return say.T("problem.passwordshort", account.MinPasswordRunes)
 	case errors.Is(err, account.ErrBadCredentials):
 		return say.T("problem.badpassword")
 	case errors.Is(err, account.ErrThemeInvalid):

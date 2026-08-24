@@ -424,7 +424,7 @@ var spanish = map[string]string{
 	// What the accounts store refused, put into words.
 	"problem.nametaken":     "Ese nombre ya está en uso.",
 	"problem.nameinvalid":   "Un nombre puede tener entre 2 y 32 letras, números, puntos, guiones o guiones bajos.",
-	"problem.passwordshort": "La contraseña necesita al menos 10 caracteres.",
+	"problem.passwordshort": "La contraseña necesita al menos %d caracteres.",
 	"problem.badpassword":   "La contraseña actual no es correcta.",
 	"problem.notheme":       "Ese tema no existe.",
 	"problem.nolang":        "Ese idioma no existe.",

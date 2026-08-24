@@ -408,7 +408,7 @@ var english = map[string]string{
 	// What the accounts store refused, put into words.
 	"problem.nametaken":     "That name is taken.",
 	"problem.nameinvalid":   "A name is 2 to 32 letters, digits, dots, hyphens or underscores.",
-	"problem.passwordshort": "A password needs at least 10 characters.",
+	"problem.passwordshort": "A password needs at least %d characters.",
 	"problem.badpassword":   "The current password is wrong.",
 	"problem.notheme":       "No such theme.",
 	"problem.nolang":        "No such language.",

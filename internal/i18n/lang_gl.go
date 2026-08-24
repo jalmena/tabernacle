@@ -353,7 +353,7 @@ var galician = map[string]string{
 	"fail.nothing.detail":        "Non hai ningunha transposición que escribir no ficheiro.",
 	"problem.nametaken":          "Ese nome xa está collido.",
 	"problem.nameinvalid":        "Un nome ten entre 2 e 32 letras, cifras, puntos, guións ou guións baixos.",
-	"problem.passwordshort":      "Un contrasinal precisa polo menos 10 caracteres.",
+	"problem.passwordshort":      "Un contrasinal precisa polo menos %d caracteres.",
 	"problem.badpassword":        "O contrasinal actual non é correcto.",
 	"problem.notheme":            "Ese decorado non existe.",
 	"problem.nolang":             "Ese idioma non existe.",

@@ -353,7 +353,7 @@ var chinese = map[string]string{
 	"fail.nothing.detail":        "没有需要写进文件的移调。",
 	"problem.nametaken":          "这个名字已经被用了。",
 	"problem.nameinvalid":        "名字是 2 到 32 个字母、数字、点、连字符或下划线。",
-	"problem.passwordshort":      "密码至少要 10 个字符。",
+	"problem.passwordshort":      "密码至少要 %d 个字符。",
 	"problem.badpassword":        "当前密码不对。",
 	"problem.notheme":            "没有这个主题。",
 	"problem.nolang":             "没有这种语言。",

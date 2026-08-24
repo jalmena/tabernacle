@@ -80,8 +80,15 @@ per password, stored as `pbkdf2-sha256$iterations$salt$key`. The parameters trav
 with the hash, so raising the count later is one number and no migration: the next
 successful login re-hashes that password in place.
 
-Minimum ten characters and no composition rules. Length is the property that
-matters; the rest mostly teaches people to write `Password1!`.
+Minimum eight characters and no composition rules. Length is the property that
+matters; the rest mostly teaches people to write `Password1!`. Eight is a floor
+rather than a recommendation: guessing costs a PBKDF2 derivation at 600,000
+iterations and the login handler rations attempts, so the arithmetic that makes
+a short password dangerous on a public site does not hold here.
+
+`account.MinPasswordRunes` is the only place the number lives. The sentence the
+reader sees takes it as an argument rather than spelling it out in nineteen
+languages, where the number and the rule would eventually disagree.
 
 A wrong password and a name that does not exist give the same answer and cost the
 same work, so response times do not report which names are real.

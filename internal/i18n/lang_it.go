@@ -353,7 +353,7 @@ var italian = map[string]string{
 	"fail.nothing.detail":        "Non c'è nessuna trasposizione da scrivere nel file.",
 	"problem.nametaken":          "Quel nome è già preso.",
 	"problem.nameinvalid":        "Un nome va da 2 a 32 lettere, cifre, punti, trattini o trattini bassi.",
-	"problem.passwordshort":      "Una password richiede almeno 10 caratteri.",
+	"problem.passwordshort":      "Una password richiede almeno %d caratteri.",
 	"problem.badpassword":        "La password attuale non è quella giusta.",
 	"problem.notheme":            "Quel tema non esiste.",
 	"problem.nolang":             "Quella lingua non esiste.",

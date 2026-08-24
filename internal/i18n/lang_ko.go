@@ -353,7 +353,7 @@ var korean = map[string]string{
 	"fail.nothing.detail":        "파일에 적을 조옮김이 없습니다.",
 	"problem.nametaken":          "그 이름은 이미 쓰이고 있습니다.",
 	"problem.nameinvalid":        "이름은 2자에서 32자 사이의 글자, 숫자, 점, 붙임표, 밑줄입니다.",
-	"problem.passwordshort":      "비밀번호는 적어도 10자가 필요합니다.",
+	"problem.passwordshort":      "비밀번호는 적어도 %d자가 필요합니다.",
 	"problem.badpassword":        "현재 비밀번호가 맞지 않습니다.",
 	"problem.notheme":            "그런 테마는 없습니다.",
 	"problem.nolang":             "그런 언어는 없습니다.",

@@ -353,7 +353,7 @@ var dutch = map[string]string{
 	"fail.nothing.detail":        "Er is geen transpositie om in het bestand te schrijven.",
 	"problem.nametaken":          "Die naam is al bezet.",
 	"problem.nameinvalid":        "Een naam is 2 tot 32 letters, cijfers, punten, koppeltekens of lage streepjes.",
-	"problem.passwordshort":      "Een wachtwoord heeft minstens 10 tekens nodig.",
+	"problem.passwordshort":      "Een wachtwoord heeft minstens %d tekens nodig.",
 	"problem.badpassword":        "Het huidige wachtwoord klopt niet.",
 	"problem.notheme":            "Dat thema bestaat niet.",
 	"problem.nolang":             "Die taal bestaat niet.",

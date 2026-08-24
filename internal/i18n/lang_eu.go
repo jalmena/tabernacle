@@ -353,7 +353,7 @@ var basque = map[string]string{
 	"fail.nothing.detail":        "Ez dago fitxategian idazteko transposiziorik.",
 	"problem.nametaken":          "Izen hori hartuta dago.",
 	"problem.nameinvalid":        "Izen batek 2 eta 32 arteko letra, zenbaki, puntu, marratxo edo azpimarra ditu.",
-	"problem.passwordshort":      "Pasahitz batek gutxienez 10 karaktere behar ditu.",
+	"problem.passwordshort":      "Pasahitz batek gutxienez %d karaktere behar ditu.",
 	"problem.badpassword":        "Oraingo pasahitza ez da zuzena.",
 	"problem.notheme":            "Itxura hori ez da existitzen.",
 	"problem.nolang":             "Hizkuntza hori ez da existitzen.",
