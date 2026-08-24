@@ -27,6 +27,10 @@
 	/* One knob for the whole sheet, so a reader can size the song to the
 	 * distance between their eyes and the music stand. */
 	--song-size: 1.0625rem;
+
+	/* Where play mode starts. Reading from a stand at arm's length wants more
+	 * than reading from a desk, and the bar moves it from there. */
+	--play-size: 1.5rem;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -34,7 +38,6 @@
 		--ink: #ece9e3;
 		--ink-soft: #a9a29a;
 		--ink-faint: #7d766e;
-		--paper: #16151300;
 		--paper: #171614;
 		--paper-raised: #1f1e1b;
 		--rule: #33302b;
@@ -358,6 +361,61 @@ a.chord:hover { text-decoration: underline; text-underline-offset: 2px; }
 
 .sheet-foot { margin-top: 2rem; padding-top: 0.75rem; border-top: 1px solid var(--rule); }
 
+/* ------------------------------------------------------------- play mode --- */
+
+/* Scrolling by itself is the one control on the sheet that cannot work without
+ * scripting, so it is hidden until the script marks the body. Everything else
+ * on that row is a link that already works. */
+.needsjs { display: none; }
+body.playready .needsjs { display: inline-flex; }
+
+/* Play mode turns the page into a lectern: the words, and nothing that is not
+ * the words. The size comes from --song-size, the same token the sheet already
+ * reads, so chords, lyrics and tab all grow together instead of drifting apart.
+ * The appendix of shapes goes: scrolling to the end of the song should stop at
+ * the end of the song, not at the twentieth diagram. */
+body.playing { --song-size: var(--play-size); }
+body.playing .top,
+body.playing .filters,
+body.playing .controls,
+body.playing .sheet-foot,
+body.playing .chordbook { display: none; }
+body.playing .wrap { padding-block-end: 8rem; }
+
+.playbar {
+	position: fixed;
+	inset-inline: 0;
+	bottom: 0;
+	z-index: 20;
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+	padding: 0.5rem 0.75rem;
+	/* Clears the home indicator on a phone held in a stand. */
+	padding-block-end: calc(0.5rem + env(safe-area-inset-bottom));
+	background: var(--paper);
+	border-top: 1px solid var(--rule);
+}
+/* display: flex beats the browser's own [hidden] rule, so the attribute has to
+ * be honoured here or the bar sits on every song page whether the mode is on or
+ * not. */
+.playbar[hidden] { display: none; }
+.playbar .sep { flex: 1; }
+.playbar .btn { min-height: 3rem; min-width: 3rem; }
+.playspeed {
+	min-width: 1.5rem;
+	font-variant-numeric: tabular-nums;
+	text-align: center;
+	color: var(--ink-soft);
+}
+
+/* On a narrow screen the two text-size buttons are the ones to drop: the
+ * browser's own zoom does the same job, and the speed controls do not have a
+ * substitute. */
+@media (max-width: 26rem) {
+	.playbar [data-play="bigger"], .playbar [data-play="smaller"] { display: none; }
+}
+
 /* ---------------------------------------------------------------- larger --- */
 
 @media (min-width: 40rem) {
@@ -606,6 +664,10 @@ body.printing .transposed {
 		--annotation: #444;
 		--song-size: 10.5pt;
 	}
+
+	/* body.playing is more specific than :root, so without this a sheet printed
+	 * from play mode comes out at music-stand size. */
+	body.playing { --song-size: 10.5pt; }
 
 	/* Nothing interactive belongs on paper. */
 	.top, .sections, .controls, .sheet-foot, .paperbar, .flash,

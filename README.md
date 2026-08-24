@@ -20,6 +20,7 @@ telemetry. Reading needs no account; changing anything does.
 | **Chord reference** | draw a shape and be told what it is, or see every way to play a chord |
 | **Simplify** | rewrites a sheet's unplayable chords into ones you can hold |
 | **Note names** | `C D E` or `Do Re Mi` |
+| **Play mode** | the sheet scrolls itself at the pace you set, big enough to read from a stand, screen kept awake |
 | **Print** | A4, light paper themes, no interface on the page |
 | **Authoring** | paste a song in, or edit the file directly |
 | **Songbook** | pick any set of songs and print them as one document |
@@ -126,7 +127,8 @@ A[G]mazing grace how [G7]sweet the [C]sound
 
 Full reference: [docs/song-format.md](docs/song-format.md). Also
 [chord diagrams](docs/chord-diagrams.md), [printing](docs/printing.md),
-[accounts](docs/accounts.md), [deployment](docs/deployment.md).
+[accounts](docs/accounts.md), [play mode](docs/play-mode.md),
+[deployment](docs/deployment.md).
 
 ## Architecture
 

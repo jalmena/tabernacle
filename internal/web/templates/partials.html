@@ -132,6 +132,12 @@
 	{{end}}
 
 	<a class="btn btn-quiet" href="{{.Body.PrintURL}}" target="_blank" rel="noopener">{{$.T "sheet.print"}}</a>
+
+	{{/* Scrolling by itself is the one thing on this page that scripting has to
+	     do, so unlike every other control here this button is hidden until the
+	     script says it is there. A dead button is worse than no button. */}}
+	<button class="btn btn-quiet needsjs" type="button" id="playstart"
+	        title="{{$.T `sheet.play.hint`}}">{{$.T "sheet.play"}}</button>
 </div>
 
 <div id="sheet">

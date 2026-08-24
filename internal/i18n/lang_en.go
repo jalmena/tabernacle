@@ -285,6 +285,8 @@ var english = map[string]string{
 	"sheet.simplify":        "Simplify",
 	"sheet.simplify.hint":   "Swap the chords with no known shape for ones you can hold",
 	"sheet.print":           "Print",
+	"sheet.play":            "Play",
+	"sheet.play.hint":       "Scroll the sheet by itself, so your hands can stay on the guitar",
 	"sheet.used.label":      "Chords used",
 	"sheet.seeshape":        "See the shape for %s",
 	"sheet.shapes":          "Shapes",
@@ -296,6 +298,17 @@ var english = map[string]string{
 	"sheet.noshape":   "No known shape.",
 	"sheet.songswith": "Songs with %s",
 	"sheet.origkey":   "originally in %s",
+
+	// Play mode: the sheet scrolls by itself while both hands are busy.
+	"play.label":   "Play mode",
+	"play.start":   "Start scrolling",
+	"play.pause":   "Pause",
+	"play.slower":  "Slower",
+	"play.faster":  "Faster",
+	"play.speed":   "Speed",
+	"play.bigger":  "Bigger words",
+	"play.smaller": "Smaller words",
+	"play.exit":    "Leave play mode",
 
 	// One song.
 	"song.broken":         "This file has a syntax error:",

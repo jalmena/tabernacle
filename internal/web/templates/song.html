@@ -41,6 +41,21 @@
 	{{end}}
 </main>
 <div id="chordpop" class="chordpop noprint" popover="auto" aria-live="polite"></div>
+
+{{/* The bar that steers play mode. It is in the markup rather than built by the
+     script so its words come from the catalogue like every other string, and it
+     stays out of the way until the body says the mode is on. */}}
+<div id="playbar" class="playbar noprint" role="group" aria-label="{{.T `play.label`}}" hidden>
+	<button class="btn" type="button" data-play="slower" aria-label="{{.T `play.slower`}}">−</button>
+	<button class="btn" type="button" data-play="toggle" aria-label="{{.T `play.start`}}"
+	        data-label-start="{{.T `play.start`}}" data-label-pause="{{.T `play.pause`}}">▶</button>
+	<button class="btn" type="button" data-play="faster" aria-label="{{.T `play.faster`}}">+</button>
+	<span class="playspeed" aria-label="{{.T `play.speed`}}" aria-live="polite">3</span>
+	<span class="sep"></span>
+	<button class="btn" type="button" data-play="smaller" aria-label="{{.T `play.smaller`}}">A−</button>
+	<button class="btn" type="button" data-play="bigger" aria-label="{{.T `play.bigger`}}">A+</button>
+	<button class="btn" type="button" data-play="exit">{{.T "play.exit"}}</button>
+</div>
 {{template "scripts" .}}
 </body>
 </html>

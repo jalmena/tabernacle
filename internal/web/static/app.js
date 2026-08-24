@@ -567,3 +567,164 @@
 		show(forChord(e.target.value), "#cqual");
 	});
 })();
+
+/* Play mode.
+ *
+ * The one thing on the sheet that scripting has to do rather than merely make
+ * nicer: a page cannot scroll itself without it. So the button that starts it
+ * is hidden until this runs, and hiding it is this code's first act — a control
+ * that does nothing is worse than one that is not there.
+ *
+ * There is no URL state and nothing is remembered. Play mode is what you are
+ * doing right now, not a way the song is; the way a song is belongs in the
+ * .song file, which is where a per-song speed would go if it is ever wanted. */
+(function () {
+	"use strict";
+
+	var bar = document.getElementById("playbar");
+	if (!bar || !document.getElementById("playstart")) return;
+	if (typeof window.requestAnimationFrame !== "function") return;
+
+	document.body.classList.add("playready");
+
+	/* Transposing replaces the whole of #controls with a freshly rendered one,
+	 * and the button lives inside it. A listener held on the element found at
+	 * load would be left attached to a node no longer on the page, so the
+	 * button would stop working the first time anybody changed key. Hence the
+	 * lookup happens every time, and the click is delegated. */
+	function startButton() { return document.getElementById("playstart"); }
+
+	/* Pixels a second, one entry per notch. Slow enough at the bottom to hold a
+	 * long verse on screen, fast enough at the top for a sheet you already know.
+	 * Steps rather than a slider because this is operated with one finger,
+	 * looking somewhere else. */
+	var speeds = [8, 14, 22, 32, 46, 64, 88, 120];
+	var notch = 2;
+	var sizes = [1.125, 1.3125, 1.5, 1.75, 2, 2.375];
+	var size = 2;
+
+	var running = false;
+	var last = 0;
+	var carry = 0;
+	var frame = 0;
+	var lock = null;
+
+	var toggle = bar.querySelector('[data-play="toggle"]');
+	var readout = bar.querySelector(".playspeed");
+
+	function show() {
+		readout.textContent = String(notch + 1);
+		toggle.textContent = running ? "⏸" : "▶";
+		toggle.setAttribute("aria-label",
+			toggle.getAttribute(running ? "data-label-pause" : "data-label-start"));
+	}
+
+	/* Fractions of a pixel are kept in carry rather than thrown away, or the
+	 * slowest speeds would round to nothing every frame and never move. */
+	function step(now) {
+		if (!running) return;
+		if (last) {
+			carry += speeds[notch] * (now - last) / 1000;
+			var whole = Math.floor(carry);
+			if (whole > 0) {
+				carry -= whole;
+				var before = window.scrollY;
+				window.scrollBy(0, whole);
+				if (window.scrollY === before) return pause();  // the foot of the page
+			}
+		}
+		last = now;
+		frame = window.requestAnimationFrame(step);
+	}
+
+	/* The screen going dark halfway through a verse is the whole reason this
+	 * mode exists, so ask for it to stay on. Not every browser has this, and a
+	 * refusal is not worth mentioning: the mode still works. */
+	function keepAwake() {
+		if (!navigator.wakeLock || lock) return;
+		navigator.wakeLock.request("screen").then(function (got) {
+			lock = got;
+			got.addEventListener("release", function () { lock = null; });
+		}).catch(function () {});
+	}
+
+	function play() {
+		if (running) return;
+		running = true;
+		last = 0;
+		carry = 0;
+		frame = window.requestAnimationFrame(step);
+		keepAwake();
+		show();
+	}
+
+	function pause() {
+		running = false;
+		if (frame) window.cancelAnimationFrame(frame);
+		frame = 0;
+		show();
+	}
+
+	function enter() {
+		document.body.classList.add("playing");
+		bar.hidden = false;
+		play();
+		toggle.focus();
+	}
+
+	function leave() {
+		pause();
+		document.body.classList.remove("playing");
+		bar.hidden = true;
+		if (lock) { lock.release(); lock = null; }
+		var button = startButton();
+		if (button) button.focus();
+	}
+
+	function resize(by) {
+		size = Math.min(sizes.length - 1, Math.max(0, size + by));
+		document.body.style.setProperty("--play-size", sizes[size] + "rem");
+	}
+
+	document.addEventListener("click", function (e) {
+		if (e.target.closest("#playstart")) enter();
+	});
+
+	bar.addEventListener("click", function (e) {
+		var button = e.target.closest("[data-play]");
+		if (!button) return;
+		switch (button.getAttribute("data-play")) {
+		case "toggle":  running ? pause() : play(); break;
+		case "slower":  notch = Math.max(0, notch - 1); show(); break;
+		case "faster":  notch = Math.min(speeds.length - 1, notch + 1); show(); break;
+		case "smaller": resize(-1); break;
+		case "bigger":  resize(1); break;
+		case "exit":    leave(); break;
+		}
+	});
+
+	/* Reaching for the page to look ahead should not be a fight with the
+	 * scrolling. Touching it pauses; the bar starts it again. */
+	function interrupted() { if (running) pause(); }
+	window.addEventListener("wheel", interrupted, { passive: true });
+	window.addEventListener("touchstart", interrupted, { passive: true });
+
+	document.addEventListener("keydown", function (e) {
+		if (!document.body.classList.contains("playing")) return;
+		if (e.target.closest("input, textarea, select")) return;
+		switch (e.key) {
+		case " ":         running ? pause() : play(); break;
+		case "Escape":    leave(); break;
+		case "ArrowUp":   notch = Math.min(speeds.length - 1, notch + 1); show(); break;
+		case "ArrowDown": notch = Math.max(0, notch - 1); show(); break;
+		default: return;
+		}
+		e.preventDefault();
+	});
+
+	/* A wake lock is dropped when the tab is hidden and is not given back on its
+	 * own, so ask again on the way back. */
+	document.addEventListener("visibilitychange", function () {
+		if (!document.hidden && running) keepAwake();
+	});
+})();

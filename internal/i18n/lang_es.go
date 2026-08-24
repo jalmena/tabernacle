@@ -301,6 +301,8 @@ var spanish = map[string]string{
 	"sheet.simplify":        "Simplificar",
 	"sheet.simplify.hint":   "Cambiar los acordes que no tienen posición conocida por otros que se puedan tocar",
 	"sheet.print":           "Imprimir",
+	"sheet.play":            "Tocar",
+	"sheet.play.hint":       "Que la hoja baje sola, para no soltar la guitarra",
 	"sheet.used.label":      "Acordes utilizados",
 	"sheet.seeshape":        "Ver la posición de %s",
 	"sheet.shapes":          "Posiciones",
@@ -312,6 +314,17 @@ var spanish = map[string]string{
 	"sheet.noshape":   "Sin posición conocida.",
 	"sheet.songswith": "Canciones con %s",
 	"sheet.origkey":   "original en %s",
+
+	// Play mode: the sheet scrolls by itself while both hands are busy.
+	"play.label":   "Modo tocar",
+	"play.start":   "Empezar a bajar",
+	"play.pause":   "Pausa",
+	"play.slower":  "Más despacio",
+	"play.faster":  "Más deprisa",
+	"play.speed":   "Velocidad",
+	"play.bigger":  "Letra más grande",
+	"play.smaller": "Letra más pequeña",
+	"play.exit":    "Salir del modo tocar",
 
 	// One song.
 	"song.broken":         "Este archivo tiene un error de sintaxis:",

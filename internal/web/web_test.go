@@ -499,7 +499,10 @@ func TestSheetFragment(t *testing.T) {
 	ts := newTestServer(t, basicSongs())
 	body := ts.get(t, "/songs/traditional-amazing-grace/sheet?t=1").Body.String()
 
-	for _, want := range []string{`id="sheet"`, `id="controls"`} {
+	// The play button is named here as well as in the page, because swapping
+	// #controls destroys it and renders a new one. If it ever falls out of the
+	// fragment, transposing would make it vanish from a page that had it.
+	for _, want := range []string{`id="sheet"`, `id="controls"`, `id="playstart"`} {
 		if !strings.Contains(body, want) {
 			t.Errorf("the fragment is missing %s", want)
 		}

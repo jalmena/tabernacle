@@ -312,7 +312,7 @@ func TestEveryThemeDeclaresTheWholePalette(t *testing.T) {
 	// :root also holds the sizes, which are not part of a palette.
 	want := []string{}
 	for _, n := range found[":root"] {
-		if n != "--sheet-width" && n != "--radius" && n != "--song-size" {
+		if n != "--sheet-width" && n != "--radius" && n != "--song-size" && n != "--play-size" {
 			want = append(want, n)
 		}
 	}
