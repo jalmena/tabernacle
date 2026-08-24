@@ -41,6 +41,11 @@ A sheet transposed up a semitone, with the chord shapes below:
 
 ![A song sheet](docs/screenshots/song-sheet.png)
 
+The chord section: draw a shape and it is named, or name a chord and see every
+way to play it, easiest first.
+
+![The chord section](docs/screenshots/chords.png)
+
 ## Deployment
 
 ```sh
@@ -56,7 +61,7 @@ Images are published for `linux/amd64` and `linux/arm64`.
 
 | Platform | How |
 | --- | --- |
-| CasaOS / ZimaOS | App Store → Custom Install → Import → paste [`compose.yaml`](compose.yaml); volume `/DATA/AppData/tabernacle/data:/data` |
+| CasaOS / ZimaOS | App Store → **Add Source** → paste the [store](https://github.com/jalmena/tabernacle-appstore) URL, then install Tabernacle like any other app. Custom Install with [`compose.yaml`](compose.yaml) still works. |
 | Portainer | Stacks → Add stack → Web editor → paste [`compose.yaml`](compose.yaml) |
 | Unraid / Synology | container from `ghcr.io/jalmena/tabernacle:latest`, `/data` on a share |
 | From source | Go 1.25+ — `go build ./cmd/tabernacle` |
