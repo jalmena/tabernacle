@@ -310,6 +310,18 @@ var english = map[string]string{
 	"play.smaller": "Smaller words",
 	"play.exit":    "Leave play mode",
 
+	// Where the capo could go. Advice on a song sheet, never a change to it.
+	"capo.title":      "Easier with a capo",
+	"capo.hint":       "The same song, the same sound. Clamp the fret and hold these instead.",
+	"capo.fret":       "Capo %d",
+	"capo.none":       "No capo",
+	"capo.inkey":      "play in %s",
+	"capo.allopen":    "every chord open",
+	"capo.nobarre":    "no barres",
+	"capo.barre.one":  "one barre left",
+	"capo.barre.many": "%d barres left",
+	"capo.unknown":    "%d chords we hold no shape for",
+
 	// One song.
 	"song.broken":         "This file has a syntax error:",
 	"song.broken.at":      "This file has a syntax error on line",

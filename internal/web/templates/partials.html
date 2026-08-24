@@ -157,6 +157,26 @@
 		</nav>
 	{{end}}
 
+	{{if .Body.Sheet.Capos}}
+		{{/* Advice, and it has to read as advice: the sheet above it has not
+		     changed and neither has the sound. */}}
+		<aside class="capos noprint" aria-label="{{$.T `capo.title`}}">
+			<h2>{{$.T "capo.title"}}</h2>
+			<p class="quiet">{{$.T "capo.hint"}}</p>
+			<ul>
+				{{range .Body.Sheet.Capos}}
+					<li>
+						<b>{{.Where}}</b>, {{.InKey}}:
+						<span class="capochords">
+							{{range .Chords}}<a class="capochord" href="/chords?c={{.Query}}">{{.Text}}</a>{{end}}
+						</span>
+						<span class="quiet">{{.Cost}}</span>
+					</li>
+				{{end}}
+			</ul>
+		</aside>
+	{{end}}
+
 	{{template "sections" (sheet $ .Body.Sheet)}}
 
 	{{if .Body.Sheet.Chords}}

@@ -20,6 +20,7 @@ telemetry. Reading needs no account; changing anything does.
 | **Chord reference** | draw a shape and be told what it is, or see every way to play a chord |
 | **Simplify** | rewrites a sheet's unplayable chords into ones you can hold |
 | **Note names** | `C D E` or `Do Re Mi` |
+| **Capo advice** | where to clamp so a barred song becomes open chords, for the same sound |
 | **Play mode** | the sheet scrolls itself at the pace you set, big enough to read from a stand, screen kept awake |
 | **Print** | A4, light paper themes, no interface on the page |
 | **Authoring** | paste a song in, or edit the file directly |

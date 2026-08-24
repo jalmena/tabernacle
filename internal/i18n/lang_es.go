@@ -326,6 +326,18 @@ var spanish = map[string]string{
 	"play.smaller": "Letra más pequeña",
 	"play.exit":    "Salir del modo tocar",
 
+	// Where the capo could go. Advice on a song sheet, never a change to it.
+	"capo.title":      "Más fácil con cejilla",
+	"capo.hint":       "La misma canción y el mismo sonido. Pon la cejilla en el traste y toca estos.",
+	"capo.fret":       "Cejilla en el %d",
+	"capo.none":       "Sin cejilla",
+	"capo.inkey":      "toca en %s",
+	"capo.allopen":    "todos al aire",
+	"capo.nobarre":    "sin cejillas",
+	"capo.barre.one":  "queda una cejilla",
+	"capo.barre.many": "quedan %d cejillas",
+	"capo.unknown":    "%d acordes sin posición conocida",
+
 	// One song.
 	"song.broken":         "Este archivo tiene un error de sintaxis:",
 	"song.broken.at":      "Este archivo tiene un error de sintaxis en la línea",

@@ -413,6 +413,55 @@ Diagrams count frets from the nut, and the sheet says so when a capo is set.
 `voicing.Options.Capo` exists so that a capo-relative mode is later a flag rather
 than a rewrite.
 
+The chords written in a `.song` file are the shapes the left hand holds. `capo:
+2` says the player clamps the second fret, so the sheet sounds two semitones
+above what it reads, and transposing a sheet leaves the capo exactly where it
+is: it describes what the player does with a piece of metal, not what the sheet
+says.
+
+### Where the capo could go
+
+A capo moves the nut. What you hear is what you finger plus where the capo sits,
+so with the sound held still, moving the capo from A to B means fingering every
+chord `B − A` semitones lower. `voicing.CapoOptions` is that sentence applied to
+each fret from none to the seventh, and scored.
+
+Each fret is scored by the primary shape of every distinct chord it produces:
+
+| Shape | Cost |
+| --- | --- |
+| none in the collection | 100 |
+| needs a barre | 10 |
+| closed, no barre | 3 |
+| open position | 0 |
+
+Plus one point per fret, so a capo has to earn its place and only ever wins a
+near tie by being lower on the neck. A chord repeated nine times counts once: a
+song with nine G's and one F is an easy song with one hard chord in it.
+
+Seven is as far up as an option goes. Past that there is not much guitar left
+above the capo and the tone thins towards a mandolin.
+
+The numbers land where a teacher lands. A song in F — F, B♭, C7, Dm — comes out
+capo 1 playing in E, capo 3 playing in D, capo 5 playing in C, in that order,
+with one minor chord barred in all three. Removing every barre is not the
+promise; being easier than the sheet you were handed is.
+
+### Staying quiet
+
+The rule for showing nothing matters more than the advice. Most songs are
+already open chords, and a panel that appears on all of them teaches the reader
+to stop looking at that corner of the page. `render.capoAdvice` offers a fret
+only when it removes work — a barre, or a chord we hold no shape for — and never
+merely because it scores a point lower. G, C, D, Em gets no panel.
+
+### Advice, not a change
+
+The panel says where the capo could go and what to hold there. It does not
+rewrite the sheet, and the sound never moves. Applying it would mean a sheet
+that displays one key while sounding another, and a key label honest about both
+— worth doing, and a separate piece of work from telling the reader the fret.
+
 ## Deliberately not done
 
 - Chord shapes in the `.song` format. A song file describes music, not

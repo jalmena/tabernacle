@@ -254,8 +254,8 @@ a:hover { text-decoration-thickness: 2px; }
 .usedchords ul { display: flex; flex-wrap: wrap; gap: 0.3rem; margin: 0; padding: 0; list-style: none; }
 
 /* A chord looks like a chord everywhere it appears: in the panel above the
- * song and over the words themselves. */
-.chordref, .chord {
+ * song, in the capo advice and over the words themselves. */
+.chordref, .chord, .capochord {
 	font-weight: 650;
 	color: var(--chord);
 	font-variant-numeric: tabular-nums;
@@ -360,6 +360,45 @@ a.chord:hover { text-decoration: underline; text-underline-offset: 2px; }
 }
 
 .sheet-foot { margin-top: 2rem; padding-top: 0.75rem; border-top: 1px solid var(--rule); }
+
+/* ----------------------------------------------------------- capo advice --- */
+
+/* It sits between the chords used and the words, where a player looks before
+ * starting, and it is styled as a note rather than as a control: nothing here
+ * changes the sheet, and it must not look as though it might. */
+.capos {
+	margin: 0 0 1.25rem;
+	padding: 0.6rem 0.75rem;
+	border: 1px solid var(--rule);
+	border-radius: var(--radius);
+	background: var(--paper-raised);
+}
+.capos h2 {
+	margin: 0 0 0.15rem;
+	font-size: 0.75rem;
+	font-weight: 600;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--ink-faint);
+}
+.capos p { margin: 0 0 0.5rem; }
+.capos ul { margin: 0; padding: 0; list-style: none; }
+.capos li { margin: 0 0 0.3rem; }
+.capos li:last-child { margin-bottom: 0; }
+.capochords {
+	display: inline-flex;
+	flex-wrap: wrap;
+	gap: 0.45rem;
+	vertical-align: bottom;
+	/* A flex box eats the space after it, and the note that follows needs
+	 * one or it reads as part of the last chord. */
+	margin-inline-end: 0.5rem;
+}
+
+/* No underline: these read as the chords they are, and the rule only appears
+ * when the pointer says they also go somewhere. */
+.capochord { text-decoration: none; }
+.capochord:hover { text-decoration: underline; }
 
 /* ------------------------------------------------------------- play mode --- */
 

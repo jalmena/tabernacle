@@ -104,9 +104,31 @@ type SheetView struct {
 	// key without knowing.
 	Shifted bool
 
+	// Capos is advice, not a change: two or three places the capo could go so
+	// the left hand holds easier shapes for the same sound. Empty when the sheet
+	// is already as easy as it gets, which is most songs.
+	Capos []CapoView
+
 	Chords   []ChordRef
 	Nav      []NavRef
 	Sections []SectionView
+}
+
+// CapoView is one place to put the capo, ready to display.
+type CapoView struct {
+	Fret   int
+	Where  string      // "Capo 3", or "No capo" at the nut
+	InKey  string      // "play in D", in the reader's notation
+	Chords []CapoChord // what the left hand holds there
+	Cost   string      // "every chord open", "one barre"
+}
+
+// CapoChord is one chord in that advice. Text is for the eye and Query is the
+// English spelling, because the chord page is addressed in English however the
+// page is spelled.
+type CapoChord struct {
+	Text  string
+	Query string
 }
 
 // ChordRef is one entry in the chords-used panel.
@@ -284,6 +306,16 @@ func Sheet(s song.Song, o Options) SheetView {
 			}
 		}
 		v.Chords = append(v.Chords, ref)
+	}
+
+	if o.Diagrams {
+		// The key decides the spelling of every suggestion, and a song that
+		// declares none falls back to its first chord — the same guess a
+		// guitarist makes when handed an unlabelled sheet, and the same one
+		// song.Transpose makes.
+		if key, ok := keyOf(shown); ok {
+			v.Capos = capoAdvice(say, key, shown.Chords(), s.Capo, o.Notation, vo)
+		}
 	}
 
 	anchors := make(map[string]int)
