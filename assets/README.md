@@ -8,7 +8,11 @@
 | `screenshot-1..3.png` | the chord page, a song sheet, the library |
 
 The mark is the wordmark's idea in a picture: `Taber` pale, `nacle` orange, so the
-structure of the grid is the pale half and the fingers are the orange one. It
+structure of the grid is the pale half and the fingers are the orange one. The
+orange is the chord token — the one `nacle` is set in — and not the stronger
+accent the buttons and the fretboard dots use. Both belong to the application;
+only one belongs to the wordmark, and a mark that sits next to it has to be that
+one, or the identity ends up carrying two oranges. It
 carries no fret lines, because at forty-eight pixels in a dock they turn to mush
 and take the dots with them; and the dots sit on the two inner strings so they
 stay inside the rectangle rather than hanging off its edge.
