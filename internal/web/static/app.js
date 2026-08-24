@@ -1,3 +1,12 @@
+/* Controls that only work with a script are hidden until this line runs.
+ *
+ * There are two of them — starting play mode and sounding a chord — and both
+ * are marked .needsjs. Revealing them is one statement rather than each block
+ * doing it, so a page with a script always shows the same set. A control whose
+ * particular capability is missing takes itself away again: no sound card, no
+ * sound button. */
+document.body.classList.add("scripted");
+
 // Tabernacle's only script.
 //
 // Its whole job is to make transposing feel instant without moving the reader's
@@ -585,8 +594,6 @@
 	if (!bar || !document.getElementById("playstart")) return;
 	if (typeof window.requestAnimationFrame !== "function") return;
 
-	document.body.classList.add("playready");
-
 	/* Transposing replaces the whole of #controls with a freshly rendered one,
 	 * and the button lives inside it. A listener held on the element found at
 	 * load would be left attached to a node no longer on the page, so the
@@ -726,5 +733,121 @@
 	 * own, so ask again on the way back. */
 	document.addEventListener("visibilitychange", function () {
 		if (!document.hidden && running) keepAwake();
+	});
+})();
+
+/* Hearing the shape on the neck.
+ *
+ * The notes arrive from the server on the button, as MIDI numbers, because
+ * which pitch a fret on a string makes is music and this file decides no music.
+ * All that happens here is turning numbers into air.
+ *
+ * The sound is Karplus-Strong: fill a short ring buffer the length of one
+ * wavelength with noise, then read it round and round, averaging each sample
+ * with the next. The averaging is a low-pass filter, so the high partials die
+ * before the low ones and what comes out is a plucked string rather than a beep
+ * — which matters, because the point is to recognise the chord you drew. */
+(function () {
+	"use strict";
+
+	var Audio = window.AudioContext || window.webkitAudioContext;
+	if (!Audio) {
+		/* No sound card, no sound button. It is only ever visible because the
+		 * script said so, and the script now knows better. */
+		var dead = document.querySelector("[data-sound]");
+		if (dead) dead.remove();
+		return;
+	}
+
+	var ctx = null;
+	var plucks = {};
+
+	function pluck(midi) {
+		if (plucks[midi]) return plucks[midi];
+
+		var freq = 440 * Math.pow(2, (midi - 69) / 12);
+		var n = Math.max(2, Math.round(ctx.sampleRate / freq));
+		var seconds = 2.4;
+		var buf = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * seconds), ctx.sampleRate);
+		var out = buf.getChannelData(0);
+
+		/* The ring is read once per period, not once per sample, so a fixed
+		 * loop gain would silence a low string in a breath and let a high one
+		 * ring for a minute. This gain evens that out, losing the same amount
+		 * per second whatever the pitch.
+		 *
+		 * It sets the floor and not the whole decay: averaging each sample with
+		 * its neighbour throws away energy of its own, and that is what mostly
+		 * decides how long a note lasts. Raising this number alone barely moves
+		 * it. A chord rings for about a second, which is a strum. */
+		var fall = 3.5;
+		var gain = Math.pow(10, -3 / (fall * freq));
+
+		/* The burst is smoothed before it is used. Raw white noise starts at
+		 * full scale on the first sample and arrives as a click; averaging it
+		 * once takes the edge off and leaves a pluck. */
+		var line = new Float32Array(n);
+		for (var i = 0; i < n; i++) line[i] = Math.random() * 2 - 1;
+		var smooth = new Float32Array(n);
+		for (var i = 0; i < n; i++) smooth[i] = (line[i] + line[(i + 1) % n]) * 0.5;
+		line = smooth;
+
+		var p = 0;
+		for (var j = 0; j < out.length; j++) {
+			out[j] = line[p];
+			var next = (p + 1) % n;
+			line[p] = (line[p] + line[next]) * 0.5 * gain;
+			p = next;
+		}
+
+		/* Whatever is left when the buffer runs out would end on a step, and a
+		 * step is a click. The last moments are faded instead. */
+		var fadeAt = out.length - Math.floor(ctx.sampleRate * 0.08);
+		for (var k = Math.max(0, fadeAt); k < out.length; k++) {
+			out[k] *= (out.length - k) / (out.length - fadeAt);
+		}
+
+		plucks[midi] = buf;
+		return buf;
+	}
+
+	function strum(midis) {
+		if (!ctx) ctx = new Audio();
+		/* A browser may hand back a context that is asleep until a gesture
+		 * resumes it, and this is one. */
+		if (ctx.state === "suspended") ctx.resume();
+
+		var now = ctx.currentTime + 0.02;
+		for (var i = 0; i < midis.length; i++) {
+			var src = ctx.createBufferSource();
+			src.buffer = pluck(midis[i]);
+			var gain = ctx.createGain();
+			/* Quiet enough that six strings together do not clip, and quieter
+			 * still as the strings get higher, which is how a guitar sounds. */
+			gain.gain.value = 0.22 - i * 0.015;
+			src.connect(gain).connect(ctx.destination);
+			/* 35ms apart, low to high: a strum rather than a piano chord. */
+			src.start(now + i * 0.035);
+		}
+	}
+
+	function notes(button) {
+		var raw = (button.getAttribute("data-sound") || "").split(",");
+		var out = [];
+		for (var i = 0; i < raw.length; i++) {
+			var n = parseInt(raw[i], 10);
+			if (n >= 0 && n <= 127) out.push(n);
+		}
+		return out;
+	}
+
+	/* Delegated, and the state is read at the moment of the press: editing the
+	 * neck replaces this button with a freshly rendered one carrying the notes
+	 * that are now drawn. */
+	document.addEventListener("click", function (e) {
+		var button = e.target.closest("[data-sound]");
+		if (!button) return;
+		var midis = notes(button);
+		if (midis.length) strum(midis);
 	});
 })();

@@ -360,6 +360,13 @@
 				<button class="btn btn-primary fallback" type="submit">{{$.T "lab.identify"}}</button>
 				<a class="btn btn-quiet boardclear" href="/chords?c={{.Symbol}}&amp;grip=0-0-0-0-0-0"
 					data-grip="0-0-0-0-0-0" data-start="1">{{$.T "lab.clear"}}</a>
+				{{/* Hearing needs a script and a sound card, so unlike the two
+				     controls beside it this one is hidden until both answer.
+				     The notes are worked out in Go and travel with the shape:
+				     which pitch a fret on a string makes is music, and none of
+				     that is decided in the browser. */}}
+				<button class="btn btn-quiet needsjs" type="button" data-sound="{{.Board.Pitches}}"
+					title="{{$.T `lab.sound.hint`}}">{{$.T "lab.sound"}}</button>
 			</div>
 		</form>
 

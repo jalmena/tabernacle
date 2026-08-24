@@ -192,3 +192,52 @@ func firstShape(t *testing.T, sym string) voicing.Voicing {
 	}
 	return res.Voicings[0]
 }
+
+// The notes the browser is handed for the shape on the neck.
+//
+// This is the whole reason the pitches are computed here rather than in
+// JavaScript: which note a fret on a string makes is music, so it is worked out
+// once, in Go, where it can be checked against a guitar.
+func TestTheBoardShipsTheNotesItSounds(t *testing.T) {
+	for _, tc := range []struct {
+		name, grip, want string
+	}{
+		// Standard tuning is E2 A2 D3 G3 B3 E4 = 40 45 50 55 59 64.
+		{"open strings", "0-0-0-0-0-0", "40,45,50,55,59,64"},
+		{"E major", "0-2-2-1-0-0", "40,47,52,56,59,64"},
+		// The muted sixth string contributes nothing at all.
+		{"C major", "x-3-2-0-1-0", "48,52,55,60,64"},
+		// Two muted strings, and the rest still in order.
+		{"D major", "x-x-0-2-3-2", "50,57,62,66"},
+		// A barre is not a special case: it is six fretted strings.
+		{"F major", "1-3-3-2-1-1", "41,48,53,57,60,65"},
+		{"nothing sounds", "x-x-x-x-x-x", ""},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			v := Lab(LabOptions{Grip: tc.grip, Lang: i18n.Spanish, Notation: chord.English})
+			if got := v.Board.Pitches; got != tc.want {
+				t.Errorf("%s sounds %q, want %q", tc.grip, got, tc.want)
+			}
+		})
+	}
+}
+
+// An octave up is twelve more of everything, which is the one arithmetic fact
+// the browser relies on when it turns these numbers into a frequency.
+func TestTwelveFretsUpIsTwelveHigher(t *testing.T) {
+	low := Lab(LabOptions{Grip: "1-3-3-2-1-1", Lang: i18n.Spanish, Notation: chord.English})
+	high := Lab(LabOptions{Grip: "13-15-15-14-13-13", Start: 13, Lang: i18n.Spanish, Notation: chord.English})
+
+	lows := strings.Split(low.Board.Pitches, ",")
+	highs := strings.Split(high.Board.Pitches, ",")
+	if len(lows) != len(highs) {
+		t.Fatalf("%d notes against %d", len(lows), len(highs))
+	}
+	for i := range lows {
+		a, _ := strconv.Atoi(lows[i])
+		b, _ := strconv.Atoi(highs[i])
+		if b-a != 12 {
+			t.Errorf("string %d: %d against %d, which is %d apart and not an octave", i, a, b, b-a)
+		}
+	}
+}

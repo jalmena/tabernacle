@@ -336,6 +336,8 @@ var chinese = map[string]string{
 	"lab.string.open":        "%s，空弦",
 	"lab.identify":           "辨认",
 	"lab.clear":              "清空",
+	"lab.sound":              "听一下",
+	"lab.sound.hint":         "弹出指板上画的那个指法",
 	"lab.drawn":              "你画出来的",
 	"lab.sounds":             "听到的是",
 	"lab.noname":             "这不是我们叫得出名字的和弦。",

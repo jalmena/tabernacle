@@ -336,6 +336,8 @@ var french = map[string]string{
 	"lab.string.open":        "%s corde, à vide",
 	"lab.identify":           "Identifier",
 	"lab.clear":              "Vider",
+	"lab.sound":              "Écouter",
+	"lab.sound.hint":         "Jouer la position dessinée sur le manche",
 	"lab.drawn":              "Ce que tu as dessiné",
 	"lab.sounds":             "Ça sonne",
 	"lab.noname":             "et ce n'est pas un accord que nous sachions nommer.",

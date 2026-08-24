@@ -386,6 +386,8 @@ var english = map[string]string{
 	"lab.string.open": "%s string, open",
 	"lab.identify":    "Identify",
 	"lab.clear":       "Clear",
+	"lab.sound":       "Hear it",
+	"lab.sound.hint":  "Play the shape drawn on the neck",
 	"lab.drawn":       "What you have drawn",
 	"lab.sounds":      "It sounds",
 	"lab.noname":      "which is not a chord we can name.",

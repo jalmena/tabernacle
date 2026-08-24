@@ -402,11 +402,12 @@ a.chord:hover { text-decoration: underline; text-underline-offset: 2px; }
 
 /* ------------------------------------------------------------- play mode --- */
 
-/* Scrolling by itself is the one control on the sheet that cannot work without
- * scripting, so it is hidden until the script marks the body. Everything else
- * on that row is a link that already works. */
+/* Scrolling a sheet by itself and making a sound are the two controls in the
+ * application that cannot work without scripting. They are hidden until the
+ * script has run and said so; everything else is a link that already works.
+ * A control whose capability is missing removes itself — see app.js. */
 .needsjs { display: none; }
-body.playready .needsjs { display: inline-flex; }
+body.scripted .needsjs { display: inline-flex; }
 
 /* Play mode turns the page into a lectern: the words, and nothing that is not
  * the words. The size comes from --song-size, the same token the sheet already

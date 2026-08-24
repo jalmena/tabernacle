@@ -336,6 +336,8 @@ var galician = map[string]string{
 	"lab.string.open":        "%s corda, ao aire",
 	"lab.identify":           "Identificar",
 	"lab.clear":              "Baleirar",
+	"lab.sound":              "Escoitar",
+	"lab.sound.hint":         "Tocar a posición debuxada no mástil",
 	"lab.drawn":              "O que debuxaches",
 	"lab.sounds":             "Soa",
 	"lab.noname":             "e non é un acorde que saibamos nomear.",

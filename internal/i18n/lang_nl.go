@@ -336,6 +336,8 @@ var dutch = map[string]string{
 	"lab.string.open":        "%s snaar, los",
 	"lab.identify":           "Herkennen",
 	"lab.clear":              "Leegmaken",
+	"lab.sound":              "Beluisteren",
+	"lab.sound.hint":         "Speel de getekende greep",
 	"lab.drawn":              "Wat je hebt getekend",
 	"lab.sounds":             "Het klinkt",
 	"lab.noname":             "en dat is geen akkoord dat wij kunnen noemen.",

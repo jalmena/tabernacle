@@ -336,6 +336,8 @@ var russian = map[string]string{
 	"lab.string.open":        "%s струна, открытая",
 	"lab.identify":           "Определить",
 	"lab.clear":              "Очистить",
+	"lab.sound":              "Послушать",
+	"lab.sound.hint":         "Сыграть аппликатуру, нарисованную на грифе",
 	"lab.drawn":              "Что ты нарисовал",
 	"lab.sounds":             "Звучит",
 	"lab.noname":             "и это не аккорд, который мы умеем назвать.",

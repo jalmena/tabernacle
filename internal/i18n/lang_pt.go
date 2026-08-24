@@ -336,6 +336,8 @@ var portuguese = map[string]string{
 	"lab.string.open":        "%s corda, solta",
 	"lab.identify":           "Identificar",
 	"lab.clear":              "Limpar",
+	"lab.sound":              "Ouvir",
+	"lab.sound.hint":         "Tocar a posição desenhada no braço",
 	"lab.drawn":              "O que desenhaste",
 	"lab.sounds":             "Soa",
 	"lab.noname":             "e não é um acorde que saibamos nomear.",

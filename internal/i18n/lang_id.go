@@ -336,6 +336,8 @@ var indonesian = map[string]string{
 	"lab.string.open":        "%s, terbuka",
 	"lab.identify":           "Kenali",
 	"lab.clear":              "Kosongkan",
+	"lab.sound":              "Dengarkan",
+	"lab.sound.hint":         "Mainkan posisi yang digambar di leher gitar",
 	"lab.drawn":              "Yang kamu gambar",
 	"lab.sounds":             "Bunyinya",
 	"lab.noname":             "dan itu bukan kunci yang bisa kami beri nama.",

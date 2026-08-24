@@ -336,6 +336,8 @@ var catalan = map[string]string{
 	"lab.string.open":        "%s corda, a l'aire",
 	"lab.identify":           "Identifica",
 	"lab.clear":              "Buida",
+	"lab.sound":              "Escoltar",
+	"lab.sound.hint":         "Tocar la posició dibuixada al mànec",
 	"lab.drawn":              "El que has dibuixat",
 	"lab.sounds":             "Sona",
 	"lab.noname":             "i no és cap acord que sapiguem anomenar.",

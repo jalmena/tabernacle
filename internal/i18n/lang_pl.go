@@ -336,6 +336,8 @@ var polish = map[string]string{
 	"lab.string.open":        "%s struna, pusta",
 	"lab.identify":           "Rozpoznaj",
 	"lab.clear":              "Wyczyść",
+	"lab.sound":              "Posłuchaj",
+	"lab.sound.hint":         "Zagraj chwyt narysowany na gryfie",
 	"lab.drawn":              "To, co narysowałeś",
 	"lab.sounds":             "Brzmi",
 	"lab.noname":             "i to nie jest akord, który umiemy nazwać.",

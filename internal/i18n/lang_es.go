@@ -402,6 +402,8 @@ var spanish = map[string]string{
 	"lab.string.open": "%s cuerda, al aire",
 	"lab.identify":    "Identificar",
 	"lab.clear":       "Vaciar",
+	"lab.sound":       "Escuchar",
+	"lab.sound.hint":  "Tocar la posición dibujada en el mástil",
 	"lab.drawn":       "Lo que has dibujado",
 	"lab.sounds":      "Suena",
 	"lab.noname":      "no es un acorde que sepamos nombrar.",

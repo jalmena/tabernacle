@@ -393,6 +393,40 @@ for `#chordresult`. Both silently did nothing while every other test passed.
 The result diagrams stay SVG. The editor is a control and the variants are
 pictures; they answer different questions.
 
+### Hearing it
+
+The neck has a button that plays what is drawn on it.
+
+The notes travel from the server on the button as MIDI numbers, because which
+pitch a fret on a string makes is music, and no music is decided in `app.js`.
+`voicing.Voicing.Pitches()` already produced them for the dataset validator;
+the board carries them in `data-sound` and the browser only turns numbers into
+air. Editing the neck re-renders the button, so what it plays is always what is
+drawn.
+
+The sound is Karplus-Strong: a ring buffer one wavelength long is filled with
+noise, then read round and round with each sample averaged against the next.
+The averaging is a low-pass filter, so the high partials die before the low
+ones and a plucked string comes out rather than a beep — which matters, because
+the point is to recognise the chord you drew.
+
+Three details are not obvious:
+
+- The ring is read once per **period**, not once per sample, so a fixed loop
+  gain would silence a low string in a breath and let a high one ring for a
+  minute. The gain is derived from the frequency so the loss per second is the
+  same at any pitch.
+- The filter throws away energy of its own, and that is what mostly decides how
+  long a note lasts. A chord rings for about a second, which is a strum.
+- The last 80 ms are faded. Whatever is left when the buffer runs out would end
+  on a step, and a step is a click.
+
+Strings start 35 ms apart, low to high, so it is a strum and not a piano chord.
+
+Sound needs a script and a sound card. The button is marked `.needsjs` and is
+hidden until `app.js` has run; if the browser has no `AudioContext`, the block
+removes the button rather than leaving one that does nothing.
+
 ## Tunings
 
 Standard tuning is the dataset's tuning. A song in another tuning gets the

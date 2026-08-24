@@ -336,6 +336,8 @@ var basque = map[string]string{
 	"lab.string.open":        "%s soka, airean",
 	"lab.identify":           "Identifikatu",
 	"lab.clear":              "Hustu",
+	"lab.sound":              "Entzun",
+	"lab.sound.hint":         "Jo mastilean marraztutako posizioa",
 	"lab.drawn":              "Marraztu duzuna",
 	"lab.sounds":             "Entzuten da:",
 	"lab.noname":             "eta ez da izendatzen dakigun akorde bat.",

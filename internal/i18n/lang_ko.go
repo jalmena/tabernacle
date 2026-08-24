@@ -336,6 +336,8 @@ var korean = map[string]string{
 	"lab.string.open":        "%s, 개방",
 	"lab.identify":           "알아내기",
 	"lab.clear":              "비우기",
+	"lab.sound":              "들어보기",
+	"lab.sound.hint":         "지판에 그린 운지를 소리 내기",
 	"lab.drawn":              "그린 것",
 	"lab.sounds":             "들리는 음",
 	"lab.noname":             "이건 이름 붙일 수 있는 코드가 아닙니다.",

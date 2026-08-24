@@ -336,6 +336,8 @@ var hindi = map[string]string{
 	"lab.string.open":        "%s, खुला",
 	"lab.identify":           "पहचानें",
 	"lab.clear":              "ख़ाली करें",
+	"lab.sound":              "सुनें",
+	"lab.sound.hint":         "फ़्रेटबोर्ड पर बनाई पकड़ बजाएँ",
 	"lab.drawn":              "आपने जो बनाया",
 	"lab.sounds":             "सुनाई देता है",
 	"lab.noname":             "और यह ऐसा कॉर्ड नहीं है जिसका नाम हम बता सकें।",

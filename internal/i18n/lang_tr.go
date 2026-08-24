@@ -336,6 +336,8 @@ var turkish = map[string]string{
 	"lab.string.open":        "%s tel, boş",
 	"lab.identify":           "Tanımla",
 	"lab.clear":              "Temizle",
+	"lab.sound":              "Dinle",
+	"lab.sound.hint":         "Sapta çizilen basışı çal",
 	"lab.drawn":              "Çizdiğin şey",
 	"lab.sounds":             "Şunlar duyuluyor:",
 	"lab.noname":             "ve bu adlandırabildiğimiz bir akor değil.",

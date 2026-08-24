@@ -336,6 +336,8 @@ var german = map[string]string{
 	"lab.string.open":        "%s Saite, leer",
 	"lab.identify":           "Bestimmen",
 	"lab.clear":              "Leeren",
+	"lab.sound":              "Anhören",
+	"lab.sound.hint":         "Den gezeichneten Griff spielen",
 	"lab.drawn":              "Was du gezeichnet hast",
 	"lab.sounds":             "Es klingt",
 	"lab.noname":             "und das ist kein Akkord, den wir benennen können.",

@@ -336,6 +336,8 @@ var arabic = map[string]string{
 	"lab.string.open":        "%s، مفتوح",
 	"lab.identify":           "تعرَّف عليه",
 	"lab.clear":              "أفرغ",
+	"lab.sound":              "استمع",
+	"lab.sound.hint":         "اعزف الوضعية المرسومة على الزند",
 	"lab.drawn":              "ما رسمته",
 	"lab.sounds":             "المسموع",
 	"lab.noname":             "وهذا ليس أكوردًا نعرف له اسمًا.",

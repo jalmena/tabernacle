@@ -336,6 +336,8 @@ var japanese = map[string]string{
 	"lab.string.open":        "%s、開放",
 	"lab.identify":           "判定する",
 	"lab.clear":              "空にする",
+	"lab.sound":              "聴いてみる",
+	"lab.sound.hint":         "指板に描いた押さえ方を鳴らす",
 	"lab.drawn":              "描いたもの",
 	"lab.sounds":             "鳴っているのは",
 	"lab.noname":             "これは名前の付けられるコードではありません。",

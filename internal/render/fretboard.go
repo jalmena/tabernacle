@@ -4,6 +4,7 @@ import (
 	"net/url"
 	"slices"
 	"strconv"
+	"strings"
 
 	"github.com/jalmena/tabernacle/internal/chord"
 	"github.com/jalmena/tabernacle/internal/i18n"
@@ -65,6 +66,12 @@ type FretboardView struct {
 	Grip    string
 	Down    string // where the window slides, empty at the end of the neck
 	Up      string
+
+	// Pitches are the notes this shape sounds, as MIDI numbers, lowest string
+	// first and comma separated. The browser needs them to make a sound and has
+	// no business working them out: which note a fret on a string produces is
+	// music, and music is decided in Go where it is tested.
+	Pitches string
 }
 
 // ReadingView is one name for the notes drawn on the board.
@@ -256,7 +263,7 @@ func Lab(o LabOptions) LabView {
 
 // boardFor lays out the editable neck with the drawn shape on it.
 func boardFor(say *i18n.Printer, v voicing.Voicing, start int, o LabOptions) FretboardView {
-	b := FretboardView{Start: start, Grip: v.Grip()}
+	b := FretboardView{Start: start, Grip: v.Grip(), Pitches: midiList(v.Pitches())}
 	if start > 1 {
 		b.Down = labURLAt(o, v.Grip(), start-1)
 	}
@@ -554,4 +561,13 @@ func labURL(symbol, grip string, start int, all bool) string {
 
 func labURLAt(o LabOptions, grip string, start int) string {
 	return labURL(o.Symbol, grip, start, o.All)
+}
+
+// midiList writes note numbers the way an attribute carries them.
+func midiList(midi []int) string {
+	out := make([]string, len(midi))
+	for i, m := range midi {
+		out[i] = strconv.Itoa(m)
+	}
+	return strings.Join(out, ",")
 }
