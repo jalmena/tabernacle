@@ -361,6 +361,30 @@ a.chord:hover { text-decoration: underline; text-underline-offset: 2px; }
 
 .sheet-foot { margin-top: 2rem; padding-top: 0.75rem; border-top: 1px solid var(--rule); }
 
+/* --------------------------------------------------------- the sound of it --- */
+
+/* A row, not a card: it sets how the neck below sounds and is not part of it.
+ * .needsjs on the row means the whole thing is absent without a script, which
+ * is right — there is nothing to choose between if nothing can be played. */
+.tonepick {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.35rem;
+	margin: 0 0 0.75rem;
+}
+/* Beats the generic .needsjs rule further down, which would leave this row
+ * as an inline-flex box rather than the row it is. */
+body.scripted p.tonepick { display: flex; }
+.tonelabel {
+	margin-inline-end: 0.15rem;
+	font-size: 0.75rem;
+	font-weight: 600;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--ink-faint);
+}
+
 /* ----------------------------------------------------------- capo advice --- */
 
 /* It sits between the chords used and the words, where a player looks before

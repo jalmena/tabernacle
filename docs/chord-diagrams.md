@@ -416,12 +416,47 @@ Three details are not obvious:
   gain would silence a low string in a breath and let a high one ring for a
   minute. The gain is derived from the frequency so the loss per second is the
   same at any pitch.
-- The filter throws away energy of its own, and that is what mostly decides how
-  long a note lasts. A chord rings for about a second, which is a strum.
+- The loop filter throws away energy of its own, and that is what mostly decides
+  how long a note lasts.
 - The last 80 ms are faded. Whatever is left when the buffer runs out would end
   on a step, and a step is a click.
 
 Strings start 35 ms apart, low to high, so it is a strum and not a piano chord.
+
+### Three guitars
+
+Four numbers each, chosen because these are what genuinely separate the
+instruments: how bright the pluck is, how fast the highs die after it, how long
+the note lasts, and what it is played through.
+
+| | pluck | body | ring | played through |
+| --- | --- | --- | --- | --- |
+| Nylon | 1100 Hz | 1800 Hz | 1.5 s | — |
+| Steel | 4000 Hz | 5000 Hz | 2.3 s | — |
+| Electric | 2600 Hz | 3200 Hz | 3.2 s | a distorted amplifier |
+
+The **pluck** is a one-pole filter over the initial burst, and it carries most
+of the difference between a nylon string and a steel one. The loop filter alone
+does not: over the handful of turns that matter it treats the two almost the
+same, and the measured brightness of the three came out within seven per cent
+of each other before the burst was shaped. With it, nylon reads about half as
+bright as steel, which is audible as a different instrument.
+
+The **body** is a lowpass on the way out, standing in for everything that is not
+the string.
+
+The **electric** earns its sustain by barely damping itself, and then goes
+through a small amplifier: the deep bass is rolled off first or six strings turn
+to mud, the signal is driven hard into a `tanh` soft clip — distortion is not
+the strings being loud, it is the amplifier refusing to go any louder and
+folding the tops over — and the fizz is taken off the top the way a speaker
+cabinet does.
+
+Pressing a guitar plays the chord on it, which is the only way to compare two of
+them without hunting for the other button. The row sits **outside** `#chordlab`
+on purpose: editing the neck replaces everything inside that div, and a choice
+that reset itself every time a string moved would be worse than not offering
+one. Out there it needs no storing and no restoring.
 
 Sound needs a script and a sound card. The button is marked `.needsjs` and is
 hidden until `app.js` has run; if the browser has no `AudioContext`, the block
