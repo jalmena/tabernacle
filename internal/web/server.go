@@ -463,6 +463,8 @@ func (s *Server) handleStatic(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/javascript; charset=utf-8")
 	case strings.HasSuffix(name, ".svg"):
 		w.Header().Set("Content-Type", "image/svg+xml")
+	case strings.HasSuffix(name, ".png"):
+		w.Header().Set("Content-Type", "image/png")
 	default:
 		w.Header().Set("Content-Type", "application/octet-stream")
 	}

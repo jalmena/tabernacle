@@ -1,0 +1,46 @@
+<!-- Source of assets/thumbnail.png. Rendered at 1200x630 with the same
+     engine that renders the application, so the store card and the page
+     cannot end up in different typefaces:
+       firefox --headless --screenshot thumbnail.png --window-size=1200,630 \
+               file://$PWD/assets/thumbnail.html
+-->
+<meta charset="utf-8">
+<style>
+/* The same declarations the header uses, copied from app.css: the store card
+   and the page have to be the same typeface, the same weight and the same
+   tightening, or the thumbnail is somebody else's product.
+   The glyph appears without the icon's rounded square — a dark box on a dark
+   ground reads as a smudge, and the store shows the real icon beside this
+   anyway. */
+html, body { margin: 0; padding: 0 }
+body {
+  width: 1200px; height: 630px; background: #171614;
+  display: flex; align-items: center; gap: 76px; padding: 0 96px;
+  box-sizing: border-box;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: #e8e4dc;
+}
+svg { width: 250px; height: 250px; flex: 0 0 auto }
+.brand { font-size: 96px; font-weight: 650; letter-spacing: -0.01em; line-height: 1 }
+.brand span { color: #fdba74 }
+.tag { margin-top: 20px; font-size: 34px; color: #a8a29a; white-space: nowrap }
+.meta { margin-top: 18px; font-size: 25px; color: #78736b; white-space: nowrap }
+</style>
+<svg viewBox="112 122 290 290" xmlns="http://www.w3.org/2000/svg">
+  <g fill="#e8e4dc">
+    <rect x="122" y="152" width="19" height="240" rx="4"/>
+    <rect x="206" y="152" width="19" height="240" rx="4"/>
+    <rect x="290" y="152" width="19" height="240" rx="4"/>
+    <rect x="374" y="152" width="19" height="240" rx="4"/>
+    <rect x="122" y="132" width="271" height="38" rx="8"/>
+  </g>
+  <g fill="#fb923c">
+    <circle cx="215.5" cy="245" r="38"/>
+    <circle cx="299.5" cy="337" r="38"/>
+  </g>
+</svg>
+<div>
+  <div class="brand">Taber<span>nacle</span></div>
+  <div class="tag">Your sacred repository of guitar tabs.</div>
+  <div class="meta">Self-hosted · plain text files · works offline</div>
+</div>

@@ -685,6 +685,24 @@ func TestStaticAssets(t *testing.T) {
 	if ts.get(t, "/static/x/../../etc/passwd").Code == http.StatusOK {
 		t.Error("the asset handler served something outside the embedded files")
 	}
+
+	// Every kind of asset the pages link to gets its own type. A browser will
+	// not draw an icon it has been handed as a stream of bytes.
+	for name, want := range map[string]string{
+		"app.css":      "text/css",
+		"app.js":       "text/javascript",
+		"icon.svg":     "image/svg+xml",
+		"icon-512.png": "image/png",
+	} {
+		w := ts.get(t, "/static/"+ts.srv.assetVersion+"/"+name)
+		if w.Code != http.StatusOK {
+			t.Errorf("GET %s = %d", name, w.Code)
+			continue
+		}
+		if ct := w.Header().Get("Content-Type"); !strings.HasPrefix(ct, want) {
+			t.Errorf("%s is served as %q, want %s", name, ct, want)
+		}
+	}
 }
 
 func TestRobotsDisallowsEverything(t *testing.T) {
