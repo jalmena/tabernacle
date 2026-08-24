@@ -1,7 +1,7 @@
 {{template "head" .}}
 {{/* One document, many songs. The same "sections" partial the screen and the
      single-song print use, so the three cannot drift apart. */}}
-<body class="printing paper-{{.Body.Theme}}">
+<body class="printing songbook paper-{{.Body.Theme}}">
 {{/* Only what a reader needs to leave or to print. The paper was chosen on the
      way in; offering it again here would be a control on a document. */}}
 <nav class="paperbar noprint" aria-label="{{.T `book.title`}}">

@@ -3,6 +3,7 @@ package web
 import (
 	"net/http"
 	"net/url"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -279,4 +280,53 @@ func TestPrintingOpensInANewTab(t *testing.T) {
 	if !strings.Contains(form, `target="_blank"`) {
 		t.Errorf("the songbook does not print into a new tab: %s", form)
 	}
+}
+
+// The songbook preview lays white sheets on a grey desk so their edges show.
+// One song has no sheet to lay down — there the page is the sheet — so the desk
+// must not reach it, or the whole preview is a grey page with nothing on it.
+//
+// The rule that paints the desk cannot tell the two apart by itself: both
+// bodies carry "printing". It reads a second class, and this checks that the
+// class is where it has to be and that nothing paints the desk without it.
+func TestOnlyTheSongbookGetsTheDesk(t *testing.T) {
+	ts := newTestServer(t, basicSongs())
+
+	book := bodyTag(t, ts.get(t, "/songbook/print?all=1").Body.String())
+	if !strings.Contains(book, "songbook") {
+		t.Errorf("the songbook print body is %q, with no class for the desk to key on", book)
+	}
+	one := bodyTag(t, ts.get(t, "/songs/traditional-amazing-grace/print").Body.String())
+	if strings.Contains(one, "songbook") {
+		t.Errorf("one song's print body is %q, which the desk would paint grey", one)
+	}
+
+	css, err := os.ReadFile("static/app.css")
+	if err != nil {
+		t.Fatal(err)
+	}
+	desk := regexp.MustCompile(`(?m)^\s*([^\n{]*)\{[^}]*#d9d9d9`)
+	found := desk.FindAllStringSubmatch(string(css), -1)
+	if len(found) == 0 {
+		t.Fatal("nothing in app.css paints the desk; this test can no longer see it")
+	}
+	for _, m := range found {
+		if !strings.Contains(m[1], ".songbook") {
+			t.Errorf("%q paints the desk without asking for the songbook", strings.TrimSpace(m[1]))
+		}
+	}
+}
+
+// bodyTag is the opening <body> tag of a page, classes and all.
+func bodyTag(t *testing.T, page string) string {
+	t.Helper()
+	i := strings.Index(page, "<body")
+	if i < 0 {
+		t.Fatal("the page has no <body>")
+	}
+	j := strings.Index(page[i:], ">")
+	if j < 0 {
+		t.Fatal("the page's <body> tag never closes")
+	}
+	return page[i : i+j+1]
 }

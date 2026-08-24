@@ -812,10 +812,14 @@ html { accent-color: var(--accent); }
 		box-shadow: 0 2px 10px rgb(0 0 0 / 8%);
 	}
 	/* The desk the sheets lie on, so their edges are visible. Printing paints
-	 * none of this: the sheets are the page. */
-	body.printing { background: #d9d9d9; }
-	body.printing .wrap { max-width: none; padding: 1.5rem 1rem; }
-	body.printing .paperbar { background: var(--paper-raised); }
+	 * none of this: the sheets are the page.
+	 *
+	 * Only the songbook. One song has no white sheet to lay on a desk — the
+	 * page is the sheet — so a desk under it is a grey page and nothing else,
+	 * which is what this looked like when the rule said body.printing alone. */
+	body.printing.songbook { background: #d9d9d9; }
+	body.printing.songbook .wrap { max-width: none; padding: 1.5rem 1rem; }
+	body.printing.songbook .paperbar { background: var(--paper-raised); }
 }
 .songbook-index ol { margin: 0.5rem 0 0; padding-inline-start: 1.4rem; }
 .songbook-index li { margin: 0.15rem 0; }

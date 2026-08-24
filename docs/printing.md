@@ -80,3 +80,11 @@ and footers*.
 - Page numbers and repeated headers on later pages are not printed, in a songbook
   either. Worth adding if a book of sixty songs turns out to want an index that
   points somewhere.
+
+## The preview on screen
+
+A songbook's preview lays each song out as a white sheet on a grey desk, so you
+can see where the pages fall before anything is printed. One song is not laid on
+a desk: there the page is the sheet, and the preview is the white page itself.
+The rule that paints the desk asks for the songbook by name, because both
+previews are otherwise the same document.
