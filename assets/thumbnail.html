@@ -6,9 +6,15 @@
 -->
 <meta charset="utf-8">
 <style>
-/* The same declarations the header uses, copied from app.css: the store card
-   and the page have to be the same typeface, the same weight and the same
-   tightening, or the thumbnail is somebody else's product.
+/* The header's declarations, copied from app.css — the same weight and the same
+   tightening — but with the family named outright instead of system-ui.
+   That difference is the whole point. On the page, system-ui is the reader's own
+   desktop font, and that is right: the interface should look native. A store
+   card is a fixed PNG, so it has to be one face, and whichever machine renders
+   it must produce the same image. Headless Firefox has no desktop to ask and
+   falls back to Noto Sans, which is not what a GNOME reader sees.
+   Adwaita Sans is that reader's system-ui, and close enough to Segoe UI and to
+   SF Pro that the card does not look like a different product anywhere.
    The glyph appears without the icon's rounded square — a dark box on a dark
    ground reads as a smudge, and the store shows the real icon beside this
    anyway. */
@@ -17,7 +23,7 @@ body {
   width: 1200px; height: 630px; background: #171614;
   display: flex; align-items: center; gap: 76px; padding: 0 96px;
   box-sizing: border-box;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: "Adwaita Sans", Inter, system-ui, "Segoe UI", Roboto, sans-serif;
   color: #e8e4dc;
 }
 svg { width: 250px; height: 250px; flex: 0 0 auto }

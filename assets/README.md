@@ -25,7 +25,18 @@ firefox --headless --screenshot assets/thumbnail.png --window-size=1200,630 \
 ```
 
 The thumbnail is rendered by a browser rather than drawn as an SVG on purpose:
-it copies its declarations from `app.css`, so the store card and the page cannot
-end up in different typefaces. The screenshots come from the running
-application in the dark theme, which is what the icon and the card are built
-for.
+it copies its declarations from `app.css`, so the card carries the wordmark's
+real weight and tightening.
+
+It names the family outright rather than saying `system-ui`, and that difference
+matters. On the page, `system-ui` is the reader's own desktop font, which is what
+makes the interface look native — Adwaita Sans on GNOME, Segoe UI on Windows, SF
+Pro on macOS. A store card is one fixed PNG, so it has to pick one, and it must
+render the same on whatever machine builds it: headless Firefox has no desktop
+to ask and quietly falls back to Noto Sans, which is nobody's system font.
+Adwaita Sans is the one named, being close enough to the others that the card
+does not look like a different product anywhere.
+
+The screenshots come from the running application in the dark theme, which is
+what the icon and the card are built for. They run library, song sheet, chord
+page — what you see on opening it, then a song, then the tool.
