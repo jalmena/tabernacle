@@ -151,6 +151,13 @@ a string that must ring open between two fretted ones costs more the further up
 the neck its neighbours are — the muting hazard nobody thinks about until they
 hear it.
 
+A shape with no fingering at all — one asking for more fingers than a hand has —
+is charged for each finger it is short and then floored into the last band. It
+had been coming out *cheaper* than merely difficult shapes, because without a
+fingering posture and spread have nothing to measure and contributed nothing. No
+arithmetic over terms it does not have is more honest than the word: inhuman
+means no hand does this.
+
 `voicing.Voicing.Level()` turns the cost into one of seven words. The bands are
 anchored to chords a guitarist already has an opinion about rather than to
 quantiles of everything the generator can produce, because most of what it can
@@ -307,6 +314,23 @@ half: Am7 goes from 370 grips to 168, and every one that is left is something a
 hand can simply hold.
 
 ### Fingering
+
+Whether to lay a barre is decided by trying it: both fingerings are worked out
+and the cheaper is kept, which is what a hand does.
+
+The rule it replaced counted fretted strings and laid a barre only past four,
+on the grounds that a barre is how a hand reaches six strings with four fingers.
+That is one reason to lay one. The other is to free a finger needed somewhere
+else, and counting cannot see it. On `1 5 4 1 0 0` — two strings at the first
+fret, and the fourth and fifth frets above them — the count said four, refused
+the barre, and spent the middle finger on the first fret while the ring and
+little fingers were three and four frets away. It is a fingering no player would
+use, and it scored the shape harder than the same shape with a sixth note added,
+because the extra note pushed the count past four and let it barre.
+
+E major and A major still come out with three separate fingers, F and Bm with
+the full barre, and F/C with the small one across the top two strings — not
+because they are named anywhere, but because that is what wins.
 
 Deterministic and without the thumb. Fingers go on in order of fret and then of
 string, which is what a player does — it is why the ordinary D and Dm come out

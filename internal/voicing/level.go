@@ -71,13 +71,48 @@ func (v Voicing) Level() Level {
 // only frets and fingers, and the rules that turn those into a number are this
 // package's business and stay in it.
 func Score(v Voicing) Voicing {
-	// Fingers first, and the shape may not be holdable at all: without them
-	// posture has nothing to measure and every shape would look comfortable.
-	if !fret(&v) {
-		v.Position = lowestFret(v.Frets)
+	if fret(&v) {
 		v.Cost = cost(v)
 		return v
 	}
-	v.Cost = cost(v)
+
+	// No fingering exists: the shape asks for more fingers than a hand has.
+	// Without one, posture and spread have nothing to measure and would score
+	// it as though it were comfortable, which had the impossible drawings
+	// coming out cheaper than the merely difficult ones.
+	//
+	// It is charged for each finger it is short, so that two of these can still
+	// be told apart, and then floored into the last band whatever that came to.
+	// No arithmetic over terms it does not have is going to be more honest than
+	// the word itself: inhuman means no hand does this.
+	v.Position = lowestFret(v.Frets)
+	v.Cost = cost(v) + shortBy(v)*40
+	if top := levels[len(levels)-1]; v.Cost <= top {
+		v.Cost = top + 1
+	}
 	return v
+}
+
+// shortBy is how many more fingers a shape needs than a hand has.
+//
+// A barre counts as one finger however many strings it covers, which is the
+// only reason some shapes are holdable at all.
+func shortBy(v Voicing) int {
+	need := 0
+	onBarre := 0
+	b, barred := barreFor(v, 0)
+	for i, f := range v.Frets {
+		if f <= 0 {
+			continue
+		}
+		if barred && i >= b.From && i <= b.To && int(f) == v.Position {
+			onBarre++
+			continue
+		}
+		need++
+	}
+	if onBarre > 0 {
+		need++
+	}
+	return max(0, need-4)
 }

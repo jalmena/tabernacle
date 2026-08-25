@@ -201,11 +201,46 @@ func popcount(x int) int {
 // player does anyway — it is why the ordinary D and Dm come out with the
 // fingering they are taught with.
 //
-// A barre is laid only when four fingers are not enough, because that is the
-// only reason anyone lays one. Asking the question that way needs no list of
-// exceptions: E major and A major keep their three separate fingers, F and Bm
-// get the full barre, and F/C gets the small one across the top two strings.
+// Whether to lay a barre is decided by trying it. A barre is not only how a
+// hand reaches six strings with four fingers; it is also how it frees a finger
+// that is needed somewhere else, and a rule that counts fretted strings cannot
+// see the second reason. It made 1-5-4-1-0-0 spend the middle finger on the
+// third string at the first fret while the ring and little fingers were at the
+// fourth and fifth — a fingering no player would use, and one that scored the
+// shape harder than the same shape with a note added, because adding the note
+// pushed it over the counting rule and let it barre.
+//
+// So both fingerings are worked out and the cheaper is kept, which is what the
+// hand does. E major and A major still come out with three separate fingers, F
+// and Bm with the full barre, and F/C with the small one across the top two
+// strings — not because they are named here, but because that is what wins.
 func fret(v *Voicing) bool {
+	plain := *v
+	plain.Frets = v.Frets
+	withBarre := *v
+	withBarre.Frets = v.Frets
+
+	okPlain := fretWith(&plain, false)
+	okBarre := fretWith(&withBarre, true)
+	switch {
+	case okPlain && okBarre:
+		if withBarre.Cost < plain.Cost {
+			*v = withBarre
+		} else {
+			*v = plain
+		}
+	case okPlain:
+		*v = plain
+	case okBarre:
+		*v = withBarre
+	default:
+		return false
+	}
+	return true
+}
+
+// fretWith works out one fingering, with a barre or without.
+func fretWith(v *Voicing, barre bool) bool {
 	v.Position = 0
 	for _, f := range v.Frets {
 		if f > 0 && (v.Position == 0 || int(f) < v.Position) {
@@ -226,7 +261,7 @@ func fret(v *Voicing) bool {
 		}
 	}
 
-	if b, ok := barreFor(*v, len(assign)); ok {
+	if b, ok := barreFor(*v, len(assign)); barre && ok {
 		v.Barres = []Barre{b}
 		rest := assign[:0:0]
 		for _, i := range assign {
@@ -260,15 +295,12 @@ func fret(v *Voicing) bool {
 	return true
 }
 
-// barreFor decides whether the index finger lies flat across the lowest fret of
-// a shape, and over which strings.
+// barreFor says where the index finger would lie if it lay flat across the
+// lowest fret of a shape. Whether it should is fret's question, not this one.
 //
 // It spans from the first sounding string at that fret to the last, and refuses
 // if an open string falls inside: a finger lying across cannot let one ring.
 func barreFor(v Voicing, fretted int) (Barre, bool) {
-	if fretted <= 4 {
-		return Barre{}, false // four fingers reach it; no reason to lay one
-	}
 	lo, hi := -1, -1
 	for i, f := range v.Frets {
 		if int(f) == v.Position {
