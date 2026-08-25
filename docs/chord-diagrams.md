@@ -166,11 +166,14 @@ the neck its neighbours are — the muting hazard nobody thinks about until they
 hear it.
 
 A shape with no fingering at all — one asking for more fingers than a hand has —
-is charged for each finger it is short and then floored into the last band. It
-had been coming out *cheaper* than merely difficult shapes, because without a
-fingering posture and spread have nothing to measure and contributed nothing. No
-arithmetic over terms it does not have is more honest than the word: inhuman
-means no hand does this.
+starts above the last band and is then charged for each finger it is short, so
+that being two short ranks past being one short. Every other term measures
+something a hand is doing, so without a fingering they measure nothing, and
+these had been coming out *cheaper* than merely difficult shapes.
+
+That sum lives in `strain` and not in `Level`, so the number shown beside the
+word is the number the word came from. When it lived in `Level` the page said
+`Inhuman (64)`, which is a band the number is nowhere near.
 
 `voicing.Voicing.Level()` turns the cost into one of seven words. The bands are
 anchored to chords a guitarist already has an opinion about rather than to

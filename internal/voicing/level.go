@@ -74,13 +74,12 @@ func levelFor(strain int) Level {
 // the ninth fret than at the first. Levelling by cost called one shape Media
 // and the identical shape nine frets up Avanzada.
 func (v Voicing) Level() Level {
-	// A shape with no fingering asks for more fingers than a hand has, and that
-	// verdict is about the shape rather than about where it sits.
-	if len(v.Fingers) == 0 && v.Reach() > 0 {
-		return Inhuman
-	}
 	return levelFor(strain(v))
 }
+
+// holdable reports whether a fingering was found for this shape. Anything
+// fretted without one needs more fingers than a hand has.
+func holdable(v Voicing) bool { return v.Reach() == 0 || len(v.Fingers) > 0 }
 
 // Score fills in Position and Cost for a shape somebody drew, so that it can be
 // levelled like one the collection produced.
@@ -99,13 +98,10 @@ func Score(v Voicing) Voicing {
 	// it as though it were comfortable, which had the impossible drawings
 	// coming out cheaper than the merely difficult ones.
 	//
-	// It is charged for each finger it is short, so that two of these can still
-	// be told apart in a list. The word for it is not decided here: Level says
-	// Inhuman for anything with no fingering, whatever the arithmetic came to,
-	// because no sum over terms the shape does not have is more honest than
-	// what the word already means.
+	// No fingering exists. strain says what that is worth; the position and
+	// fullness preferences still apply, because this is still a row in a list.
 	v.Position = lowestFret(v.Frets)
-	v.Cost = cost(v) + shortBy(v)*40
+	v.Cost = cost(v)
 	return v
 }
 

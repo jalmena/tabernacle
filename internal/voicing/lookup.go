@@ -785,6 +785,22 @@ func silent(frets []Fret) int {
 
 // strain is what the shape asks of the hand, and nothing about where it is.
 func strain(v Voicing) int {
+	// A shape with no fingering asks for more fingers than a hand has. Every
+	// term below measures something a hand is doing, so with no fingering they
+	// measure nothing and it would come out looking comfortable.
+	//
+	// All of these are inhuman, so they start above the last band, and the only
+	// thing left to say is which is further out of reach: a shape two fingers
+	// short of a hand ranks past one that is short by a single finger.
+	//
+	// It is worked out here rather than in Level so that the number shown
+	// beside the word is the number the word came from. They disagreed for a
+	// while, and the page said "Inhuman (64)" — a band the number is nowhere
+	// near.
+	if !holdable(v) {
+		return levels[len(levels)-1] + 1 + 40*shortBy(v)
+	}
+
 	c := 0
 	fretted, thumb := 0, 0
 	for i, f := range v.Frets {
