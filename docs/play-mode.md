@@ -30,13 +30,18 @@ not a fight with it. The bar starts it again.
 | ↑ / ↓ | Faster, slower |
 | Esc | Leave |
 
-## Why it is the one control that needs scripting
+## Why the button hides itself
 
 Every other control on a sheet is a link or a form that works with scripting
 turned off; transposition, notation and printing all round-trip to the server. A
-page cannot scroll itself without a script, so the **Play** button is hidden
-until the script has run and marked the body. A button that does nothing is
-worse than no button, which is why it is absent rather than dead.
+page cannot scroll itself without a script, so the **Play** button is marked
+`.needsjs` and stays hidden until `app.js` has run and put `scripted` on the
+body. A button that does nothing is worse than no button, which is why it is
+absent rather than dead.
+
+It is the only control on a song sheet that needs scripting. The chord page has
+the other one: hearing a shape needs a script and a sound card, and it is marked
+the same way — see [chord diagrams](chord-diagrams.md).
 
 ## What is not remembered
 

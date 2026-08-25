@@ -134,7 +134,7 @@ A[G]mazing grace how [G7]sweet the [C]sound
 Full reference: [docs/song-format.md](docs/song-format.md). Also
 [chord diagrams](docs/chord-diagrams.md), [printing](docs/printing.md),
 [accounts](docs/accounts.md), [play mode](docs/play-mode.md),
-[deployment](docs/deployment.md).
+[languages](docs/languages.md), [deployment](docs/deployment.md).
 
 ## Architecture
 

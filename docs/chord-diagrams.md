@@ -120,14 +120,34 @@ which may be right but should never be accidental.
 
 ### How hard a shape is
 
-The number that orders shapes is a cost, and the term that matters most is
-**posture**: how far a shape drags the hand out of the position it rests in.
+Two numbers, not one, and keeping them apart is the whole design.
 
-A hand at rest covers four frets with one finger each — index on the lowest,
-then middle, ring, little. Two fingers are as far apart as they want to be when
-the frets between them match the fingers between them, and every fret beyond
-that is a stretch. Two fingers on one fret cost nothing, which is why a barre
-with the ring and little finger side by side is comfortable.
+**Strain** is what the shape asks of the hand. **Cost** is strain plus two
+editorial preferences, added in `cost` and nowhere else, and it is the sort key
+for a list. `Level` reads the strain, so the word a reader sees is about the
+shape and not about where it happens to sit in a list.
+
+#### Strain
+
+| | | |
+| --- | --- | --- |
+| Posture | ×7 | how far the fingers are from where the hand rests |
+| Stretch | ×8 per fret | the width of the hand along the neck |
+| Spread | ×4 | the width of the hand across the strings |
+| Fretted notes | ×4 each | |
+| Crowding | ×8 | fingertips past the second on one fret, behind a barre |
+| Silent inside | ×8 | a muted string between two ringing ones |
+| Open inside | ×3 | an open string between two fretted ones |
+| Barre | +6, +1 per string | and +6 at the first fret, +2 at the second |
+| Thumb | ×6 | |
+
+**Posture** is the term that matters most: how far a shape drags the hand out of
+the position it rests in. A hand at rest covers four frets with one finger each
+— index on the lowest, then middle, ring, little. Two fingers are as far apart
+as they want to be when the frets between them match the fingers between them,
+and every fret beyond that is a stretch. Two fingers on one fret cost nothing,
+which is why a barre with the ring and little finger side by side is
+comfortable.
 
 Width alone cannot say this, and that was the bug. Index on the first fret and
 little finger on the fourth is the hand doing nothing unusual; index on the
@@ -135,52 +155,59 @@ first and ring on the fourth is the same three frets and a real stretch. A model
 built on span scored them the same, and preferred a contortion like
 `x 2 1 4 0 2` over B's barre.
 
-Fingers are not equally independent, so every distance is weighted by which
-pair is being pulled apart. The index and the middle finger come apart almost
-for free; the ring and the little finger share a tendon, and prising those two
-apart is the most awkward thing a left hand is asked to do. It is why an open G,
-whose middle and ring fingers sit four strings apart, is learnt in an afternoon,
-and why the same distance between the ring and the little finger is a shape most
-players never hold.
+Fingers are not equally independent, so every distance is weighted by which pair
+is being pulled apart: index to middle ×1, middle to ring ×2, ring to little ×3.
+The index and the middle finger come apart almost for free; the ring and the
+little finger share a tendon, and prising those two apart is the most awkward
+thing a left hand is asked to do. It is why an open G, whose middle and ring
+fingers sit four strings apart, is learnt in an afternoon, and why the same
+distance between the ring and the little finger is a shape most players never
+hold. A finger behind one that should be behind it costs three frets' worth,
+weighted the same way.
 
-Distance along the frets is not the only distance. Two fingers on one fret are
-not the same thing on neighbouring strings as they are on the sixth and the
-first, which is a hand opened as far as it goes — and posture cannot see that,
-because along the frets those two fingers are in the same place. `spread`
-measures it, for neighbouring fingers only and only past four strings, which is
-the width an open G already asks for.
+**Spread** is the other distance. Two fingers on one fret are not the same thing
+on neighbouring strings as they are on the sixth and the first, which is a hand
+opened as far as it goes — and posture cannot see it, because along the frets
+those two fingers are in the same place. Neighbouring fingers only, and only
+past four strings, which is the width an open G already asks for.
 
-A wide barre costs more the nearer the nut it is laid, and not in one step: the
-strings are highest and tightest at the first fret and a little less so at the
-second, which is the whole difference between F and F#. The drop between the two
-has to beat the three points a fret of position costs, or they cancel and the
-two chords come out level; it cannot be much more than that either, or Bb
+**Crowding** is three fingertips on one fret behind a barre, arching over an
+index already lying across the neck. On its own, three fingers on a fret is
+ordinary — an open A and an open G both do it and nobody calls either hard — so
+it counts only when there is a barre under them. It is the difference between
+the E-shape barre and the A-shape one, and why B is a step past F.
+
+**A wide barre** costs more the nearer the nut it is laid, and not in one step:
+the strings are highest and tightest at the first fret and a little less so at
+the second, which is the whole difference between F and F#. The drop between the
+two has to beat the three points a fret of position costs, or they cancel and
+the two chords come out level; it cannot be much more than that either, or Bb
 abandons the first-fret A shape everybody plays for a barre at the sixth. Which
 leaves a wide barre at the third fret costing what one at the first does, the
 position term having caught up — nobody is going to notice, and the two numbers
 are not worth more machinery.
 
-A finger behind one that should be behind it costs three frets' worth each, and
-a string that must ring open between two fretted ones costs more the further up
-the neck its neighbours are — the muting hazard nobody thinks about until they
-hear it.
+**An open string between two fretted ones** costs more the further up the neck
+its neighbours are: the muting hazard nobody thinks about until they hear it.
 
-A shape with no fingering at all — one asking for more fingers than a hand has —
-starts above the last band and is then charged for each finger it is short, so
-that being two short ranks past being one short. Every other term measures
-something a hand is doing, so without a fingering they measure nothing, and
-these had been coming out *cheaper* than merely difficult shapes.
+**A shape with no fingering at all** — one asking for more fingers than a hand
+has — starts above the last band and is then charged 40 for each finger it is
+short, so that being two short ranks past being one short. Every other term
+measures something a hand is doing, so without a fingering they measure nothing,
+and these had been coming out *cheaper* than merely difficult shapes.
 
 That sum lives in `strain` and not in `Level`, so the number shown beside the
 word is the number the word came from. When it lived in `Level` the page said
 `Inhuman (64)`, which is a band the number is nowhere near.
 
-`voicing.Voicing.Level()` turns the cost into one of seven words. The bands are
-anchored to chords a guitarist already has an opinion about rather than to
+#### The words
+
+`voicing.Voicing.Level()` turns the strain into one of seven words. The bands
+are anchored to chords a guitarist already has an opinion about rather than to
 quantiles of everything the generator can produce, because most of what it can
 produce is nothing anybody plays:
 
-| | cost | |
+| | strain | |
 | --- | --- | --- |
 | Trivial | ≤ 16 | Em7 4, Em 8, A 12, E7 16 |
 | Easy | ≤ 40 | E 20, Am 20, D 20, Dm 28, C 28, G 30 |
@@ -190,9 +217,16 @@ produce is nothing anybody plays:
 | Extreme | ≤ 112 | |
 | Inhuman | above | |
 
-Those are **strain**, not cost. The cost is strain plus two editorial
-preferences, added in one place and nowhere else, and neither of them is
-difficulty:
+The first four bands are fixed by real chords; moving them would rename
+something everybody plays. The two above are anchored to nothing, so they sit
+close enough together that the top one can be reached.
+
+The number is shown beside the word, small: a word alone cannot say that one
+shape is at the top of its band and the next barely scraped in, and the
+difference between two shapes in the same band is exactly what somebody
+comparing them is looking at.
+
+#### The two preferences that are not difficulty
 
 - **Position**, three points a fret. A chord reference prints the shape nearest
   the nut first. Frets narrow as they climb, so the same barre is easier at the
@@ -203,26 +237,10 @@ difficulty:
   not the harder one: a three-string grip is usually the easiest thing on the
   page.
 
-`Level` reads the strain. The list still opens where a reference would, and the
-word stops moving when the shape does not.
-
-The number is shown beside the word, small: a word alone cannot say that one
-shape is at the top of its band and the next barely scraped in, and the
-difference between two shapes in the same band is exactly what somebody
-comparing them is looking at.
-
-Which is also why the list no longer says "easiest first". It never was: a
-curated shape leads it, then the fuller and lower ones, and a three-string grip
-that is the easiest thing on the page can sit near the end. It says the usual
-ones come first, which is true.
-
-The first four bands are fixed by real chords; moving them would rename
-something everybody plays. The two above are anchored to nothing, so they sit
-close enough together that the top one can be reached.
-
-B lands a band above F and Bm on purpose: the A-shape barre holds the sixth
-string down with the index and crowds three more fingers onto one fret, and it
-is the chord that stops people who have already got F.
+Which is why the list does not say "easiest first". It never was: a curated
+shape leads it, then the fuller and lower ones, and a three-string grip that is
+the easiest thing on the page can sit near the end. It says the usual ones come
+first, which is true.
 
 ### The shape the collection prints comes first
 

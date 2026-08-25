@@ -32,13 +32,24 @@ If the container cannot write to the volume, nothing else will work. `PUID` and
 
 ## CasaOS and ZimaOS
 
-App Store → **Custom Install** → *Import* → paste `compose.yaml`.
+There is a store, so Tabernacle installs like any other app rather than being
+pasted in by hand. App Store → **Add Source**, and paste
 
-The `x-casaos` blocks in that file give CasaOS the title, icon, description and
-port mapping, so it renders a real app card rather than a bare container. Plain
-Docker Compose ignores those blocks, which is why one file serves both.
+```
+https://raw.githubusercontent.com/jalmena/tabernacle-appstore/gh-pages/tabernacle-appstore.zip
+```
 
-Adjust the volume to the platform's convention before installing:
+Tabernacle then appears in the store and updates itself when a new version is
+published. On ZimaOS, or any client that speaks version 2 of the protocol, the
+same store is also served as `index.json` from the same branch. The store lives
+in [its own repository](https://github.com/jalmena/tabernacle-appstore), which
+carries the compose file CasaOS installs and the metadata that draws its card.
+
+Custom Install still works: App Store → **Custom Install** → *Import* → paste
+`compose.yaml`. The `x-casaos` blocks in that file give CasaOS the title, icon,
+description and port mapping, so it renders a real app card rather than a bare
+container, and plain Docker Compose ignores them — which is why one file serves
+both. Adjust the volume to the platform's convention before installing:
 
 ```yaml
 volumes:

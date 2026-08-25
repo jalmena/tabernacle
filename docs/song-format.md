@@ -83,6 +83,12 @@ YAML parser would not change the format.
 Unknown fields are an error rather than being ignored, so that `titel:` is
 caught instead of silently dropping a title.
 
+The chords written in the body are the shapes the left hand holds, so `capo: 2`
+means the sheet sounds two semitones above what it reads. Transposing leaves the
+capo exactly where it is: it describes what the player does with a piece of
+metal, not what the sheet says. The chord page will tell you where else the capo
+could go for the same sound — see [chord diagrams](chord-diagrams.md).
+
 Rules worth knowing:
 
 - Fields are not nested and are indented with spaces, never tabs.
