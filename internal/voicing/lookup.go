@@ -721,11 +721,27 @@ func cost(v Voicing) int {
 		c += 6
 		width := v.Barres[0].To - v.Barres[0].From + 1
 		c += width
-		// The neck is thickest and the tension highest at the first two frets,
-		// which is why a player manages F at the fifth fret long before the
-		// first.
-		if v.Position <= 2 && width >= 5 {
-			c += 4
+		// A wide barre costs more the nearer the nut it is laid, and not in one
+		// step: the strings are highest and tightest at the first fret, a
+		// little less so at the second, and by the third the hand has stopped
+		// noticing. It is the whole difference between F and F#, and it is why
+		// a player manages a barre at the fifth fret long before the first.
+		//
+		// The drop from the first fret to the second has to beat the three
+		// points a fret of position costs, or the two cancel and F comes out
+		// level with F#. It cannot be much more than that either: another
+		// point and Bb abandons the first-fret A shape everybody plays for a
+		// barre at the sixth.
+		//
+		// Which leaves a wide barre at the third fret costing what one at the
+		// first does, the position term having caught up by then. Nobody is
+		// going to notice, and the two numbers are not worth more machinery.
+		switch {
+		case width < 5:
+		case v.Position == 1:
+			c += 6
+		case v.Position == 2:
+			c += 2
 		}
 	}
 	// Position matters a lot: a shape high up is harder to reach and harder to

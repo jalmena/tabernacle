@@ -102,9 +102,9 @@ that is not the chord.
 
 ## Ordering
 
-Shapes are sorted by a playability cost: fretted notes, stretch, barre width,
-position, muted strings inside the shape, thumbed notes. The weights matter less
-than two properties, both pinned by tests:
+Shapes are sorted by a playability cost: fretted notes, stretch, posture,
+spread, barre, position, muted and open strings inside the shape, thumbed notes.
+The weights matter less than two properties, both pinned by tests:
 
 1. An open shape always beats a barre.
 2. The order is deterministic, because the interface says "2 de 4" and a deep
@@ -145,6 +145,16 @@ first, which is a hand opened as far as it goes — and posture cannot see that,
 because along the frets those two fingers are in the same place. `spread`
 measures it, for neighbouring fingers only and only past four strings, which is
 the width an open G already asks for.
+
+A wide barre costs more the nearer the nut it is laid, and not in one step: the
+strings are highest and tightest at the first fret and a little less so at the
+second, which is the whole difference between F and F#. The drop between the two
+has to beat the three points a fret of position costs, or they cancel and the
+two chords come out level; it cannot be much more than that either, or Bb
+abandons the first-fret A shape everybody plays for a barre at the sixth. Which
+leaves a wide barre at the third fret costing what one at the first does, the
+position term having caught up — nobody is going to notice, and the two numbers
+are not worth more machinery.
 
 A finger behind one that should be behind it costs three frets' worth each, and
 a string that must ring open between two fretted ones costs more the further up

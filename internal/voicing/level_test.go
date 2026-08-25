@@ -91,3 +91,36 @@ func TestScoringADrawnShapeWorksOutTheFingers(t *testing.T) {
 		t.Errorf("E major came out level %d", easy.Level())
 	}
 }
+
+// The same barre is harder the nearer the nut it is laid: the strings are
+// highest and tightest at the first fret. It is the whole difference between F
+// and F#, which are one shape and one fret apart.
+func TestTheSameBarreIsHarderAtTheFirstFret(t *testing.T) {
+	first := func(sym string) Voicing {
+		t.Helper()
+		c, err := chord.Parse(sym)
+		if err != nil {
+			t.Fatal(err)
+		}
+		g, ok := Generate(c, GenerateOptions{})
+		if !ok || len(g.Root.Shapes) == 0 {
+			t.Fatalf("%s has no shape", sym)
+		}
+		return g.Root.Shapes[0]
+	}
+
+	for _, tc := range []struct{ nut, next string }{
+		{"F", "F#"}, // the E shape, at the first fret and at the second
+		{"Bb", "B"}, // the A shape, likewise
+	} {
+		a, b := first(tc.nut), first(tc.next)
+		if a.Position != 1 || b.Position != 2 {
+			t.Fatalf("%s is at fret %d and %s at fret %d; this test needs 1 and 2",
+				tc.nut, a.Position, tc.next, b.Position)
+		}
+		if a.Cost <= b.Cost {
+			t.Errorf("%s at the first fret costs %d and %s at the second costs %d",
+				tc.nut, a.Cost, tc.next, b.Cost)
+		}
+	}
+}
