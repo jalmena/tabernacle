@@ -362,7 +362,7 @@ var galician = map[string]string{
 	"lab.chord":              "Acorde",
 	"lab.quality":            "Tipo de acorde",
 	"lab.inversions":         "Con outra nota no baixo",
-	"lab.count":              "%d de %d posicións, da máis doada en diante",
+	"lab.count":              "%d de %d posicións, as máis habituais primeiro",
 	"lab.more":               "Ver máis posicións",
 	"title.edit":             "Editar",
 	"title.conflict":         "Conflito",

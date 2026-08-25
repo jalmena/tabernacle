@@ -13,24 +13,26 @@ func TestTheLevelsLandWhereAPlayerWouldPutThem(t *testing.T) {
 		sym  string
 		want Level
 	}{
-		// Two and three fingers, and no barre: the first chords anybody holds.
+		// Two and three fingers, no barre and no stretch: the first chords
+		// anybody holds, A among them — three fingertips in a row on one fret.
 		{"Em7", Trivial},
 		{"Em", Trivial},
+		{"A", Trivial},
 		{"E7", Trivial},
 		// The rest of the open chords.
 		{"E", Easy},
-		{"A", Easy},
-		{"G", Easy},
-		{"C", Easy},
-		{"D", Easy},
 		{"Am", Easy},
+		{"D", Easy},
+		{"C", Easy},
+		{"G", Easy},
 		// The barres everybody fights and then masters.
 		{"F", Moderate},
 		{"Bm", Moderate},
-		// B is the A-shape barre, which is a step past the other two: the index
-		// holds the sixth string down while three more fingers crowd onto one
-		// fret. It is the chord that stops people who have already got F.
+		// B is the A-shape barre, a step past the other two: three fingertips
+		// arch over an index already lying across the neck. It is the chord
+		// that stops people who have already got F.
 		{"B", Advanced},
+		{"Bb", Advanced},
 	} {
 		t.Run(tc.sym, func(t *testing.T) {
 			c, err := chord.Parse(tc.sym)

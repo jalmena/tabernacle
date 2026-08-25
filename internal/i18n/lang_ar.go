@@ -362,7 +362,7 @@ var arabic = map[string]string{
 	"lab.chord":              "أكورد",
 	"lab.quality":            "نوع الأكورد",
 	"lab.inversions":         "مع نغمة أخرى في القرار",
-	"lab.count":              "%d من %d وضعًا، من الأسهل فصاعدًا",
+	"lab.count":              "%d من %d وضعًا، الأكثر شيوعًا أولًا",
 	"lab.more":               "اعرض أوضاعًا أخرى",
 	"title.edit":             "تحرير",
 	"title.conflict":         "تعارض",

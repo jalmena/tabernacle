@@ -412,7 +412,7 @@ var english = map[string]string{
 	"lab.chord":      "Chord",
 	"lab.quality":    "Kind of chord",
 	"lab.inversions": "With another note in the bass",
-	"lab.count":      "%d of %d shapes, easiest first",
+	"lab.count":      "%d of %d shapes, the usual ones first",
 	"lab.more":       "Show more shapes",
 
 	// Pages that say something went wrong. The heading doubles as the title

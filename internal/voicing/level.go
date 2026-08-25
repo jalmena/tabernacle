@@ -40,11 +40,12 @@ func (l Level) Key() string {
 // what it can produce is nothing anybody plays. The numbers are strain, not
 // cost — what the hand is asked to do, with where it happens left out:
 //
-//	Em7 4, Em 8, E7 16          the two- and three-finger chords learnt first
-//	A 18, E 20, Am 26, G 30,
-//	D 32, C 34                  the rest of the open chords
-//	F# 54, Bm 55, F 58          the barres everybody fights and then masters
-//	B 62, Bb 66                 the A-shape barre, a step past those
+//	Em7 4, Em 8, A 12, E7 16    the two- and three-finger chords learnt first
+//	E 20, Am 20, D 20, Dm 28,
+//	C 28, G 30                  the rest of the open chords
+//	Bm 49, F# 54, F 58          the barres everybody fights and then masters
+//	B 64, Bb 68                 the A shape, a step past those: three
+//	                            fingertips arching over a barre
 //
 // So trivial ends where the first group does, easy where the open chords do,
 // moderate where the common barres do, and advanced where the A shape does.
@@ -53,7 +54,7 @@ func (l Level) Key() string {
 //
 // The two above them are anchored to nothing, so they are set close enough
 // together that the top band can actually be reached.
-var levels = [...]int{16, 40, 60, 72, 90, 110}
+var levels = [...]int{16, 40, 60, 75, 92, 112}
 
 // levelFor puts one strain into its band.
 func levelFor(strain int) Level {

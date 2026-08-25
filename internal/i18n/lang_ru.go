@@ -362,7 +362,7 @@ var russian = map[string]string{
 	"lab.chord":              "Аккорд",
 	"lab.quality":            "Вид аккорда",
 	"lab.inversions":         "С другой нотой в басу",
-	"lab.count":              "%d из %d аппликатур, от самой лёгкой",
+	"lab.count":              "%d из %d аппликатур, сначала самые обычные",
 	"lab.more":               "Показать больше аппликатур",
 	"title.edit":             "Изменить",
 	"title.conflict":         "Конфликт",

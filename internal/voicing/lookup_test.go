@@ -219,11 +219,18 @@ func TestOrdering(t *testing.T) {
 		t.Error("Bb offers no alternative position")
 	}
 
-	// Ordering is by cost and is stable, because the interface says "2 de 4".
+	// A shape somebody wrote down for this chord comes first, and everything
+	// after it is ordered by cost. The weights are a model of a hand and they
+	// are approximate; a curated entry is a decision, and no tuning of the
+	// numbers should be able to knock one off the top.
 	for _, sym := range []string{"F", "Bb", "B", "F#m", "Am7", "C#m7"} {
 		res := lookup(t, sym)
-		for i := 1; i < len(res.Voicings); i++ {
-			if res.Voicings[i].Cost < res.Voicings[i-1].Cost {
+		rest := res.Voicings
+		if curatedFirst(t, sym) {
+			rest = rest[1:]
+		}
+		for i := 1; i < len(rest); i++ {
+			if rest[i].Cost < rest[i-1].Cost {
 				t.Errorf("%s: shape %d costs less than the one before it", sym, i)
 			}
 		}
@@ -474,4 +481,27 @@ func FuzzFor(f *testing.F) {
 			}
 		}
 	})
+}
+
+// curatedFirst reports whether the collection holds a hand-written shape for
+// this chord, in which case it is the one the lookup puts first.
+func curatedFirst(t *testing.T, sym string) bool {
+	t.Helper()
+	c, err := chord.Parse(sym)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ds, err := load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	q, _, ok := harmony.Of(c)
+	if !ok {
+		return false
+	}
+	k := key{root: c.Root.PitchClass(), quality: q, bass: -1}
+	if c.HasBass {
+		k.bass = c.Bass.PitchClass()
+	}
+	return len(ds.curated[k]) > 0
 }

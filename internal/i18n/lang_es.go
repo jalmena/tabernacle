@@ -428,7 +428,7 @@ var spanish = map[string]string{
 	"lab.chord":      "Acorde",
 	"lab.quality":    "Tipo de acorde",
 	"lab.inversions": "Con otra nota en el bajo",
-	"lab.count":      "%d de %d posiciones, de la más fácil en adelante",
+	"lab.count":      "%d de %d posiciones, las más habituales primero",
 	"lab.more":       "Ver más posiciones",
 
 	// Pages that say something went wrong. The heading doubles as the title

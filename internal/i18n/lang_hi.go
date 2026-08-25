@@ -362,7 +362,7 @@ var hindi = map[string]string{
 	"lab.chord":              "कॉर्ड",
 	"lab.quality":            "कॉर्ड का प्रकार",
 	"lab.inversions":         "नीचे कोई और स्वर हो तो",
-	"lab.count":              "%d में से %d पकड़ें, सबसे आसान से आगे",
+	"lab.count":              "%d में से %d पकड़ें, सबसे आम पहले",
 	"lab.more":               "और पकड़ें दिखाएँ",
 	"title.edit":             "बदलें",
 	"title.conflict":         "टकराव",

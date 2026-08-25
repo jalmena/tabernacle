@@ -362,7 +362,7 @@ var portuguese = map[string]string{
 	"lab.chord":              "Acorde",
 	"lab.quality":            "Tipo de acorde",
 	"lab.inversions":         "Com outra nota no baixo",
-	"lab.count":              "%d de %d posições, da mais fácil em diante",
+	"lab.count":              "%d de %d posições, as mais habituais primeiro",
 	"lab.more":               "Ver mais posições",
 	"title.edit":             "Editar",
 	"title.conflict":         "Conflito",

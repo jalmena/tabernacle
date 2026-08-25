@@ -362,7 +362,7 @@ var polish = map[string]string{
 	"lab.chord":              "Akord",
 	"lab.quality":            "Rodzaj akordu",
 	"lab.inversions":         "Z innym dźwiękiem w basie",
-	"lab.count":              "%d z %d chwytów, od najłatwiejszego",
+	"lab.count":              "%d z %d chwytów, najczęstsze najpierw",
 	"lab.more":               "Pokaż więcej chwytów",
 	"title.edit":             "Edytuj",
 	"title.conflict":         "Konflikt",

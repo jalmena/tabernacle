@@ -362,7 +362,7 @@ var dutch = map[string]string{
 	"lab.chord":              "Akkoord",
 	"lab.quality":            "Soort akkoord",
 	"lab.inversions":         "Met een andere noot in de bas",
-	"lab.count":              "%d van %d grepen, van de makkelijkste af",
+	"lab.count":              "%d van %d grepen, de gebruikelijkste eerst",
 	"lab.more":               "Meer grepen tonen",
 	"title.edit":             "Bewerken",
 	"title.conflict":         "Conflict",

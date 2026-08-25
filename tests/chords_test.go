@@ -244,7 +244,7 @@ func TestNamingAChordDrawsIt(t *testing.T) {
 // The shapes are one list, easiest first, and not a set of headings to read
 // through. Somebody learning a chord wants the one they can play today and then
 // the next one.
-func TestTheShapesAreOneListEasiestFirst(t *testing.T) {
+func TestTheShapesAreOneList(t *testing.T) {
 	in := start(t, nil)
 	body := in.page("/chords?c=Am7")
 
@@ -257,9 +257,15 @@ func TestTheShapesAreOneListEasiestFirst(t *testing.T) {
 	if n := strings.Count(body, "class=\"labshape"); n < 8 {
 		t.Errorf("the list holds only %d shapes", n)
 	}
-	// The real total is printed, so a trimmed list does not read as all there is.
-	if !strings.Contains(body, "posiciones, de la más fácil en adelante") {
+	// The real total is printed, so a trimmed list does not read as all there
+	// is. What it must not claim is that the order is by difficulty: a curated
+	// shape leads, then the fuller and lower ones, and a three-string grip that
+	// is the easiest thing on the page can sit near the end.
+	if !strings.Contains(body, "posiciones, las más habituales primero") {
 		t.Error("the list does not say how it is ordered")
+	}
+	if strings.Contains(body, "más fácil") {
+		t.Error("the list still claims to be ordered by how easy the shapes are")
 	}
 }
 

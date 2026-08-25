@@ -362,7 +362,7 @@ var catalan = map[string]string{
 	"lab.chord":              "Acord",
 	"lab.quality":            "Mena d'acord",
 	"lab.inversions":         "Amb una altra nota al baix",
-	"lab.count":              "%d de %d posicions, de la més fàcil endavant",
+	"lab.count":              "%d de %d posicions, les més habituals primer",
 	"lab.more":               "Mostra més posicions",
 	"title.edit":             "Edita",
 	"title.conflict":         "Conflicte",

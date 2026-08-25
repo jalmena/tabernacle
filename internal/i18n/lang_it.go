@@ -362,7 +362,7 @@ var italian = map[string]string{
 	"lab.chord":              "Accordo",
 	"lab.quality":            "Tipo di accordo",
 	"lab.inversions":         "Con un'altra nota al basso",
-	"lab.count":              "%d di %d posizioni, dalla più facile in poi",
+	"lab.count":              "%d di %d posizioni, prima le più comuni",
 	"lab.more":               "Vedi altre posizioni",
 	"title.edit":             "Modifica",
 	"title.conflict":         "Conflitto",

@@ -362,7 +362,7 @@ var basque = map[string]string{
 	"lab.chord":              "Akordea",
 	"lab.quality":            "Akorde mota",
 	"lab.inversions":         "Beste nota bat baxuan duela",
-	"lab.count":              "%d / %d posizio, errazenetik aurrera",
+	"lab.count":              "%d / %d posizio, ohikoenak lehenik",
 	"lab.more":               "Ikusi posizio gehiago",
 	"title.edit":             "Editatu",
 	"title.conflict":         "Gatazka",

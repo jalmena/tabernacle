@@ -1,150 +1,923 @@
 {
   "version": 1,
   "note": "Fret and finger specifications are read lowest string first (E A D G B e). 'x' is a muted string, '-' is no finger, 'T' is the thumb. Curated shapes carry absolute frets; movable shapes carry frets relative to their own lowest line and are never emitted at the nut, because open-position fingerings are idiomatic rather than derived and so are always curated.",
-
   "curated": [
-    { "chord": "C",      "shapes": [{ "id": "open", "frets": "x 3 2 0 1 0", "fingers": "- 3 2 - 1 -" }] },
-    { "chord": "C7",     "shapes": [{ "id": "open", "frets": "x 3 2 3 1 0", "fingers": "- 3 2 4 1 -" }] },
-    { "chord": "Cmaj7",  "shapes": [{ "id": "open", "frets": "x 3 2 0 0 0", "fingers": "- 3 2 - - -" }] },
-    { "chord": "Cadd9",  "shapes": [{ "id": "open", "frets": "x 3 2 0 3 0", "fingers": "- 2 1 - 3 -" }] },
-    { "chord": "C/E",    "shapes": [{ "id": "open", "frets": "0 3 2 0 1 0", "fingers": "- 3 2 - 1 -" }] },
-    { "chord": "C/G",    "shapes": [{ "id": "open", "frets": "3 3 2 0 1 0", "fingers": "3 4 2 - 1 -" }] },
-
-    { "chord": "D",      "shapes": [{ "id": "open", "frets": "x x 0 2 3 2", "fingers": "- - - 1 3 2" }] },
-    { "chord": "Dm",     "shapes": [{ "id": "open", "frets": "x x 0 2 3 1", "fingers": "- - - 2 3 1" }] },
-    { "chord": "D7",     "shapes": [{ "id": "open", "frets": "x x 0 2 1 2", "fingers": "- - - 2 1 3" }] },
-    { "chord": "Dm7",    "shapes": [{ "id": "open", "frets": "x x 0 2 1 1", "fingers": "- - - 2 1 1" }] },
-    { "chord": "Dmaj7",  "shapes": [{ "id": "open", "frets": "x x 0 2 2 2", "fingers": "- - - 1 2 3" }] },
-    { "chord": "Dsus2",  "shapes": [{ "id": "open", "frets": "x x 0 2 3 0", "fingers": "- - - 1 3 -" }] },
-    { "chord": "Dsus4",  "shapes": [{ "id": "open", "frets": "x x 0 2 3 3", "fingers": "- - - 1 2 3" }] },
-    { "chord": "D/F#",   "shapes": [{ "id": "open", "frets": "2 0 0 2 3 2", "fingers": "2 - - 1 4 3" }] },
-    { "chord": "D/A",    "shapes": [{ "id": "open", "frets": "x 0 0 2 3 2", "fingers": "- - - 1 3 2" }] },
-
-    { "chord": "E",      "shapes": [{ "id": "open", "frets": "0 2 2 1 0 0", "fingers": "- 2 3 1 - -" }] },
-    { "chord": "Em",     "shapes": [{ "id": "open", "frets": "0 2 2 0 0 0", "fingers": "- 2 3 - - -" }] },
-    { "chord": "E7",     "shapes": [{ "id": "open", "frets": "0 2 0 1 0 0", "fingers": "- 2 - 1 - -" }] },
-    { "chord": "Em7",    "shapes": [{ "id": "open", "frets": "0 2 0 0 0 0", "fingers": "- 2 - - - -" }] },
-    { "chord": "Emaj7",  "shapes": [{ "id": "open", "frets": "0 2 1 1 0 0", "fingers": "- 3 1 2 - -" }] },
-    { "chord": "Esus4",  "shapes": [{ "id": "open", "frets": "0 2 2 2 0 0", "fingers": "- 1 2 3 - -" }] },
-    { "chord": "Em/B",   "shapes": [{ "id": "open", "frets": "x 2 2 0 0 0", "fingers": "- 2 3 - - -" }] },
-
-    { "chord": "F",      "shapes": [{ "id": "open", "frets": "1 3 3 2 1 1", "fingers": "1 4 3 2 1 1",
-                                      "barre": { "fret": 1, "from": 0, "to": 5, "finger": 1 } }] },
-    { "chord": "Fmaj7",  "shapes": [{ "id": "open", "frets": "x x 3 2 1 0", "fingers": "- - 3 2 1 -" }] },
-    { "chord": "F/C",    "shapes": [{ "id": "open", "frets": "x 3 3 2 1 1", "fingers": "- 4 3 2 1 1",
-                                      "barre": { "fret": 1, "from": 4, "to": 5, "finger": 1 } }] },
-
-    { "chord": "G",      "shapes": [{ "id": "open", "frets": "3 2 0 0 3 3", "fingers": "2 1 - - 3 4" }] },
-    { "chord": "G7",     "shapes": [{ "id": "open", "frets": "3 2 0 0 0 1", "fingers": "3 2 - - - 1" }] },
-    { "chord": "Gmaj7",  "shapes": [{ "id": "open", "frets": "3 2 0 0 0 2", "fingers": "3 1 - - - 2" }] },
-    { "chord": "G/B",    "shapes": [{ "id": "open", "frets": "x 2 0 0 3 3", "fingers": "- 1 - - 3 4" }] },
-
-    { "chord": "A",      "shapes": [{ "id": "open", "frets": "x 0 2 2 2 0", "fingers": "- - 1 2 3 -" }] },
-    { "chord": "Am",     "shapes": [{ "id": "open", "frets": "x 0 2 2 1 0", "fingers": "- - 2 3 1 -" }] },
-    { "chord": "A7",     "shapes": [{ "id": "open", "frets": "x 0 2 0 2 0", "fingers": "- - 2 - 3 -" }] },
-    { "chord": "Am7",    "shapes": [{ "id": "open", "frets": "x 0 2 0 1 0", "fingers": "- - 2 - 1 -" }] },
-    { "chord": "Amaj7",  "shapes": [{ "id": "open", "frets": "x 0 2 1 2 0", "fingers": "- - 3 1 2 -" }] },
-    { "chord": "Asus2",  "shapes": [{ "id": "open", "frets": "x 0 2 2 0 0", "fingers": "- - 1 2 - -" }] },
-    { "chord": "Asus4",  "shapes": [{ "id": "open", "frets": "x 0 2 2 3 0", "fingers": "- - 1 2 3 -" }] },
-    { "chord": "A6",     "shapes": [{ "id": "open", "frets": "x 0 2 2 2 2", "fingers": "- - 1 2 3 4" }] },
-    { "chord": "Am6",    "shapes": [{ "id": "open", "frets": "x 0 2 2 1 2", "fingers": "- - 2 3 1 4" }] },
-    { "chord": "E6",     "shapes": [{ "id": "open", "frets": "0 2 2 1 2 0", "fingers": "- 2 3 1 4 -" }] },
-    { "chord": "D6",     "shapes": [{ "id": "open", "frets": "x x 0 2 0 2", "fingers": "- - - 2 - 3" }] },
-    { "chord": "Am/G",   "shapes": [{ "id": "open", "frets": "3 0 2 2 1 0", "fingers": "3 - 2 4 1 -" }] },
-
-    { "chord": "B7",     "shapes": [{ "id": "open", "frets": "x 2 1 2 0 2", "fingers": "- 3 1 4 - 2" }] },
-    { "chord": "Bm",     "shapes": [{ "id": "open", "frets": "x 2 4 4 3 2", "fingers": "- 1 3 4 2 1",
-                                      "barre": { "fret": 2, "from": 1, "to": 5, "finger": 1 } }] },
-    { "chord": "Bm7",    "shapes": [{ "id": "open", "frets": "x 2 4 2 3 2", "fingers": "- 1 3 1 2 1",
-                                      "barre": { "fret": 2, "from": 1, "to": 5, "finger": 1 } }] },
-    { "chord": "Bb",     "shapes": [{ "id": "open", "frets": "x 1 3 3 3 1", "fingers": "- 1 2 3 4 1",
-                                      "barre": { "fret": 1, "from": 1, "to": 5, "finger": 1 } }] },
-
-    { "chord": "E5",     "shapes": [{ "id": "open", "frets": "0 2 x x x x", "fingers": "- 3 - - - -" }] },
-    { "chord": "A5",     "shapes": [{ "id": "open", "frets": "x 0 2 x x x", "fingers": "- - 3 - - -" }] },
-    { "chord": "D5",     "shapes": [{ "id": "open", "frets": "x x 0 2 x x", "fingers": "- - - 3 - -" }] },
-    { "chord": "Am7b5",  "shapes": [{ "id": "open", "frets": "x 0 1 0 1 x", "fingers": "- - 2 - 3 -" }] },
-    { "chord": "Bm7b5",  "shapes": [{ "id": "open", "frets": "x 2 3 2 3 x", "fingers": "- 1 3 2 4 -" }] }
+    {
+      "chord": "C",
+      "shapes": [
+        {
+          "id": "open",
+          "frets": "x 3 2 0 1 0",
+          "fingers": "- 3 2 - 1 -"
+        }
+      ]
+    },
+    {
+      "chord": "C7",
+      "shapes": [
+        {
+          "id": "open",
+          "frets": "x 3 2 3 1 0",
+          "fingers": "- 3 2 4 1 -"
+        }
+      ]
+    },
+    {
+      "chord": "Cmaj7",
+      "shapes": [
+        {
+          "id": "open",
+          "frets": "x 3 2 0 0 0",
+          "fingers": "- 3 2 - - -"
+        }
+      ]
+    },
+    {
+      "chord": "Cadd9",
+      "shapes": [
+        {
+          "id": "open",
+          "frets": "x 3 2 0 3 0",
+          "fingers": "- 2 1 - 3 -"
+        }
+      ]
+    },
+    {
+      "chord": "C/E",
+      "shapes": [
+        {
+          "id": "open",
+          "frets": "0 3 2 0 1 0",
+          "fingers": "- 3 2 - 1 -"
+        }
+      ]
+    },
+    {
+      "chord": "C/G",
+      "shapes": [
+        {
+          "id": "open",
+          "frets": "3 3 2 0 1 0",
+          "fingers": "3 4 2 - 1 -"
+        }
+      ]
+    },
+    {
+      "chord": "D",
+      "shapes": [
+        {
+          "id": "open",
+          "frets": "x x 0 2 3 2",
+          "fingers": "- - - 1 3 2"
+        }
+      ]
+    },
+    {
+      "chord": "Dm",
+      "shapes": [
+        {
+          "id": "open",
+          "frets": "x x 0 2 3 1",
+          "fingers": "- - - 2 3 1"
+        }
+      ]
+    },
+    {
+      "chord": "D7",
+      "shapes": [
+        {
+          "id": "open",
+          "frets": "x x 0 2 1 2",
+          "fingers": "- - - 2 1 3"
+        }
+      ]
+    },
+    {
+      "chord": "Dm7",
+      "shapes": [
+        {
+          "id": "open",
+          "frets": "x x 0 2 1 1",
+          "fingers": "- - - 2 1 1"
+        }
+      ]
+    },
+    {
+      "chord": "Dmaj7",
+      "shapes": [
+        {
+          "id": "open",
+          "frets": "x x 0 2 2 2",
+          "fingers": "- - - 1 2 3"
+        }
+      ]
+    },
+    {
+      "chord": "Dsus2",
+      "shapes": [
+        {
+          "id": "open",
+          "frets": "x x 0 2 3 0",
+          "fingers": "- - - 1 3 -"
+        }
+      ]
+    },
+    {
+      "chord": "Dsus4",
+      "shapes": [
+        {
+          "id": "open",
+          "frets": "x x 0 2 3 3",
+          "fingers": "- - - 1 2 3"
+        }
+      ]
+    },
+    {
+      "chord": "D/F#",
+      "shapes": [
+        {
+          "id": "open",
+          "frets": "2 0 0 2 3 2",
+          "fingers": "2 - - 1 4 3"
+        }
+      ]
+    },
+    {
+      "chord": "D/A",
+      "shapes": [
+        {
+          "id": "open",
+          "frets": "x 0 0 2 3 2",
+          "fingers": "- - - 1 3 2"
+        }
+      ]
+    },
+    {
+      "chord": "E",
+      "shapes": [
+        {
+          "id": "open",
+          "frets": "0 2 2 1 0 0",
+          "fingers": "- 2 3 1 - -"
+        }
+      ]
+    },
+    {
+      "chord": "Em",
+      "shapes": [
+        {
+          "id": "open",
+          "frets": "0 2 2 0 0 0",
+          "fingers": "- 2 3 - - -"
+        }
+      ]
+    },
+    {
+      "chord": "E7",
+      "shapes": [
+        {
+          "id": "open",
+          "frets": "0 2 0 1 0 0",
+          "fingers": "- 2 - 1 - -"
+        }
+      ]
+    },
+    {
+      "chord": "Em7",
+      "shapes": [
+        {
+          "id": "open",
+          "frets": "0 2 0 0 0 0",
+          "fingers": "- 2 - - - -"
+        }
+      ]
+    },
+    {
+      "chord": "Emaj7",
+      "shapes": [
+        {
+          "id": "open",
+          "frets": "0 2 1 1 0 0",
+          "fingers": "- 3 1 2 - -"
+        }
+      ]
+    },
+    {
+      "chord": "Esus4",
+      "shapes": [
+        {
+          "id": "open",
+          "frets": "0 2 2 2 0 0",
+          "fingers": "- 1 2 3 - -"
+        }
+      ]
+    },
+    {
+      "chord": "Em/B",
+      "shapes": [
+        {
+          "id": "open",
+          "frets": "x 2 2 0 0 0",
+          "fingers": "- 2 3 - - -"
+        }
+      ]
+    },
+    {
+      "chord": "F",
+      "shapes": [
+        {
+          "id": "open",
+          "frets": "1 3 3 2 1 1",
+          "fingers": "1 4 3 2 1 1",
+          "barre": {
+            "fret": 1,
+            "from": 0,
+            "to": 5,
+            "finger": 1
+          }
+        }
+      ]
+    },
+    {
+      "chord": "Fmaj7",
+      "shapes": [
+        {
+          "id": "open",
+          "frets": "x x 3 2 1 0",
+          "fingers": "- - 3 2 1 -"
+        }
+      ]
+    },
+    {
+      "chord": "F/C",
+      "shapes": [
+        {
+          "id": "open",
+          "frets": "x 3 3 2 1 1",
+          "fingers": "- 4 3 2 1 1",
+          "barre": {
+            "fret": 1,
+            "from": 4,
+            "to": 5,
+            "finger": 1
+          }
+        }
+      ]
+    },
+    {
+      "chord": "G",
+      "shapes": [
+        {
+          "id": "open",
+          "frets": "3 2 0 0 3 3",
+          "fingers": "2 1 - - 3 4"
+        }
+      ]
+    },
+    {
+      "chord": "G7",
+      "shapes": [
+        {
+          "id": "open",
+          "frets": "3 2 0 0 0 1",
+          "fingers": "3 2 - - - 1"
+        }
+      ]
+    },
+    {
+      "chord": "Gmaj7",
+      "shapes": [
+        {
+          "id": "open",
+          "frets": "3 2 0 0 0 2",
+          "fingers": "3 1 - - - 2"
+        }
+      ]
+    },
+    {
+      "chord": "G/B",
+      "shapes": [
+        {
+          "id": "open",
+          "frets": "x 2 0 0 3 3",
+          "fingers": "- 1 - - 3 4"
+        }
+      ]
+    },
+    {
+      "chord": "A",
+      "shapes": [
+        {
+          "id": "open",
+          "frets": "x 0 2 2 2 0",
+          "fingers": "- - 1 2 3 -"
+        }
+      ]
+    },
+    {
+      "chord": "Am",
+      "shapes": [
+        {
+          "id": "open",
+          "frets": "x 0 2 2 1 0",
+          "fingers": "- - 2 3 1 -"
+        }
+      ]
+    },
+    {
+      "chord": "A7",
+      "shapes": [
+        {
+          "id": "open",
+          "frets": "x 0 2 0 2 0",
+          "fingers": "- - 2 - 3 -"
+        }
+      ]
+    },
+    {
+      "chord": "Am7",
+      "shapes": [
+        {
+          "id": "open",
+          "frets": "x 0 2 0 1 0",
+          "fingers": "- - 2 - 1 -"
+        }
+      ]
+    },
+    {
+      "chord": "Amaj7",
+      "shapes": [
+        {
+          "id": "open",
+          "frets": "x 0 2 1 2 0",
+          "fingers": "- - 3 1 2 -"
+        }
+      ]
+    },
+    {
+      "chord": "Asus2",
+      "shapes": [
+        {
+          "id": "open",
+          "frets": "x 0 2 2 0 0",
+          "fingers": "- - 1 2 - -"
+        }
+      ]
+    },
+    {
+      "chord": "Asus4",
+      "shapes": [
+        {
+          "id": "open",
+          "frets": "x 0 2 2 3 0",
+          "fingers": "- - 1 2 3 -"
+        }
+      ]
+    },
+    {
+      "chord": "A6",
+      "shapes": [
+        {
+          "id": "open",
+          "frets": "x 0 2 2 2 2",
+          "fingers": "- - 1 2 3 4"
+        }
+      ]
+    },
+    {
+      "chord": "Am6",
+      "shapes": [
+        {
+          "id": "open",
+          "frets": "x 0 2 2 1 2",
+          "fingers": "- - 2 3 1 4"
+        }
+      ]
+    },
+    {
+      "chord": "E6",
+      "shapes": [
+        {
+          "id": "open",
+          "frets": "0 2 2 1 2 0",
+          "fingers": "- 2 3 1 4 -"
+        }
+      ]
+    },
+    {
+      "chord": "D6",
+      "shapes": [
+        {
+          "id": "open",
+          "frets": "x x 0 2 0 2",
+          "fingers": "- - - 2 - 3"
+        }
+      ]
+    },
+    {
+      "chord": "Am/G",
+      "shapes": [
+        {
+          "id": "open",
+          "frets": "3 0 2 2 1 0",
+          "fingers": "3 - 2 4 1 -"
+        }
+      ]
+    },
+    {
+      "chord": "B7",
+      "shapes": [
+        {
+          "id": "open",
+          "frets": "x 2 1 2 0 2",
+          "fingers": "- 3 1 4 - 2"
+        }
+      ]
+    },
+    {
+      "chord": "Bm",
+      "shapes": [
+        {
+          "id": "open",
+          "frets": "x 2 4 4 3 2",
+          "fingers": "- 1 3 4 2 1",
+          "barre": {
+            "fret": 2,
+            "from": 1,
+            "to": 5,
+            "finger": 1
+          }
+        }
+      ]
+    },
+    {
+      "chord": "Bm7",
+      "shapes": [
+        {
+          "id": "open",
+          "frets": "x 2 4 2 3 2",
+          "fingers": "- 1 3 1 2 1",
+          "barre": {
+            "fret": 2,
+            "from": 1,
+            "to": 5,
+            "finger": 1
+          }
+        }
+      ]
+    },
+    {
+      "chord": "B",
+      "shapes": [
+        {
+          "id": "a-shape",
+          "frets": "x 2 4 4 4 2",
+          "fingers": "- 1 2 3 4 1",
+          "barre": {
+            "fret": 2,
+            "from": 1,
+            "to": 5,
+            "finger": 1
+          }
+        }
+      ]
+    },
+    {
+      "chord": "Bb",
+      "shapes": [
+        {
+          "id": "open",
+          "frets": "x 1 3 3 3 1",
+          "fingers": "- 1 2 3 4 1",
+          "barre": {
+            "fret": 1,
+            "from": 1,
+            "to": 5,
+            "finger": 1
+          }
+        }
+      ]
+    },
+    {
+      "chord": "E5",
+      "shapes": [
+        {
+          "id": "open",
+          "frets": "0 2 x x x x",
+          "fingers": "- 3 - - - -"
+        }
+      ]
+    },
+    {
+      "chord": "A5",
+      "shapes": [
+        {
+          "id": "open",
+          "frets": "x 0 2 x x x",
+          "fingers": "- - 3 - - -"
+        }
+      ]
+    },
+    {
+      "chord": "D5",
+      "shapes": [
+        {
+          "id": "open",
+          "frets": "x x 0 2 x x",
+          "fingers": "- - - 3 - -"
+        }
+      ]
+    },
+    {
+      "chord": "Am7b5",
+      "shapes": [
+        {
+          "id": "open",
+          "frets": "x 0 1 0 1 x",
+          "fingers": "- - 2 - 3 -"
+        }
+      ]
+    },
+    {
+      "chord": "Bm7b5",
+      "shapes": [
+        {
+          "id": "open",
+          "frets": "x 2 3 2 3 x",
+          "fingers": "- 1 3 2 4 -"
+        }
+      ]
+    }
   ],
-
   "movable": [
-    { "quality": "major", "shapes": [
-      { "id": "e-shape", "root": 0, "frets": "0 2 2 1 0 0", "fingers": "1 3 4 2 1 1",
-        "barre": { "fret": 0, "from": 0, "to": 5, "finger": 1 }, "minFret": 1, "maxFret": 11 },
-      { "id": "a-shape", "root": 1, "frets": "x 0 2 2 2 0", "fingers": "- 1 2 3 4 1",
-        "barre": { "fret": 0, "from": 1, "to": 5, "finger": 1 }, "minFret": 1, "maxFret": 11 },
-      { "id": "d-shape", "root": 2, "frets": "x x 0 2 3 2", "fingers": "- - 1 2 4 3",
-        "minFret": 1, "maxFret": 10 }
-    ]},
-    { "quality": "minor", "shapes": [
-      { "id": "e-shape", "root": 0, "frets": "0 2 2 0 0 0", "fingers": "1 3 4 1 1 1",
-        "barre": { "fret": 0, "from": 0, "to": 5, "finger": 1 }, "minFret": 1, "maxFret": 11 },
-      { "id": "a-shape", "root": 1, "frets": "x 0 2 2 1 0", "fingers": "- 1 3 4 2 1",
-        "barre": { "fret": 0, "from": 1, "to": 5, "finger": 1 }, "minFret": 1, "maxFret": 11 },
-      { "id": "d-shape", "root": 2, "frets": "x x 0 2 3 1", "fingers": "- - 1 3 4 2",
-        "minFret": 1, "maxFret": 10 }
-    ]},
-    { "quality": "dom7", "shapes": [
-      { "id": "e-shape", "root": 0, "frets": "0 2 0 1 0 0", "fingers": "1 3 1 2 1 1",
-        "barre": { "fret": 0, "from": 0, "to": 5, "finger": 1 }, "minFret": 1, "maxFret": 11 },
-      { "id": "a-shape", "root": 1, "frets": "x 0 2 0 2 0", "fingers": "- 1 3 1 4 1",
-        "barre": { "fret": 0, "from": 1, "to": 5, "finger": 1 }, "minFret": 1, "maxFret": 11 },
-      { "id": "d-shape", "root": 2, "frets": "x x 0 2 1 2", "fingers": "- - 1 3 2 4",
-        "minFret": 1, "maxFret": 10 }
-    ]},
-    { "quality": "min7", "shapes": [
-      { "id": "e-shape", "root": 0, "frets": "0 2 0 0 0 0", "fingers": "1 3 1 1 1 1",
-        "barre": { "fret": 0, "from": 0, "to": 5, "finger": 1 }, "minFret": 1, "maxFret": 11 },
-      { "id": "a-shape", "root": 1, "frets": "x 0 2 0 1 0", "fingers": "- 1 3 1 2 1",
-        "barre": { "fret": 0, "from": 1, "to": 5, "finger": 1 }, "minFret": 1, "maxFret": 11 },
-      { "id": "d-shape", "root": 2, "frets": "x x 0 2 1 1", "fingers": "- - 1 3 2 2",
-        "minFret": 1, "maxFret": 10 }
-    ]},
-    { "quality": "maj7", "shapes": [
-      { "id": "e-shape", "root": 0, "frets": "0 2 1 1 0 0", "fingers": "1 4 2 3 1 1",
-        "barre": { "fret": 0, "from": 0, "to": 5, "finger": 1 }, "minFret": 1, "maxFret": 11 },
-      { "id": "a-shape", "root": 1, "frets": "x 0 2 1 2 0", "fingers": "- 1 4 2 3 1",
-        "barre": { "fret": 0, "from": 1, "to": 5, "finger": 1 }, "minFret": 1, "maxFret": 11 },
-      { "id": "d-shape", "root": 2, "frets": "x x 0 2 2 2", "fingers": "- - 1 2 3 4",
-        "minFret": 1, "maxFret": 10 }
-    ]},
-    { "quality": "sus4", "shapes": [
-      { "id": "e-shape", "root": 0, "frets": "0 2 2 2 0 0", "fingers": "1 2 3 4 1 1",
-        "barre": { "fret": 0, "from": 0, "to": 5, "finger": 1 }, "minFret": 1, "maxFret": 11 },
-      { "id": "a-shape", "root": 1, "frets": "x 0 2 2 3 0", "fingers": "- 1 2 3 4 1",
-        "barre": { "fret": 0, "from": 1, "to": 5, "finger": 1 }, "minFret": 1, "maxFret": 10 }
-    ]},
-    { "quality": "sus2", "shapes": [
-      { "id": "a-shape", "root": 1, "frets": "x 0 2 2 0 0", "fingers": "- 1 3 4 1 1",
-        "barre": { "fret": 0, "from": 1, "to": 5, "finger": 1 }, "minFret": 1, "maxFret": 11 }
-    ]},
-    { "quality": "dom7sus4", "shapes": [
-      { "id": "e-shape", "root": 0, "frets": "0 2 0 2 0 0", "fingers": "1 3 1 4 1 1",
-        "barre": { "fret": 0, "from": 0, "to": 5, "finger": 1 }, "minFret": 1, "maxFret": 11 },
-      { "id": "a-shape", "root": 1, "frets": "x 0 2 0 3 0", "fingers": "- 1 3 1 4 1",
-        "barre": { "fret": 0, "from": 1, "to": 5, "finger": 1 }, "minFret": 1, "maxFret": 10 }
-    ]},
-    { "quality": "min7b5", "shapes": [
-      { "id": "a-shape", "root": 1, "frets": "x 0 1 0 1 x", "fingers": "- 1 3 2 4 -",
-        "minFret": 1, "maxFret": 12 }
-    ]},
-    { "quality": "dim7", "shapes": [
-      { "id": "d-shape", "root": 2, "frets": "x x 0 1 0 1", "fingers": "- - 1 3 2 4",
-        "minFret": 1, "maxFret": 12 }
-    ]},
-    { "quality": "dim", "shapes": [
-      { "id": "d-shape", "root": 2, "frets": "x x 0 1 3 1", "fingers": "- - 1 2 4 3",
-        "minFret": 1, "maxFret": 10 }
-    ]},
-    { "quality": "maj6", "shapes": [
-      { "id": "a-shape", "root": 1, "frets": "x 0 2 2 2 2", "fingers": "- 1 3 3 3 3",
-        "barre": { "fret": 2, "from": 2, "to": 5, "finger": 3 }, "minFret": 1, "maxFret": 10 }
-    ]},
-    { "quality": "power", "shapes": [
-      { "id": "e-shape", "root": 0, "frets": "0 2 x x x x", "fingers": "1 3 - - - -",
-        "minFret": 1, "maxFret": 12 },
-      { "id": "a-shape", "root": 1, "frets": "x 0 2 x x x", "fingers": "- 1 3 - - -",
-        "minFret": 1, "maxFret": 12 }
-    ]}
+    {
+      "quality": "major",
+      "shapes": [
+        {
+          "id": "e-shape",
+          "root": 0,
+          "frets": "0 2 2 1 0 0",
+          "fingers": "1 3 4 2 1 1",
+          "barre": {
+            "fret": 0,
+            "from": 0,
+            "to": 5,
+            "finger": 1
+          },
+          "minFret": 1,
+          "maxFret": 11
+        },
+        {
+          "id": "a-shape",
+          "root": 1,
+          "frets": "x 0 2 2 2 0",
+          "fingers": "- 1 2 3 4 1",
+          "barre": {
+            "fret": 0,
+            "from": 1,
+            "to": 5,
+            "finger": 1
+          },
+          "minFret": 1,
+          "maxFret": 11
+        },
+        {
+          "id": "d-shape",
+          "root": 2,
+          "frets": "x x 0 2 3 2",
+          "fingers": "- - 1 2 4 3",
+          "minFret": 1,
+          "maxFret": 10
+        }
+      ]
+    },
+    {
+      "quality": "minor",
+      "shapes": [
+        {
+          "id": "e-shape",
+          "root": 0,
+          "frets": "0 2 2 0 0 0",
+          "fingers": "1 3 4 1 1 1",
+          "barre": {
+            "fret": 0,
+            "from": 0,
+            "to": 5,
+            "finger": 1
+          },
+          "minFret": 1,
+          "maxFret": 11
+        },
+        {
+          "id": "a-shape",
+          "root": 1,
+          "frets": "x 0 2 2 1 0",
+          "fingers": "- 1 3 4 2 1",
+          "barre": {
+            "fret": 0,
+            "from": 1,
+            "to": 5,
+            "finger": 1
+          },
+          "minFret": 1,
+          "maxFret": 11
+        },
+        {
+          "id": "d-shape",
+          "root": 2,
+          "frets": "x x 0 2 3 1",
+          "fingers": "- - 1 3 4 2",
+          "minFret": 1,
+          "maxFret": 10
+        }
+      ]
+    },
+    {
+      "quality": "dom7",
+      "shapes": [
+        {
+          "id": "e-shape",
+          "root": 0,
+          "frets": "0 2 0 1 0 0",
+          "fingers": "1 3 1 2 1 1",
+          "barre": {
+            "fret": 0,
+            "from": 0,
+            "to": 5,
+            "finger": 1
+          },
+          "minFret": 1,
+          "maxFret": 11
+        },
+        {
+          "id": "a-shape",
+          "root": 1,
+          "frets": "x 0 2 0 2 0",
+          "fingers": "- 1 3 1 4 1",
+          "barre": {
+            "fret": 0,
+            "from": 1,
+            "to": 5,
+            "finger": 1
+          },
+          "minFret": 1,
+          "maxFret": 11
+        },
+        {
+          "id": "d-shape",
+          "root": 2,
+          "frets": "x x 0 2 1 2",
+          "fingers": "- - 1 3 2 4",
+          "minFret": 1,
+          "maxFret": 10
+        }
+      ]
+    },
+    {
+      "quality": "min7",
+      "shapes": [
+        {
+          "id": "e-shape",
+          "root": 0,
+          "frets": "0 2 0 0 0 0",
+          "fingers": "1 3 1 1 1 1",
+          "barre": {
+            "fret": 0,
+            "from": 0,
+            "to": 5,
+            "finger": 1
+          },
+          "minFret": 1,
+          "maxFret": 11
+        },
+        {
+          "id": "a-shape",
+          "root": 1,
+          "frets": "x 0 2 0 1 0",
+          "fingers": "- 1 3 1 2 1",
+          "barre": {
+            "fret": 0,
+            "from": 1,
+            "to": 5,
+            "finger": 1
+          },
+          "minFret": 1,
+          "maxFret": 11
+        },
+        {
+          "id": "d-shape",
+          "root": 2,
+          "frets": "x x 0 2 1 1",
+          "fingers": "- - 1 3 2 2",
+          "minFret": 1,
+          "maxFret": 10
+        }
+      ]
+    },
+    {
+      "quality": "maj7",
+      "shapes": [
+        {
+          "id": "e-shape",
+          "root": 0,
+          "frets": "0 2 1 1 0 0",
+          "fingers": "1 4 2 3 1 1",
+          "barre": {
+            "fret": 0,
+            "from": 0,
+            "to": 5,
+            "finger": 1
+          },
+          "minFret": 1,
+          "maxFret": 11
+        },
+        {
+          "id": "a-shape",
+          "root": 1,
+          "frets": "x 0 2 1 2 0",
+          "fingers": "- 1 4 2 3 1",
+          "barre": {
+            "fret": 0,
+            "from": 1,
+            "to": 5,
+            "finger": 1
+          },
+          "minFret": 1,
+          "maxFret": 11
+        },
+        {
+          "id": "d-shape",
+          "root": 2,
+          "frets": "x x 0 2 2 2",
+          "fingers": "- - 1 2 3 4",
+          "minFret": 1,
+          "maxFret": 10
+        }
+      ]
+    },
+    {
+      "quality": "sus4",
+      "shapes": [
+        {
+          "id": "e-shape",
+          "root": 0,
+          "frets": "0 2 2 2 0 0",
+          "fingers": "1 2 3 4 1 1",
+          "barre": {
+            "fret": 0,
+            "from": 0,
+            "to": 5,
+            "finger": 1
+          },
+          "minFret": 1,
+          "maxFret": 11
+        },
+        {
+          "id": "a-shape",
+          "root": 1,
+          "frets": "x 0 2 2 3 0",
+          "fingers": "- 1 2 3 4 1",
+          "barre": {
+            "fret": 0,
+            "from": 1,
+            "to": 5,
+            "finger": 1
+          },
+          "minFret": 1,
+          "maxFret": 10
+        }
+      ]
+    },
+    {
+      "quality": "sus2",
+      "shapes": [
+        {
+          "id": "a-shape",
+          "root": 1,
+          "frets": "x 0 2 2 0 0",
+          "fingers": "- 1 3 4 1 1",
+          "barre": {
+            "fret": 0,
+            "from": 1,
+            "to": 5,
+            "finger": 1
+          },
+          "minFret": 1,
+          "maxFret": 11
+        }
+      ]
+    },
+    {
+      "quality": "dom7sus4",
+      "shapes": [
+        {
+          "id": "e-shape",
+          "root": 0,
+          "frets": "0 2 0 2 0 0",
+          "fingers": "1 3 1 4 1 1",
+          "barre": {
+            "fret": 0,
+            "from": 0,
+            "to": 5,
+            "finger": 1
+          },
+          "minFret": 1,
+          "maxFret": 11
+        },
+        {
+          "id": "a-shape",
+          "root": 1,
+          "frets": "x 0 2 0 3 0",
+          "fingers": "- 1 3 1 4 1",
+          "barre": {
+            "fret": 0,
+            "from": 1,
+            "to": 5,
+            "finger": 1
+          },
+          "minFret": 1,
+          "maxFret": 10
+        }
+      ]
+    },
+    {
+      "quality": "min7b5",
+      "shapes": [
+        {
+          "id": "a-shape",
+          "root": 1,
+          "frets": "x 0 1 0 1 x",
+          "fingers": "- 1 3 2 4 -",
+          "minFret": 1,
+          "maxFret": 12
+        }
+      ]
+    },
+    {
+      "quality": "dim7",
+      "shapes": [
+        {
+          "id": "d-shape",
+          "root": 2,
+          "frets": "x x 0 1 0 1",
+          "fingers": "- - 1 3 2 4",
+          "minFret": 1,
+          "maxFret": 12
+        }
+      ]
+    },
+    {
+      "quality": "dim",
+      "shapes": [
+        {
+          "id": "d-shape",
+          "root": 2,
+          "frets": "x x 0 1 3 1",
+          "fingers": "- - 1 2 4 3",
+          "minFret": 1,
+          "maxFret": 10
+        }
+      ]
+    },
+    {
+      "quality": "maj6",
+      "shapes": [
+        {
+          "id": "a-shape",
+          "root": 1,
+          "frets": "x 0 2 2 2 2",
+          "fingers": "- 1 3 3 3 3",
+          "barre": {
+            "fret": 2,
+            "from": 2,
+            "to": 5,
+            "finger": 3
+          },
+          "minFret": 1,
+          "maxFret": 10
+        }
+      ]
+    },
+    {
+      "quality": "power",
+      "shapes": [
+        {
+          "id": "e-shape",
+          "root": 0,
+          "frets": "0 2 x x x x",
+          "fingers": "1 3 - - - -",
+          "minFret": 1,
+          "maxFret": 12
+        },
+        {
+          "id": "a-shape",
+          "root": 1,
+          "frets": "x 0 2 x x x",
+          "fingers": "- 1 3 - - -",
+          "minFret": 1,
+          "maxFret": 12
+        }
+      ]
+    }
   ]
 }

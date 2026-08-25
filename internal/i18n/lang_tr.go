@@ -362,7 +362,7 @@ var turkish = map[string]string{
 	"lab.chord":              "Akor",
 	"lab.quality":            "Akor türü",
 	"lab.inversions":         "Basta başka bir notayla",
-	"lab.count":              "%d / %d pozisyon, en kolaydan başlayarak",
+	"lab.count":              "%d / %d pozisyon, en yaygın olanlar önce",
 	"lab.more":               "Daha çok pozisyon göster",
 	"title.edit":             "Düzenle",
 	"title.conflict":         "Çakışma",

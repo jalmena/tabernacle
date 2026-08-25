@@ -362,7 +362,7 @@ var french = map[string]string{
 	"lab.chord":              "Accord",
 	"lab.quality":            "Type d'accord",
 	"lab.inversions":         "Avec une autre note à la basse",
-	"lab.count":              "%d sur %d positions, de la plus facile aux suivantes",
+	"lab.count":              "%d sur %d positions, les plus courantes d'abord",
 	"lab.more":               "Voir plus de positions",
 	"title.edit":             "Modifier",
 	"title.conflict":         "Conflit",

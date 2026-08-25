@@ -362,7 +362,7 @@ var chinese = map[string]string{
 	"lab.chord":              "和弦",
 	"lab.quality":            "和弦种类",
 	"lab.inversions":         "低音换成别的音",
-	"lab.count":              "%d / %d 个指法，由易到难",
+	"lab.count":              "%d / %d 个指法，最常用的在前",
 	"lab.more":               "看更多指法",
 	"title.edit":             "编辑",
 	"title.conflict":         "冲突",

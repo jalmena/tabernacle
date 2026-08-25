@@ -362,7 +362,7 @@ var german = map[string]string{
 	"lab.chord":              "Akkord",
 	"lab.quality":            "Art des Akkords",
 	"lab.inversions":         "Mit einer anderen Note im Bass",
-	"lab.count":              "%d von %d Griffen, vom leichtesten an",
+	"lab.count":              "%d von %d Griffen, die gebräuchlichsten zuerst",
 	"lab.more":               "Mehr Griffe zeigen",
 	"title.edit":             "Bearbeiten",
 	"title.conflict":         "Konflikt",

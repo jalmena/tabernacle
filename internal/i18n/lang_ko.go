@@ -362,7 +362,7 @@ var korean = map[string]string{
 	"lab.chord":              "코드",
 	"lab.quality":            "코드 종류",
 	"lab.inversions":         "베이스가 다른 음일 때",
-	"lab.count":              "%d／%d 운지, 쉬운 것부터",
+	"lab.count":              "%d／%d 운지, 흔히 쓰는 것부터",
 	"lab.more":               "운지 더 보기",
 	"title.edit":             "편집",
 	"title.conflict":         "충돌",

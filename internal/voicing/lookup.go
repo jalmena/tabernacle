@@ -407,15 +407,36 @@ func For(c chord.Chord, opts Options) Result {
 		res.Warning, res.Tuning = warningForNothing(tuning)
 		return res
 	}
+	// A shape somebody wrote down for this chord comes before one the code slid
+	// into place, whatever the weights make of them.
+	//
+	// The weights are a model of a hand and they are approximate; a curated
+	// entry is a decision. Sorting on cost alone let a tuning change knock Bb
+	// off the first-fret A shape everybody plays and onto a barre at the sixth,
+	// and no amount of care with the numbers stops that happening again.
 	sort.SliceStable(found, func(i, j int) bool {
-		if found[i].Cost != found[j].Cost {
-			return found[i].Cost < found[j].Cost
+		a, b := found[i], found[j]
+		if wa, wb := written(a), written(b); wa != wb {
+			return wa
 		}
-		return found[i].Position < found[j].Position
+		if a.Cost != b.Cost {
+			return a.Cost < b.Cost
+		}
+		return a.Position < b.Position
 	})
+	for i := range found {
+		found[i].Shape = strings.TrimPrefix(found[i].Shape, curatedMark)
+	}
 	res.Voicings = thin(found, opts.Max)
 	return res
 }
+
+// curatedMark tags a shape while it is being sorted, so that a hand-written
+// entry can be told from a slid template without widening Voicing with a field
+// that means nothing to anybody outside this file.
+const curatedMark = "\x00"
+
+func written(v Voicing) bool { return strings.HasPrefix(v.Shape, curatedMark) }
 
 // gather collects every candidate shape for one chord.
 func gather(ds *dataset, k key, tuning Tuning) []Voicing {
@@ -434,6 +455,7 @@ func gather(ds *dataset, k key, tuning Tuning) []Voicing {
 	}
 
 	for _, v := range ds.curated[k] {
+		v.Shape = curatedMark + v.Shape
 		appendIf(v, v.Tuning)
 	}
 	// Movable templates only voice a chord with no slash bass: sliding a shape
@@ -688,11 +710,18 @@ func openInside(frets []Fret) int {
 // cost is the sort key for a list of shapes: how hard the shape is, plus where
 // it sits on the neck.
 //
-// The two are added here and nowhere else, because they answer different
-// questions. Strain is what the hand is asked to do. Position is an editorial
-// preference — a chord reference prints the shape nearest the nut first — and
-// it is not difficulty at all: frets narrow as they climb, so the same barre is
-// easier at the ninth than at the first, not harder.
+// The parts are added here and nowhere else, because they answer different
+// questions. Strain is what the hand is asked to do. The other two are
+// editorial preferences and are not difficulty at all.
+//
+// Position: a chord reference prints the shape nearest the nut first. Frets
+// narrow as they climb, so the same barre is easier at the ninth than at the
+// first, not harder.
+//
+// Silent strings: a fuller voicing is the better thing to print, being the
+// bigger sound and the shape people expect to be shown. It is not the harder
+// one — a three-string grip is usually the easiest thing on the page, and
+// calling a list ordered by this "easiest first" was a plain untruth.
 //
 // Keeping them apart is what lets the page say the same word for the same shape
 // wherever it sits, while the list still opens where a reference would.
@@ -701,18 +730,65 @@ func openInside(frets []Fret) int {
 // shape always beats a barre, and the order is deterministic, because the
 // interface says "2 de 4" and a deep link names a shape.
 func cost(v Voicing) int {
-	return strain(v) + 3*v.Position
+	return strain(v) + 3*v.Position + 6*silent(v.Frets)
+}
+
+// crowded counts fingertips past the second on any one fret, behind a barre.
+//
+// Three fingers on one fret is ordinary on its own — an open A and an open G
+// both do it and nobody calls either hard. What is not ordinary is doing it
+// while the index lies flat across the neck below: the other three have to arch
+// over it and land on their tips in the space it leaves. That is the whole
+// difference between the E-shape barre and the A-shape one, and it is why B is
+// a step past F for most players rather than the same thing on another root.
+//
+// The barre finger itself is never counted: it lies flat and takes no room the
+// others want.
+func crowded(v Voicing) int {
+	if len(v.Barres) == 0 {
+		return 0
+	}
+	on := map[Fret]map[Finger]bool{}
+	for i, f := range v.Frets {
+		if f <= 0 || i >= len(v.Fingers) {
+			continue
+		}
+		k := v.Fingers[i]
+		if k < Index || k > Pinky {
+			continue
+		}
+		if k == v.Barres[0].Finger && f == v.Barres[0].Fret {
+			continue
+		}
+		if on[f] == nil {
+			on[f] = map[Finger]bool{}
+		}
+		on[f][k] = true
+	}
+	extra := 0
+	for _, fingers := range on {
+		extra += max(0, len(fingers)-2)
+	}
+	return extra
+}
+
+// silent counts strings that do not sound at all.
+func silent(frets []Fret) int {
+	n := 0
+	for _, f := range frets {
+		if f == Muted {
+			n++
+		}
+	}
+	return n
 }
 
 // strain is what the shape asks of the hand, and nothing about where it is.
 func strain(v Voicing) int {
 	c := 0
-	fretted, muted, thumb := 0, 0, 0
+	fretted, thumb := 0, 0
 	for i, f := range v.Frets {
-		switch {
-		case f == Muted:
-			muted++
-		case f > 0:
+		if f > 0 {
 			fretted++
 		}
 		if i < len(v.Fingers) && v.Fingers[i] == Thumb {
@@ -761,12 +837,13 @@ func strain(v Voicing) int {
 		}
 	}
 	c += 6 * thumb
+	// Fingers crowded onto one fret behind a barre. Two side by side is
+	// nothing; a third joining them means three fingertips arching over an
+	// index that is already lying across the neck.
+	c += 8 * crowded(v)
 	// A muted string between two sounded ones has to be damped deliberately.
+	// This one is strain: it is a thing the hand does.
 	c += 8 * mutedInside(v.Frets)
-	// A fuller voicing is the better primary choice for a song sheet: it is the
-	// bigger sound, and it is the shape people expect to be shown. Without this
-	// a thin four-string grip wins simply by fretting fewer notes.
-	c += 6 * muted
 	return c
 }
 

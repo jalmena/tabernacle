@@ -362,7 +362,7 @@ var indonesian = map[string]string{
 	"lab.chord":              "Kunci",
 	"lab.quality":            "Jenis kunci",
 	"lab.inversions":         "Dengan nada lain di bas",
-	"lab.count":              "%d dari %d posisi, dari yang paling mudah",
+	"lab.count":              "%d dari %d posisi, yang paling lazim dulu",
 	"lab.more":               "Tampilkan lebih banyak posisi",
 	"title.edit":             "Ubah",
 	"title.conflict":         "Bentrok",

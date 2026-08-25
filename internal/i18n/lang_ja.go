@@ -362,7 +362,7 @@ var japanese = map[string]string{
 	"lab.chord":              "コード",
 	"lab.quality":            "コードの種類",
 	"lab.inversions":         "ベースが別の音",
-	"lab.count":              "%d ／ %d の押さえ方、やさしい順",
+	"lab.count":              "%d ／ %d の押さえ方、よく使うものから",
 	"lab.more":               "もっと押さえ方を見る",
 	"title.edit":             "編集",
 	"title.conflict":         "衝突",

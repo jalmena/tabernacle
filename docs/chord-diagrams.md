@@ -106,8 +106,12 @@ Shapes are sorted by a playability cost: fretted notes, stretch, posture,
 spread, barre, position, muted and open strings inside the shape, thumbed notes.
 The weights matter less than two properties, both pinned by tests:
 
-1. An open shape always beats a barre.
-2. The order is deterministic, because the interface says "2 de 4" and a deep
+1. A shape somebody wrote down for this chord comes first, whatever the weights
+   make of it. The weights are a model of a hand and they are approximate; a
+   curated entry is a decision. Sorting on cost alone let a tuning change knock
+   Bb off the first-fret A shape everybody plays and onto a barre at the sixth.
+2. An open shape always beats a barre.
+3. The order is deterministic, because the interface says "2 de 4" and a deep
    link names a shape.
 
 `TestPrimaryShapes` pins the shape offered first for about forty chords against
@@ -175,24 +179,34 @@ produce is nothing anybody plays:
 
 | | cost | |
 | --- | --- | --- |
-| Trivial | ≤ 16 | Em7 4, Em 8, E7 16 |
-| Easy | ≤ 40 | A 18, E 20, Am 26, G 30, D 32, C 34 |
-| Moderate | ≤ 60 | F# 54, Bm 55, F 58 |
-| Advanced | ≤ 72 | B 62, Bb 66 |
-| Complex | ≤ 90 | |
-| Extreme | ≤ 110 | |
+| Trivial | ≤ 16 | Em7 4, Em 8, A 12, E7 16 |
+| Easy | ≤ 40 | E 20, Am 20, D 20, Dm 28, C 28, G 30 |
+| Moderate | ≤ 60 | Bm 49, F# 54, F 58 |
+| Advanced | ≤ 75 | B 64, Bb 68 |
+| Complex | ≤ 92 | |
+| Extreme | ≤ 112 | |
 | Inhuman | above | |
 
-Those are **strain**, not cost. The cost adds three points per fret of position,
-which is not difficulty at all: a chord reference prints the shape nearest the
-nut first, and that is an editorial preference. Frets narrow as they climb, so
-the same barre is easier at the ninth fret than at the first, not harder.
-Levelling by cost called one shape Moderate and the identical shape nine frets
-up Advanced.
+Those are **strain**, not cost. The cost is strain plus two editorial
+preferences, added in one place and nowhere else, and neither of them is
+difficulty:
 
-So `cost` is `strain` plus the position, added in one place and nowhere else,
-and `Level` reads the strain. The list still opens where a reference would; the
-word no longer moves when the shape does not.
+- **Position**, three points a fret. A chord reference prints the shape nearest
+  the nut first. Frets narrow as they climb, so the same barre is easier at the
+  ninth fret than at the first, not harder — levelling by cost called one shape
+  Moderate and the identical shape nine frets up Advanced.
+- **Silent strings**, six points each. A fuller voicing is the better thing to
+  print, being the bigger sound and the shape people expect to be shown. It is
+  not the harder one: a three-string grip is usually the easiest thing on the
+  page.
+
+`Level` reads the strain. The list still opens where a reference would, and the
+word stops moving when the shape does not.
+
+Which is also why the list no longer says "easiest first". It never was: a
+curated shape leads it, then the fuller and lower ones, and a three-string grip
+that is the easiest thing on the page can sit near the end. It says the usual
+ones come first, which is true.
 
 The first four bands are fixed by real chords; moving them would rename
 something everybody plays. The two above are anchored to nothing, so they sit
