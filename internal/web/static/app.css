@@ -1312,34 +1312,32 @@ input[type="file"].filepick:focus-visible { outline: 2px solid var(--accent); ou
 }
 
 /* Shifted by the fret-number column so these sit under the middle of the neck
- * rather than under the middle of the card, which is half a column to the
- * left of it. */
-.boardfoot {
-	display: flex;
-	gap: 0.5rem;
-	justify-content: center;
-	margin-inline-start: calc(1.1rem + 0.3rem);
+ * rather than under the middle of the card, which is half a column to the left
+ * of it. The block takes the width of the buttons in it, and the guitar under
+ * them takes the width of the block, so the card reads as one column of
+ * controls rather than three things that happen to be near each other. */
+.boardactions {
+	inline-size: fit-content;
+	margin-inline: auto;
+	padding-inline-start: calc(1.1rem + 0.3rem);
 }
+.boardfoot { display: flex; gap: 0.5rem; justify-content: center; }
 
-/* How it sounds, under the neck it sounds. Same shift as the buttons. */
-.soundrow {
-	align-items: center;
-	gap: 0.4rem;
-	margin: 0.9rem 0 0;
-	margin-inline-start: calc(1.1rem + 0.3rem);
-	justify-content: center;
+.tonepick {
+	inline-size: 100%;
+	margin-block-start: 0.5rem;
+	min-height: 2.75rem;
+	padding: 0 0.7rem;
+	font: inherit;
+	font-size: 0.9375rem;
+	font-weight: 500;
+	color: var(--chord);
+	background: var(--chord-bg);
+	border: 1px solid var(--chord);
+	border-radius: var(--radius);
 }
-body.scripted div.soundrow { display: flex; flex-wrap: wrap; }
-.tonelabel {
-	font-size: 0.75rem;
-	font-weight: 600;
-	letter-spacing: 0.06em;
-	text-transform: uppercase;
-	color: var(--ink-faint);
-}
-.driverow { display: inline-flex; align-items: center; gap: 0.35rem; }
-.driverow[hidden] { display: none; }
-.driverow input[type="range"] { inline-size: 6rem; accent-color: var(--chord); }
+body.scripted select.tonepick { display: block; }
+.tonepick:hover { border-color: var(--accent); }
 
 /* How hard the drawn shape is, said in a word. */
 .levelrow { display: flex; align-items: baseline; gap: 0.4rem; margin: 0 0 0.75rem; }

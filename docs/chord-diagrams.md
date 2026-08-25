@@ -131,6 +131,21 @@ first and ring on the fourth is the same three frets and a real stretch. A model
 built on span scored them the same, and preferred a contortion like
 `x 2 1 4 0 2` over B's barre.
 
+Fingers are not equally independent, so every distance is weighted by which
+pair is being pulled apart. The index and the middle finger come apart almost
+for free; the ring and the little finger share a tendon, and prising those two
+apart is the most awkward thing a left hand is asked to do. It is why an open G,
+whose middle and ring fingers sit four strings apart, is learnt in an afternoon,
+and why the same distance between the ring and the little finger is a shape most
+players never hold.
+
+Distance along the frets is not the only distance. Two fingers on one fret are
+not the same thing on neighbouring strings as they are on the sixth and the
+first, which is a hand opened as far as it goes — and posture cannot see that,
+because along the frets those two fingers are in the same place. `spread`
+measures it, for neighbouring fingers only and only past four strings, which is
+the width an open G already asks for.
+
 A finger behind one that should be behind it costs three frets' worth each, and
 a string that must ring open between two fretted ones costs more the further up
 the neck its neighbours are — the muting hazard nobody thinks about until they
@@ -146,10 +161,16 @@ produce is nothing anybody plays:
 | Trivial | ≤ 20 | Em7 10, Em 14, E7 19 |
 | Easy | ≤ 40 | E 23, A 24, G 36, C 37, D 38 |
 | Moderate | ≤ 65 | F 59, Bm 63 |
-| Advanced | ≤ 90 | B 70 |
-| Complex | ≤ 115 | |
-| Extreme | ≤ 145 | |
+| Advanced | ≤ 78 | B 70 |
+| Complex | ≤ 98 | |
+| Extreme | ≤ 120 | |
 | Inhuman | above | |
+
+The first three bands are fixed by real chords; moving them would rename
+something everybody plays. The three above are anchored to nothing, so they sit
+close enough together that the top one can be reached. It used to begin at 145,
+past the ninety-ninth percentile of everything the generator can produce, which
+made it a word nobody would ever see.
 
 B lands a band above F and Bm on purpose: the A-shape barre holds the sixth
 string down with the index and crowds three more fingers onto one fret, and it
@@ -497,8 +518,15 @@ low and its top plate just above, and both are strong — that is the warmth. A
 steel-string puts the same two a little higher and adds a presence peak, which
 is why a strummed dreadnought cuts through a room.
 
-The **electric** is the steel guitar with an amplifier after it, and a control
-for how hard it is driven.
+The **electric** is the steel guitar with an amplifier after it.
+
+Two things that are not the string matter as much as it does. A ring of whole
+samples can only play the notes whose wavelength happens to be a whole number of
+them, and everything else came out as much as five cents off — across six
+strings, a chord beating against itself; an allpass in the loop supplies the
+missing fraction. And a pluck is not only a string: the nail or the pick
+crossing it arrives before the note, and a few milliseconds of noise on top is a
+large part of hearing a guitar rather than a tone.
 
 The **electric** earns its sustain by barely damping itself, and then goes
 through a small amplifier: the deep bass is rolled off first or six strings turn

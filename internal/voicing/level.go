@@ -45,9 +45,14 @@ func (l Level) Key() string {
 //	B 70                          the A-shape barre, a step past those
 //
 // So trivial ends where the first group does, easy where the open chords do,
-// and moderate where the common barres do. Above that the bands are even, and
-// the last one is open-ended because there is no ceiling on a bad idea.
-var levels = [...]int{20, 40, 65, 90, 115, 145}
+// and moderate where the common barres do. Those three are fixed by real
+// chords: moving them would rename something everybody plays.
+//
+// The three above them are not anchored to anything, so they are set close
+// enough together that the top band can actually be reached. It used to begin
+// at 145, past the ninety-ninth percentile of everything the generator can
+// produce, which made it a label nobody would ever see.
+var levels = [...]int{20, 40, 65, 78, 98, 120}
 
 // Level says how hard this shape is to hold.
 func (v Voicing) Level() Level {

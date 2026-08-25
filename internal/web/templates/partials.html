@@ -354,6 +354,7 @@
 				</div>
 			</div>
 
+			<div class="boardactions">
 			<div class="boardfoot">
 				{{/* Identifying happens as the neck is edited, so this button is
 				     only ever pressed when there is no script to do it. */}}
@@ -368,22 +369,19 @@
 				<button class="btn btn-quiet needsjs" type="button" data-sound="{{.Board.Pitches}}"
 					title="{{$.T `lab.sound.hint`}}">{{$.T "lab.sound"}}</button>
 			</div>
-		</form>
 
-		{{/* Outside the form on purpose: these are not part of the shape and
-		     must not travel with it when the neck is submitted. */}}
-		<div class="soundrow needsjs">
-			<label class="tonelabel" for="tone">{{$.T "lab.tone"}}</label>
-			<select id="tone" class="tonepick">
+			{{/* Which guitar. It carries no name, so it is not submitted with
+			     the neck; it is in the form only to sit under the buttons and
+			     take their width. It needs no label — it names three guitars,
+			     which is what it is for. */}}
+			<label class="sr" for="tone">{{$.T "lab.tone"}}</label>
+			<select id="tone" class="tonepick needsjs">
 				<option value="steel">{{$.T "lab.tone.steel"}}</option>
 				<option value="nylon">{{$.T "lab.tone.nylon"}}</option>
 				<option value="electric">{{$.T "lab.tone.electric"}}</option>
 			</select>
-			<span class="driverow" hidden>
-				<label class="tonelabel" for="drive">{{$.T "lab.drive"}}</label>
-				<input id="drive" type="range" min="1" max="10" value="5" step="1">
-			</span>
-		</div>
+			</div>
+		</form>
 
 		<div class="labread">
 			<h3>{{$.T "lab.drawn"}}</h3>

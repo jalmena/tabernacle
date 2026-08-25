@@ -510,6 +510,33 @@ func abs(n int) int {
 	return n
 }
 
+// hardness is how much it costs to separate one pair of fingers from another.
+//
+// Fingers are not equally independent. The index and the middle finger come
+// apart almost for free. The ring and the little finger share a tendon, and
+// prising them apart is the single most awkward thing a left hand is asked to
+// do — which is why an open G, whose middle finger and ring finger sit four
+// strings apart, is a chord beginners learn in an afternoon, while the same
+// distance between the ring and the little finger is a shape most players
+// never hold.
+//
+// Only neighbours differ. Once there is a finger in between, the difficulty is
+// the reach rather than the independence.
+func hardness(a, b Finger) int {
+	if b-a != 1 {
+		return 1
+	}
+	switch a {
+	case Index:
+		return 1
+	case Middle:
+		return 2
+	case Ring:
+		return 3
+	}
+	return 1
+}
+
 // posture is how far a shape drags the hand out of the position it rests in.
 //
 // A hand at rest covers four frets with one finger each: the index on the
@@ -557,10 +584,11 @@ func posture(v Voicing) int {
 				// A finger behind one that should be behind it. The hand can
 				// do it, but only by turning the wrist out of everything
 				// else's way.
-				strain += 3 * (fa - fb)
+				strain += 3 * hardness(a, b) * (fa - fb)
 			default:
-				// Every fret between them beyond the fingers between them.
-				strain += max(0, (fb-fa)-int(b-a))
+				// Every fret between them beyond the fingers between them,
+				// counted according to how hard that pair is to separate.
+				strain += hardness(a, b) * max(0, (fb-fa)-int(b-a))
 			}
 		}
 	}
@@ -573,6 +601,62 @@ func posture(v Voicing) int {
 // It is the muting hazard nobody thinks about until they hear it: the higher
 // the fingers on either side, the more the hand arches over the open string in
 // between, and the more likely it is to be deadened.
+// spread is how wide the hand is opened across the neck.
+//
+// Two fingers on one fret are not the same thing on neighbouring strings as
+// they are on the sixth and the first, which is a hand opened as far as it
+// goes. Posture cannot see this: it measures along the frets, and along the
+// frets those two fingers are in the same place.
+//
+// Four strings is the width a hand spans without anybody calling it a stretch —
+// an open G asks that much of the middle and ring fingers — so only what is
+// past four counts, and it counts by pair.
+func spread(v Voicing) int {
+	lo := map[Finger]int{}
+	hi := map[Finger]int{}
+	for i, f := range v.Frets {
+		if f <= 0 || i >= len(v.Fingers) {
+			continue
+		}
+		k := v.Fingers[i]
+		if k < Index || k > Pinky {
+			continue
+		}
+		if _, seen := lo[k]; !seen {
+			lo[k] = i
+		}
+		hi[k] = i
+	}
+
+	strain := 0
+	// Neighbours only. What costs is prising two fingers that sit together
+	// apart; how far the hand reaches overall is already counted along the
+	// frets, and counting it again here would charge an open G twice.
+	for a := Index; a < Pinky; a++ {
+		b := a + 1
+		if _, ok := lo[a]; !ok {
+			continue
+		}
+		if _, ok := lo[b]; !ok {
+			continue
+		}
+		// From the nearest edge of each: a barre reaches everything under it,
+		// so it is never the far one.
+		gap := 0
+		switch {
+		case hi[a] < lo[b]:
+			gap = lo[b] - hi[a]
+		case hi[b] < lo[a]:
+			gap = lo[a] - hi[b]
+		}
+		// Weighted by the pair: four strings between the middle and ring
+		// fingers is an open G, and four between the ring and the little
+		// finger is a different question entirely.
+		strain += hardness(a, b) * max(0, gap-4)
+	}
+	return strain
+}
+
 func openInside(frets []Fret) int {
 	cost := 0
 	for i, f := range frets {
@@ -628,6 +712,10 @@ func cost(v Voicing) int {
 	// How far the fingers sit from where the hand rests. This is the term that
 	// tells two shapes of the same width apart, and it is weighted to matter.
 	c += 7 * posture(v)
+	// Reaching across the neck is real but milder than reaching along it: an
+	// open G opens the hand as wide as most shapes ever ask and nobody calls
+	// it hard.
+	c += 4 * spread(v)
 	c += 3 * openInside(v.Frets)
 	if len(v.Barres) > 0 {
 		c += 6

@@ -751,12 +751,12 @@ document.body.classList.add("scripted");
  * blend is a low-pass filter, so the high partials die before the low ones and
  * a plucked string comes out rather than a beep.
  *
- * A string on its own still sounds like a synthesiser, because half of a guitar
- * is the box. What follows the string is a handful of resonances — the air
- * inside the body, the top plate — and they are most of what makes one guitar
- * recognisably not another. Nylon and steel differ in the pluck, in how fast
- * the highs die, and in where those resonances sit. The electric is the steel
- * guitar driven into a distorting amplifier. */
+ * A string on its own still sounds like a synthesiser, and two things are why.
+ * Half of a guitar is the box, so the string is followed by the resonances of
+ * one — the air inside, the top plate — and those are most of what makes one
+ * guitar recognisably not another. And a pluck is not only a string: there is
+ * the sound of a nail or a pick crossing it, which arrives before the note and
+ * is a large part of hearing a guitar rather than a tone. */
 (function () {
 	"use strict";
 
@@ -764,7 +764,7 @@ document.body.classList.add("scripted");
 	if (!Audio) {
 		/* No sound card, no sound controls. They are only ever visible because
 		 * the script said so, and the script now knows better. */
-		var dead = document.querySelectorAll("[data-sound], .soundrow");
+		var dead = document.querySelectorAll("[data-sound], .tonepick");
 		for (var i = 0; i < dead.length; i++) dead[i].remove();
 		return;
 	}
@@ -775,17 +775,18 @@ document.body.classList.add("scripted");
 	 *
 	 * damp is how much of its neighbour each sample takes on the way round the
 	 * ring, and fall the loss per second on top of that. body is the box, as
-	 * [hertz, Q, decibels], and tilt is where the top is rolled off. */
+	 * [hertz, Q, decibels], tilt is where the top is rolled off, and pick is how
+	 * loud the nail is against the note. */
 	var packs = {
 		nylon: {
-			burst: 900, damp: 0.50, fall: 2.2, seconds: 2.0, level: 0.26,
+			burst: 900, damp: 0.50, fall: 2.6, seconds: 2.4, level: 0.26, pick: 0.05,
 			/* A classical guitar's air resonance sits low and its top plate
 			 * just above; both are strong, which is the warmth. */
 			body: [[105, 3.0, 5], [215, 2.5, 3.5], [400, 2.0, 2]],
 			tilt: 2400
 		},
 		steel: {
-			burst: 4200, damp: 0.40, fall: 4.0, seconds: 2.4, level: 0.22,
+			burst: 4200, damp: 0.40, fall: 4.6, seconds: 2.8, level: 0.22, pick: 0.11,
 			/* A steel-string is louder and brighter: the same two resonances
 			 * sit a little higher, and there is a presence peak that is why a
 			 * strummed dreadnought cuts through a room. */
@@ -793,13 +794,11 @@ document.body.classList.add("scripted");
 			tilt: 6500
 		}
 	};
-	/* The electric is the steel guitar with an amplifier after it, which is what
-	 * it was asked to be. */
+	/* The electric is the steel guitar with an amplifier after it. */
 	var stringOf = { nylon: "nylon", steel: "steel", electric: "steel" };
-
-	var tone = "steel";
 	var drive = 5;
 
+	var tone = "steel";
 	var ctx = null;
 	var plucks = {};
 
@@ -809,9 +808,18 @@ document.body.classList.add("scripted");
 		var t = packs[name];
 
 		var freq = 440 * Math.pow(2, (midi - 69) / 12);
-		var n = Math.max(2, Math.round(ctx.sampleRate / freq));
 		var buf = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * t.seconds), ctx.sampleRate);
 		var out = buf.getChannelData(0);
+
+		/* A ring of whole samples can only play the notes whose wavelength
+		 * happens to be a whole number of them, and everything else comes out
+		 * as much as five cents off — which across six strings is a chord that
+		 * beats against itself. The blend already delays the loop by damp
+		 * samples; an allpass supplies whatever fraction is still missing. */
+		var wanted = ctx.sampleRate / freq;
+		var n = Math.max(2, Math.floor(wanted - t.damp));
+		var missing = wanted - n - t.damp;
+		var apC = (1 - missing) / (1 + missing);
 
 		/* The ring is read once per period, not once per sample, so a fixed
 		 * loop gain would silence a low string in a breath and let a high one
@@ -841,18 +849,37 @@ document.body.classList.add("scripted");
 		if (loudest > 0) for (var i = 0; i < n; i++) line[i] /= loudest;
 
 		var p = 0;
+		var apIn = 0;
+		var apOut = 0;
 		for (var j = 0; j < out.length; j++) {
-			out[j] = line[p];
-			var next = (p + 1) % n;
-			line[p] = (line[p] * (1 - t.damp) + line[next] * t.damp) * gain;
-			p = next;
+			var here = line[p];
+			var next = line[(p + 1) % n];
+			out[j] = here;
+			var blended = (here * (1 - t.damp) + next * t.damp) * gain;
+			apOut = apC * (blended - apOut) + apIn;
+			apIn = blended;
+			line[p] = apOut;
+			p = (p + 1) % n;
+		}
+
+		/* The nail or the pick crossing the string, which happens before the
+		 * note and is a large part of hearing a guitar rather than a tone. It
+		 * is not part of the string, so it is not in the loop: a few
+		 * milliseconds of noise on top, gone before the note has settled. */
+		var attack = Math.floor(ctx.sampleRate * 0.012);
+		var edge = 0;
+		for (var k = 0; k < attack && k < out.length; k++) {
+			var white = Math.random() * 2 - 1;
+			/* Bright: the sound is the crossing, not the string. */
+			edge = 0.6 * white + 0.4 * edge;
+			out[k] += edge * t.pick * (1 - k / attack);
 		}
 
 		/* Whatever is left when the buffer runs out would end on a step, and a
 		 * step is a click. The last moments are faded instead. */
 		var fadeAt = out.length - Math.floor(ctx.sampleRate * 0.08);
-		for (var k = Math.max(0, fadeAt); k < out.length; k++) {
-			out[k] *= (out.length - k) / (out.length - fadeAt);
+		for (var m = Math.max(0, fadeAt); m < out.length; m++) {
+			out[m] *= (out.length - m) / (out.length - fadeAt);
 		}
 
 		plucks[key] = buf;
@@ -969,31 +996,22 @@ document.body.classList.add("scripted");
 		if (button && notes(button).length) strum(notes(button));
 	}
 
-	/* The controls live inside the region the neck's own script replaces on
-	 * every edit, so their state is held here and put back afterwards rather
-	 * than read off the page. */
+	/* The chooser lives inside the region the neck's own script replaces on
+	 * every edit, so its state is held here and put back afterwards rather than
+	 * read off the page. */
 	function restore() {
-		var pick = document.getElementById("tone");
+		var pick = document.querySelector(".tonepick");
 		if (pick) pick.value = tone;
-		var knob = document.getElementById("drive");
-		if (knob) knob.value = String(drive);
-		var row = document.querySelector(".driverow");
-		if (row) row.hidden = tone !== "electric";
 	}
 	restore();
 	document.addEventListener("labswapped", restore);
 
 	document.addEventListener("change", function (e) {
-		if (e.target.id === "tone") {
-			tone = e.target.value;
-			restore();
-			/* Choosing a guitar plays the chord on it, which is the only way to
-			 * compare two of them without reaching for another control. */
-			playDrawn();
-		} else if (e.target.id === "drive") {
-			drive = parseInt(e.target.value, 10) || 1;
-			playDrawn();
-		}
+		if (!e.target.closest(".tonepick")) return;
+		tone = e.target.value;
+		/* Choosing a guitar plays the chord on it, which is the only way to
+		 * compare two of them without reaching for another control. */
+		playDrawn();
 	});
 
 	/* Delegated, and the notes are read at the moment of the press: editing the
