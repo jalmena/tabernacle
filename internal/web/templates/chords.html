@@ -6,17 +6,6 @@
 	<h1>{{.T "nav.chords"}}</h1>
 	<p class="lede">{{.T "lab.lede"}}</p>
 
-	{{/* Outside #chordlab on purpose. Editing the neck replaces everything
-	     inside that div, and a choice of sound that reset itself every time a
-	     string moved would be worse than not offering one. Out here it needs
-	     no storing and no restoring. */}}
-	<p class="tonepick needsjs">
-		<span class="tonelabel">{{.T "lab.tone"}}</span>
-		<button class="btn btn-quiet on" type="button" data-tone="steel" aria-pressed="true">{{.T "lab.tone.steel"}}</button>
-		<button class="btn btn-quiet" type="button" data-tone="nylon" aria-pressed="false">{{.T "lab.tone.nylon"}}</button>
-		<button class="btn btn-quiet" type="button" data-tone="electric" aria-pressed="false">{{.T "lab.tone.electric"}}</button>
-	</p>
-
 	<div id="chordlab">{{template "chordlab" .}}</div>
 </main>
 {{template "scripts" .}}

@@ -370,6 +370,21 @@
 			</div>
 		</form>
 
+		{{/* Outside the form on purpose: these are not part of the shape and
+		     must not travel with it when the neck is submitted. */}}
+		<div class="soundrow needsjs">
+			<label class="tonelabel" for="tone">{{$.T "lab.tone"}}</label>
+			<select id="tone" class="tonepick">
+				<option value="steel">{{$.T "lab.tone.steel"}}</option>
+				<option value="nylon">{{$.T "lab.tone.nylon"}}</option>
+				<option value="electric">{{$.T "lab.tone.electric"}}</option>
+			</select>
+			<span class="driverow" hidden>
+				<label class="tonelabel" for="drive">{{$.T "lab.drive"}}</label>
+				<input id="drive" type="range" min="1" max="10" value="5" step="1">
+			</span>
+		</div>
+
 		<div class="labread">
 			<h3>{{$.T "lab.drawn"}}</h3>
 			{{if .Readings}}
@@ -405,6 +420,14 @@
 	</div>
 
 	<div class="labcard labpick">
+		{{with .Board.Level}}
+			{{/* What the neck on the left is asking of the hand, said in a word.
+			     It lives over here because the left card is already full and
+			     because it belongs with the rest of what we know about the
+			     shape rather than with the drawing of it. */}}
+			<p class="levelrow"><span class="levellabel">{{$.T "lab.level"}}</span>
+				<b class="levelword">{{.}}</b></p>
+		{{end}}
 		<h2>{{$.T "lab.pick"}}</h2>
 		<form class="pickform" method="get" action="/chords">
 			<label class="sr" for="csym">{{$.T "lab.chord"}}</label>
@@ -423,8 +446,7 @@
 		</form>
 		{{with .Inversions}}
 			<h3 class="invhead">{{$.T "lab.inversions"}}</h3>
-			<p class="rootrow">{{range .}}<a class="rootlink" data-c="{{.Value}}" href="{{.URL}}">{{.Name}}
-				<span class="count">{{.Total}}</span></a>{{end}}</p>
+			<p class="rootrow">{{range .}}<a class="rootlink" data-c="{{.Value}}" href="{{.URL}}">{{.Name}}</a>{{end}}</p>
 		{{end}}
 	</div>
 </div>

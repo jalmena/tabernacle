@@ -114,6 +114,57 @@ than two properties, both pinned by tests:
 what a chord reference prints. A change there means the cost function moved,
 which may be right but should never be accidental.
 
+### How hard a shape is
+
+The number that orders shapes is a cost, and the term that matters most is
+**posture**: how far a shape drags the hand out of the position it rests in.
+
+A hand at rest covers four frets with one finger each — index on the lowest,
+then middle, ring, little. Two fingers are as far apart as they want to be when
+the frets between them match the fingers between them, and every fret beyond
+that is a stretch. Two fingers on one fret cost nothing, which is why a barre
+with the ring and little finger side by side is comfortable.
+
+Width alone cannot say this, and that was the bug. Index on the first fret and
+little finger on the fourth is the hand doing nothing unusual; index on the
+first and ring on the fourth is the same three frets and a real stretch. A model
+built on span scored them the same, and preferred a contortion like
+`x 2 1 4 0 2` over B's barre.
+
+A finger behind one that should be behind it costs three frets' worth each, and
+a string that must ring open between two fretted ones costs more the further up
+the neck its neighbours are — the muting hazard nobody thinks about until they
+hear it.
+
+`voicing.Voicing.Level()` turns the cost into one of seven words. The bands are
+anchored to chords a guitarist already has an opinion about rather than to
+quantiles of everything the generator can produce, because most of what it can
+produce is nothing anybody plays:
+
+| | cost | |
+| --- | --- | --- |
+| Trivial | ≤ 20 | Em7 10, Em 14, E7 19 |
+| Easy | ≤ 40 | E 23, A 24, G 36, C 37, D 38 |
+| Moderate | ≤ 65 | F 59, Bm 63 |
+| Advanced | ≤ 90 | B 70 |
+| Complex | ≤ 115 | |
+| Extreme | ≤ 145 | |
+| Inhuman | above | |
+
+B lands a band above F and Bm on purpose: the A-shape barre holds the sixth
+string down with the index and crowds three more fingers onto one fret, and it
+is the chord that stops people who have already got F.
+
+### The shape the collection prints comes first
+
+On the chord page the generated shapes are ordered easiest first, but the shape
+a lookup would return leads them — the curated one, or when nothing is curated,
+the first shape the dataset produces. Without that the page led with whatever
+the generator found cheapest, which for B was a four-string grip with the top
+string muted, and the same chord then carried a different diagram on a song
+sheet. Only the first, and only when nothing is curated: adopting every slid
+template put a barre at the eighth fret above the open C.
+
 ## Naming a shape
 
 A caption says where on the neck a shape sits, which is what a player wants to
@@ -423,27 +474,31 @@ Three details are not obvious:
 
 Strings start 35 ms apart, low to high, so it is a strum and not a piano chord.
 
-### Three guitars
+### Two guitars and an amplifier
 
-Four numbers each, chosen because these are what genuinely separate the
-instruments: how bright the pluck is, how fast the highs die after it, how long
-the note lasts, and what it is played through.
+A string on its own still sounds like a synthesiser, because half of a guitar is
+the box. What follows the string is a handful of resonances — the air inside the
+body, the top plate — and they are most of what makes one guitar recognisably
+not another.
 
-| | pluck | body | ring | played through |
+| | pluck | body | top | ring |
 | --- | --- | --- | --- | --- |
-| Nylon | 1100 Hz | 1800 Hz | 1.5 s | — |
-| Steel | 4000 Hz | 5000 Hz | 2.3 s | — |
-| Electric | 2600 Hz | 3200 Hz | 3.2 s | a distorted amplifier |
+| Nylon | 900 Hz | 105, 215, 400 Hz | 2400 Hz | 2.0 s |
+| Steel | 4200 Hz | 100, 250, 2600 Hz | 6500 Hz | 2.4 s |
 
 The **pluck** is a one-pole filter over the initial burst, and it carries most
 of the difference between a nylon string and a steel one. The loop filter alone
 does not: over the handful of turns that matter it treats the two almost the
-same, and the measured brightness of the three came out within seven per cent
-of each other before the burst was shaped. With it, nylon reads about half as
-bright as steel, which is audible as a different instrument.
+same, and the measured brightness came out within seven per cent before the
+burst was shaped. With it, nylon reads about half as bright as steel.
 
-The **body** is a lowpass on the way out, standing in for everything that is not
-the string.
+The **body** is three peaking filters. A classical guitar's air resonance sits
+low and its top plate just above, and both are strong — that is the warmth. A
+steel-string puts the same two a little higher and adds a presence peak, which
+is why a strummed dreadnought cuts through a room.
+
+The **electric** is the steel guitar with an amplifier after it, and a control
+for how hard it is driven.
 
 The **electric** earns its sustain by barely damping itself, and then goes
 through a small amplifier: the deep bass is rolled off first or six strings turn

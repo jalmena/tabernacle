@@ -510,6 +510,97 @@ func abs(n int) int {
 	return n
 }
 
+// posture is how far a shape drags the hand out of the position it rests in.
+//
+// A hand at rest covers four frets with one finger each: the index on the
+// lowest, then middle, ring and the little finger. Two fingers are as far apart
+// as they want to be when the frets between them match the fingers between
+// them, and every fret beyond that is a stretch.
+//
+// Span alone cannot say this. Index on the first fret and little finger on the
+// fourth is the hand doing nothing unusual; index on the first and ring on the
+// fourth is the same three frets and a real stretch, because the ring finger is
+// a fret further out than it reaches. And two fingers side by side on one fret
+// cost nothing at all, which is why a barre shape with the ring and little
+// finger together is comfortable and a model built on absolute positions
+// wrongly says it is not.
+func posture(v Voicing) int {
+	// Where each finger is holding. A finger holds one fret, so the first
+	// string it appears on fixes it and a barre simply repeats it.
+	at := map[Finger]int{}
+	for i, f := range v.Frets {
+		if f <= 0 || i >= len(v.Fingers) {
+			continue
+		}
+		k := v.Fingers[i]
+		if k < Index || k > Pinky {
+			continue
+		}
+		if _, seen := at[k]; !seen {
+			at[k] = int(f)
+		}
+	}
+
+	strain := 0
+	for a := Index; a < Pinky; a++ {
+		fa, ok := at[a]
+		if !ok {
+			continue
+		}
+		for b := a + 1; b <= Pinky; b++ {
+			fb, ok := at[b]
+			if !ok {
+				continue
+			}
+			switch {
+			case fb < fa:
+				// A finger behind one that should be behind it. The hand can
+				// do it, but only by turning the wrist out of everything
+				// else's way.
+				strain += 3 * (fa - fb)
+			default:
+				// Every fret between them beyond the fingers between them.
+				strain += max(0, (fb-fa)-int(b-a))
+			}
+		}
+	}
+	return strain
+}
+
+// openInside counts strings that must ring open with fretted strings on both
+// sides, weighted by how far up the neck those neighbours are.
+//
+// It is the muting hazard nobody thinks about until they hear it: the higher
+// the fingers on either side, the more the hand arches over the open string in
+// between, and the more likely it is to be deadened.
+func openInside(frets []Fret) int {
+	cost := 0
+	for i, f := range frets {
+		if f != Open {
+			continue
+		}
+		before, after := 0, 0
+		for j := i - 1; j >= 0; j-- {
+			if frets[j] > 0 {
+				before = int(frets[j])
+				break
+			}
+		}
+		for j := i + 1; j < len(frets); j++ {
+			if frets[j] > 0 {
+				after = int(frets[j])
+				break
+			}
+		}
+		if before > 0 && after > 0 {
+			if high := max(before, after); high > 2 {
+				cost += high - 2
+			}
+		}
+	}
+	return cost
+}
+
 // cost scores playability. The weights matter less than two properties, both
 // pinned by tests: an open shape always beats a barre, and the order is
 // deterministic, because the interface says "2 de 4" and a deep link names a
@@ -534,6 +625,10 @@ func cost(v Voicing) int {
 		// fingers involved.
 		c += 8 * (s - 1)
 	}
+	// How far the fingers sit from where the hand rests. This is the term that
+	// tells two shapes of the same width apart, and it is weighted to matter.
+	c += 7 * posture(v)
+	c += 3 * openInside(v.Frets)
 	if len(v.Barres) > 0 {
 		c += 6
 		width := v.Barres[0].To - v.Barres[0].From + 1

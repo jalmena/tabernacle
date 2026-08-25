@@ -361,30 +361,6 @@ a.chord:hover { text-decoration: underline; text-underline-offset: 2px; }
 
 .sheet-foot { margin-top: 2rem; padding-top: 0.75rem; border-top: 1px solid var(--rule); }
 
-/* --------------------------------------------------------- the sound of it --- */
-
-/* A row, not a card: it sets how the neck below sounds and is not part of it.
- * .needsjs on the row means the whole thing is absent without a script, which
- * is right — there is nothing to choose between if nothing can be played. */
-.tonepick {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: 0.35rem;
-	margin: 0 0 0.75rem;
-}
-/* Beats the generic .needsjs rule further down, which would leave this row
- * as an inline-flex box rather than the row it is. */
-body.scripted p.tonepick { display: flex; }
-.tonelabel {
-	margin-inline-end: 0.15rem;
-	font-size: 0.75rem;
-	font-weight: 600;
-	letter-spacing: 0.06em;
-	text-transform: uppercase;
-	color: var(--ink-faint);
-}
-
 /* ----------------------------------------------------------- capo advice --- */
 
 /* It sits between the chords used and the words, where a player looks before
@@ -1222,11 +1198,22 @@ input[type="file"].filepick:focus-visible { outline: 2px solid var(--accent); ou
 .boardmove:hover { border-color: var(--ink-faint); }
 .boardmove.off { color: var(--ink-faint); opacity: 0.4; }
 
-.boardgrid { display: flex; justify-content: center; gap: 0.3rem; margin: 0.9rem 0 1rem; }
+/* --nums is the width of the fret-number column and --numgap the space after
+ * it. Both are named because the row of buttons underneath has to know them:
+ * the grid centres the column and the neck together, which puts the neck
+ * itself half a column to the right of centre. */
+.boardgrid {
+	display: flex;
+	justify-content: center;
+	gap: var(--numgap);
+	margin: 0.9rem 0 1rem;
+	--nums: 1.1rem;
+	--numgap: 0.3rem;
+}
 .boardnums {
 	display: flex;
 	flex-direction: column;
-	width: 1.1rem;
+	width: var(--nums);
 	font-size: 0.75rem;
 	color: var(--ink-faint);
 	font-variant-numeric: tabular-nums;
@@ -1324,7 +1311,46 @@ input[type="file"].filepick:focus-visible { outline: 2px solid var(--accent); ou
 	background: radial-gradient(circle at center, var(--accent) 0 0.55rem, transparent 0.55rem);
 }
 
-.boardfoot { display: flex; gap: 0.5rem; justify-content: center; }
+/* Shifted by the fret-number column so these sit under the middle of the neck
+ * rather than under the middle of the card, which is half a column to the
+ * left of it. */
+.boardfoot {
+	display: flex;
+	gap: 0.5rem;
+	justify-content: center;
+	margin-inline-start: calc(1.1rem + 0.3rem);
+}
+
+/* How it sounds, under the neck it sounds. Same shift as the buttons. */
+.soundrow {
+	align-items: center;
+	gap: 0.4rem;
+	margin: 0.9rem 0 0;
+	margin-inline-start: calc(1.1rem + 0.3rem);
+	justify-content: center;
+}
+body.scripted div.soundrow { display: flex; flex-wrap: wrap; }
+.tonelabel {
+	font-size: 0.75rem;
+	font-weight: 600;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--ink-faint);
+}
+.driverow { display: inline-flex; align-items: center; gap: 0.35rem; }
+.driverow[hidden] { display: none; }
+.driverow input[type="range"] { inline-size: 6rem; accent-color: var(--chord); }
+
+/* How hard the drawn shape is, said in a word. */
+.levelrow { display: flex; align-items: baseline; gap: 0.4rem; margin: 0 0 0.75rem; }
+.levellabel {
+	font-size: 0.75rem;
+	font-weight: 600;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--ink-faint);
+}
+.levelword { color: var(--chord); font-size: 1.0625rem; }
 
 /* A control that exists only for the reader without a script. The script hides
  * it as it starts, because by then it does nothing the page has not done. */

@@ -72,6 +72,10 @@ type FretboardView struct {
 	// no business working them out: which note a fret on a string produces is
 	// music, and music is decided in Go where it is tested.
 	Pitches string
+
+	// Level is how hard the drawn shape is to hold, in words. Empty when
+	// nothing is fretted, since there is no difficulty in doing nothing.
+	Level string
 }
 
 // ReadingView is one name for the notes drawn on the board.
@@ -113,7 +117,6 @@ type InversionView struct {
 	Name  string
 	Value string // the symbol as this package writes it, for a link to ask for
 	URL   string
-	Total int
 }
 
 // LabView is the whole chord page.
@@ -264,6 +267,11 @@ func Lab(o LabOptions) LabView {
 // boardFor lays out the editable neck with the drawn shape on it.
 func boardFor(say *i18n.Printer, v voicing.Voicing, start int, o LabOptions) FretboardView {
 	b := FretboardView{Start: start, Grip: v.Grip(), Pitches: midiList(v.Pitches())}
+	// Cost is set by the lookup, not by parsing a grip, so it is worked out
+	// here for whatever the reader has drawn.
+	if v.Reach() > 0 {
+		b.Level = say.T(voicing.Score(v).Level().Key())
+	}
 	if start > 1 {
 		b.Down = labURLAt(o, v.Grip(), start-1)
 	}
@@ -384,7 +392,6 @@ func variantsFor(say *i18n.Printer, o LabOptions) ([]LabShape, int, []InversionV
 			Name:  inv.Chord.Format(o.Notation),
 			Value: sym,
 			URL:   labURL(sym, "", 0, o.All),
-			Total: len(inv.Shapes),
 		})
 	}
 	if len(g.Root.Shapes) == 0 {

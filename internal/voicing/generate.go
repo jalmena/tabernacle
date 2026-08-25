@@ -317,9 +317,24 @@ func adoptDataset(r Requirement, opts GenerateOptions, out []Voicing) map[string
 	for _, v := range dedupe(known) {
 		byGrip[fretKey(v.Frets)] = v
 	}
-	written := make(map[string]bool, len(ds.curated[k]))
+	written := make(map[string]bool, len(ds.curated[k])+1)
 	for _, v := range ds.curated[k] {
 		written[fretKey(v.Frets)] = true
+	}
+	// A chord with nothing curated still has a shape the collection prints:
+	// the first one a lookup returns, which for every root that needs a barre
+	// is that barre at the position a reference shows it. Without this the page
+	// leads with whatever the generator finds cheapest — for B, a four-string
+	// grip with the top string muted — and then disagrees with the diagram the
+	// same chord gets on a song sheet.
+	//
+	// Only the first, and only when nothing is curated. Adopting every slid
+	// template put a barre at the eighth fret above the open C.
+	if len(ds.curated[k]) == 0 {
+		if best := dedupe(known); len(best) > 0 {
+			slices.SortStableFunc(best, func(a, b Voicing) int { return cmp.Compare(a.Cost, b.Cost) })
+			written[fretKey(best[0].Frets)] = true
+		}
 	}
 	for i, v := range out {
 		if c, ok := byGrip[fretKey(v.Frets)]; ok {
