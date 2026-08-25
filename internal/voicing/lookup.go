@@ -685,11 +685,27 @@ func openInside(frets []Fret) int {
 	return cost
 }
 
-// cost scores playability. The weights matter less than two properties, both
-// pinned by tests: an open shape always beats a barre, and the order is
-// deterministic, because the interface says "2 de 4" and a deep link names a
-// shape.
+// cost is the sort key for a list of shapes: how hard the shape is, plus where
+// it sits on the neck.
+//
+// The two are added here and nowhere else, because they answer different
+// questions. Strain is what the hand is asked to do. Position is an editorial
+// preference — a chord reference prints the shape nearest the nut first — and
+// it is not difficulty at all: frets narrow as they climb, so the same barre is
+// easier at the ninth than at the first, not harder.
+//
+// Keeping them apart is what lets the page say the same word for the same shape
+// wherever it sits, while the list still opens where a reference would.
+//
+// The weights matter less than two properties, both pinned by tests: an open
+// shape always beats a barre, and the order is deterministic, because the
+// interface says "2 de 4" and a deep link names a shape.
 func cost(v Voicing) int {
+	return strain(v) + 3*v.Position
+}
+
+// strain is what the shape asks of the hand, and nothing about where it is.
+func strain(v Voicing) int {
 	c := 0
 	fretted, muted, thumb := 0, 0, 0
 	for i, f := range v.Frets {
@@ -744,9 +760,6 @@ func cost(v Voicing) int {
 			c += 2
 		}
 	}
-	// Position matters a lot: a shape high up is harder to reach and harder to
-	// read at arm's length, and it is not what a chord reference prints first.
-	c += 3 * v.Position
 	c += 6 * thumb
 	// A muted string between two sounded ones has to be damped deliberately.
 	c += 8 * mutedInside(v.Frets)

@@ -52,15 +52,13 @@ func TestTheLevelsLandWhereAPlayerWouldPutThem(t *testing.T) {
 
 // The scale has to be a scale: harder shapes never come out easier.
 func TestTheLevelsNeverGoBackwards(t *testing.T) {
-	for cost := 0; cost < 400; cost++ {
-		a := Voicing{Cost: cost}.Level()
-		b := Voicing{Cost: cost + 1}.Level()
-		if b < a {
-			t.Fatalf("cost %d is level %d but %d is level %d", cost, a, cost+1, b)
+	for s := 0; s < 400; s++ {
+		if levelFor(s+1) < levelFor(s) {
+			t.Fatalf("strain %d is level %d but %d is level %d", s, levelFor(s), s+1, levelFor(s+1))
 		}
 	}
-	if got := (Voicing{Cost: 10_000}).Level(); got != Inhuman {
-		t.Errorf("an absurd cost is level %d, want Inhuman", got)
+	if got := levelFor(10_000); got != Inhuman {
+		t.Errorf("an absurd strain is level %d, want Inhuman", got)
 	}
 }
 
@@ -122,5 +120,31 @@ func TestTheSameBarreIsHarderAtTheFirstFret(t *testing.T) {
 			t.Errorf("%s at the first fret costs %d and %s at the second costs %d",
 				tc.nut, a.Cost, tc.next, b.Cost)
 		}
+	}
+}
+
+// The same shape is the same shape wherever it sits. Frets narrow as they
+// climb, so if anything a barre is easier high up than low down — it is
+// certainly not two bands harder, which is what levelling by cost said.
+func TestTheSameShapeKeepsItsLevelUpTheNeck(t *testing.T) {
+	shape := func(at int) Voicing {
+		return Score(Voicing{Tuning: Standard(), Frets: []Fret{
+			Fret(at), Fret(at + 2), Fret(at + 2), Fret(at + 1), Fret(at), Fret(at),
+		}})
+	}
+
+	want := shape(1).Level()
+	for _, at := range []int{2, 3, 5, 7, 9, 12} {
+		if got := shape(at).Level(); got != want {
+			t.Errorf("the E shape is level %d at the first fret and %d at the %dth",
+				want, got, at)
+		}
+	}
+
+	// And the list still opens where a chord reference does, which is the job
+	// the position term is actually for.
+	if shape(1).Cost >= shape(5).Cost {
+		t.Errorf("the shape at the first fret costs %d and at the fifth %d; a "+
+			"reference prints the low one first", shape(1).Cost, shape(5).Cost)
 	}
 }

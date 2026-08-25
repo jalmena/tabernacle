@@ -37,31 +37,48 @@ func (l Level) Key() string {
 //
 // They are anchored to chords a guitarist already has an opinion about rather
 // than to quantiles of everything the generator can produce, because most of
-// what it can produce is nothing anybody plays:
+// what it can produce is nothing anybody plays. The numbers are strain, not
+// cost — what the hand is asked to do, with where it happens left out:
 //
-//	Em7 10, Em 14, E7 19          the two- and three-finger chords learnt first
-//	E 23, A 24, G 36, C 37, D 38  the rest of the open chords
-//	F 59, Bm 63                   the barres everybody fights and then masters
-//	B 70                          the A-shape barre, a step past those
+//	Em7 4, Em 8, E7 16          the two- and three-finger chords learnt first
+//	A 18, E 20, Am 26, G 30,
+//	D 32, C 34                  the rest of the open chords
+//	F# 54, Bm 55, F 58          the barres everybody fights and then masters
+//	B 62, Bb 66                 the A-shape barre, a step past those
 //
 // So trivial ends where the first group does, easy where the open chords do,
-// and moderate where the common barres do. Those three are fixed by real
-// chords: moving them would rename something everybody plays.
+// moderate where the common barres do, and advanced where the A shape does.
+// Those four are fixed by real chords: moving them would rename something
+// everybody plays.
 //
-// The three above them are not anchored to anything, so they are set close
-// enough together that the top band can actually be reached. It used to begin
-// at 145, past the ninety-ninth percentile of everything the generator can
-// produce, which made it a label nobody would ever see.
-var levels = [...]int{20, 40, 65, 78, 98, 120}
+// The two above them are anchored to nothing, so they are set close enough
+// together that the top band can actually be reached.
+var levels = [...]int{16, 40, 60, 72, 90, 110}
 
-// Level says how hard this shape is to hold.
-func (v Voicing) Level() Level {
+// levelFor puts one strain into its band.
+func levelFor(strain int) Level {
 	for i, upto := range levels {
-		if v.Cost <= upto {
+		if strain <= upto {
 			return Level(i)
 		}
 	}
 	return Inhuman
+}
+
+// Level says how hard this shape is to hold.
+//
+// It reads the strain rather than the cost. The cost carries a preference for
+// shapes near the nut, which is how a chord reference orders its pages and not
+// how a hand feels: frets narrow as they climb, so the same barre is easier at
+// the ninth fret than at the first. Levelling by cost called one shape Media
+// and the identical shape nine frets up Avanzada.
+func (v Voicing) Level() Level {
+	// A shape with no fingering asks for more fingers than a hand has, and that
+	// verdict is about the shape rather than about where it sits.
+	if len(v.Fingers) == 0 && v.Reach() > 0 {
+		return Inhuman
+	}
+	return levelFor(strain(v))
 }
 
 // Score fills in Position and Cost for a shape somebody drew, so that it can be
@@ -82,14 +99,12 @@ func Score(v Voicing) Voicing {
 	// coming out cheaper than the merely difficult ones.
 	//
 	// It is charged for each finger it is short, so that two of these can still
-	// be told apart, and then floored into the last band whatever that came to.
-	// No arithmetic over terms it does not have is going to be more honest than
-	// the word itself: inhuman means no hand does this.
+	// be told apart in a list. The word for it is not decided here: Level says
+	// Inhuman for anything with no fingering, whatever the arithmetic came to,
+	// because no sum over terms the shape does not have is more honest than
+	// what the word already means.
 	v.Position = lowestFret(v.Frets)
 	v.Cost = cost(v) + shortBy(v)*40
-	if top := levels[len(levels)-1]; v.Cost <= top {
-		v.Cost = top + 1
-	}
 	return v
 }
 

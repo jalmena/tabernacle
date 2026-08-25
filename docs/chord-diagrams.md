@@ -175,19 +175,28 @@ produce is nothing anybody plays:
 
 | | cost | |
 | --- | --- | --- |
-| Trivial | ≤ 20 | Em7 10, Em 14, E7 19 |
-| Easy | ≤ 40 | E 23, A 24, G 36, C 37, D 38 |
-| Moderate | ≤ 65 | F 59, Bm 63 |
-| Advanced | ≤ 78 | B 70 |
-| Complex | ≤ 98 | |
-| Extreme | ≤ 120 | |
+| Trivial | ≤ 16 | Em7 4, Em 8, E7 16 |
+| Easy | ≤ 40 | A 18, E 20, Am 26, G 30, D 32, C 34 |
+| Moderate | ≤ 60 | F# 54, Bm 55, F 58 |
+| Advanced | ≤ 72 | B 62, Bb 66 |
+| Complex | ≤ 90 | |
+| Extreme | ≤ 110 | |
 | Inhuman | above | |
 
-The first three bands are fixed by real chords; moving them would rename
-something everybody plays. The three above are anchored to nothing, so they sit
-close enough together that the top one can be reached. It used to begin at 145,
-past the ninety-ninth percentile of everything the generator can produce, which
-made it a word nobody would ever see.
+Those are **strain**, not cost. The cost adds three points per fret of position,
+which is not difficulty at all: a chord reference prints the shape nearest the
+nut first, and that is an editorial preference. Frets narrow as they climb, so
+the same barre is easier at the ninth fret than at the first, not harder.
+Levelling by cost called one shape Moderate and the identical shape nine frets
+up Advanced.
+
+So `cost` is `strain` plus the position, added in one place and nowhere else,
+and `Level` reads the strain. The list still opens where a reference would; the
+word no longer moves when the shape does not.
+
+The first four bands are fixed by real chords; moving them would rename
+something everybody plays. The two above are anchored to nothing, so they sit
+close enough together that the top one can be reached.
 
 B lands a band above F and Bm on purpose: the A-shape barre holds the sixth
 string down with the index and crowds three more fingers onto one fret, and it
