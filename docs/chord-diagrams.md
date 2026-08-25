@@ -203,6 +203,11 @@ difficulty:
 `Level` reads the strain. The list still opens where a reference would, and the
 word stops moving when the shape does not.
 
+The number is shown beside the word, small: a word alone cannot say that one
+shape is at the top of its band and the next barely scraped in, and the
+difference between two shapes in the same band is exactly what somebody
+comparing them is looking at.
+
 Which is also why the list no longer says "easiest first". It never was: a
 curated shape leads it, then the fuller and lower ones, and a three-string grip
 that is the easiest thing on the page can sit near the end. It says the usual
@@ -340,8 +345,8 @@ rediscover the same shapes.
 **Nothing silent in the middle.** A muted string between two ringing ones has to
 be damped deliberately, with a fingertip leaning off a note already being held.
 It is a real technique and not a shape to hand somebody learning a chord, so the
-search throws those away rather than ranking them low. None of the fifty
-hand-written shapes does it either, which is the check that the rule is a real
+search throws those away rather than ranking them low. No hand-written shape
+does it either, which is the check that the rule is a real
 one and not a preference. It is also what cuts the search's output roughly in
 half: Am7 goes from 370 grips to 168, and every one that is left is something a
 hand can simply hold.
@@ -379,8 +384,8 @@ falls inside it, because a finger lying across cannot let one ring.
 Where a generated fret vector matches a dataset shape, the dataset's shape is
 used instead, with its fingering and its CAGED name.
 
-`TestGenerationCoversTheCuratedDataset` requires the generator to rediscover all
-fifty hand-typed shapes on its own, and asserts the list of exceptions is
+`TestGenerationCoversTheCuratedDataset` requires the generator to rediscover
+every hand-typed shape on its own, and asserts the list of exceptions is
 **exact** so it cannot grow in silence. It is currently empty.
 
 ### The order shapes are shown in

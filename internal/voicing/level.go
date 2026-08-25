@@ -132,3 +132,7 @@ func shortBy(v Voicing) int {
 	}
 	return max(0, need-4)
 }
+
+// Strain is the number Level came from: what the shape asks of the hand, with
+// where it sits on the neck and how full it is left out.
+func (v Voicing) Strain() int { return strain(v) }

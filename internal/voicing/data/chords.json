@@ -63,6 +63,22 @@
       ]
     },
     {
+      "chord": "Db",
+      "shapes": [
+        {
+          "id": "a-shape",
+          "frets": "x 4 6 6 6 4",
+          "fingers": "- 1 2 3 4 1",
+          "barre": {
+            "fret": 4,
+            "from": 1,
+            "to": 5,
+            "finger": 1
+          }
+        }
+      ]
+    },
+    {
       "chord": "D",
       "shapes": [
         {
@@ -149,6 +165,22 @@
           "id": "open",
           "frets": "x 0 0 2 3 2",
           "fingers": "- - - 1 3 2"
+        }
+      ]
+    },
+    {
+      "chord": "Eb",
+      "shapes": [
+        {
+          "id": "a-shape",
+          "frets": "x 6 8 8 8 6",
+          "fingers": "- 1 2 3 4 1",
+          "barre": {
+            "fret": 6,
+            "from": 1,
+            "to": 5,
+            "finger": 1
+          }
         }
       ]
     },

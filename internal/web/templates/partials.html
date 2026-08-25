@@ -424,7 +424,8 @@
 			     because it belongs with the rest of what we know about the
 			     shape rather than with the drawing of it. */}}
 			<p class="levelrow"><span class="levellabel">{{$.T "lab.level"}}</span>
-				<b class="levelword">{{.}}</b></p>
+				<b class="levelword">{{.}}</b>
+				<span class="levelnum">({{$.Body.Board.Strain}})</span></p>
 		{{end}}
 		<h2>{{$.T "lab.pick"}}</h2>
 		<form class="pickform" method="get" action="/chords">

@@ -46,9 +46,14 @@ func TestPrimaryShapes(t *testing.T) {
 		{"Dmaj7", "x x 0 2 2 2"},
 		{"Fmaj7", "x x 3 2 1 0"},
 
-		// The barre chords, at the position a reference prints.
+		// The barre chords, at the position a reference prints. Db and Eb are
+		// the A shape slid up rather than the four-string grips lower down: a
+		// reference prints the movable shape, and it is what a player reaches
+		// for in a song that has the rest of its chords up there too.
 		{"F", "1 3 3 2 1 1"},
 		{"Bb", "x 1 3 3 3 1"},
+		{"Db", "x 4 6 6 6 4"},
+		{"Eb", "x 6 8 8 8 6"},
 		{"Bm", "x 2 4 4 3 2"},
 		{"Bm7", "x 2 4 2 3 2"},
 		{"B7", "x 2 1 2 0 2"},
@@ -56,9 +61,6 @@ func TestPrimaryShapes(t *testing.T) {
 		// Slid templates, for roots with no curated shape.
 		{"F#m", "2 4 4 2 2 2"},
 		{"C#m", "x 4 6 6 5 4"},
-		// The four-string shape at the first fret, which is the easy Eb most
-		// references print, rather than the A-shape barre at the sixth.
-		{"Eb", "x x 1 3 4 3"},
 		{"Ab", "4 6 6 5 4 4"},
 
 		// Slash chords keep their bass in the lowest voice.

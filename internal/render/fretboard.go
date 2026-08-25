@@ -76,6 +76,11 @@ type FretboardView struct {
 	// Level is how hard the drawn shape is to hold, in words. Empty when
 	// nothing is fretted, since there is no difficulty in doing nothing.
 	Level string
+	// Strain is the number the word came from, shown beside it. A word alone
+	// cannot say that one shape is at the top of its band and the next barely
+	// scraped into it, and the difference between two shapes in the same band
+	// is exactly what somebody comparing them wants to see.
+	Strain int
 }
 
 // ReadingView is one name for the notes drawn on the board.
@@ -270,7 +275,9 @@ func boardFor(say *i18n.Printer, v voicing.Voicing, start int, o LabOptions) Fre
 	// Cost is set by the lookup, not by parsing a grip, so it is worked out
 	// here for whatever the reader has drawn.
 	if v.Reach() > 0 {
-		b.Level = say.T(voicing.Score(v).Level().Key())
+		scored := voicing.Score(v)
+		b.Level = say.T(scored.Level().Key())
+		b.Strain = scored.Strain()
 	}
 	if start > 1 {
 		b.Down = labURLAt(o, v.Grip(), start-1)
