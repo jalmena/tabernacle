@@ -241,3 +241,43 @@ func TestTwelveFretsUpIsTwelveHigher(t *testing.T) {
 		}
 	}
 }
+
+// The neck says which finger goes on each dot.
+//
+// It is the same fingering the rest of the collection is held by, worked out in
+// Go rather than left to the reader: a neck that shows dots and says nothing
+// about how to hold them is a puzzle rather than a lesson.
+func TestTheNeckNamesItsFingers(t *testing.T) {
+	v := Lab(LabOptions{Grip: "1-3-3-2-1-1", Lang: i18n.Spanish, Notation: chord.English})
+
+	// F: the index lies across the first fret, the middle takes the second, and
+	// the ring and little finger the third.
+	want := map[int]int{0: 1, 1: 3, 2: 4, 3: 2, 4: 1, 5: 1}
+	for _, row := range v.Board.Strings {
+		for _, cell := range row.Cells {
+			if !cell.On {
+				if cell.Finger != 0 {
+					t.Errorf("string %d fret %d is not pressed but names finger %d",
+						row.Index, cell.Fret, cell.Finger)
+				}
+				continue
+			}
+			if got := cell.Finger; got != want[row.Index] {
+				t.Errorf("string %d is held by finger %d, want %d", row.Index, got, want[row.Index])
+			}
+			if !strings.Contains(cell.Label, "Traste") {
+				t.Errorf("string %d says %q, which does not name the fret", row.Index, cell.Label)
+			}
+		}
+	}
+
+	// An empty neck has nothing to say about fingers.
+	empty := Lab(LabOptions{Grip: "0-0-0-0-0-0", Lang: i18n.Spanish, Notation: chord.English})
+	for _, row := range empty.Board.Strings {
+		for _, cell := range row.Cells {
+			if cell.Finger != 0 {
+				t.Errorf("an open string names finger %d", cell.Finger)
+			}
+		}
+	}
+}

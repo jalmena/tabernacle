@@ -1310,6 +1310,18 @@ input[type="file"].filepick:focus-visible { outline: 2px solid var(--accent); ou
 .boardcell.fret input:checked {
 	background: radial-gradient(circle at center, var(--accent) 0 0.55rem, transparent 0.55rem);
 }
+/* Which finger, inside its own dot. The paper colour rather than a fixed one,
+ * so it reads against the dot in either theme: dark ink on a dark mark in the
+ * light theme, and the other way round in the dark one. */
+.fingermark {
+	position: relative;
+	pointer-events: none;
+	font-size: 0.8125rem;
+	font-weight: 700;
+	line-height: 1;
+	color: var(--paper);
+	font-variant-numeric: tabular-nums;
+}
 
 /* Shifted by the fret-number column so these sit under the middle of the neck
  * rather than under the middle of the card, which is half a column to the left

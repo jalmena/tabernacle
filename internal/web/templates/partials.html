@@ -344,9 +344,10 @@
 								<span class="sr">{{$.T "lab.string.open" .Name}}</span>
 							</label>
 							{{range .Cells}}
-								<label class="boardcell fret{{if .Top}} firstfret{{end}}{{if .Nut}} nut{{end}}" title="{{$.T `shape.fret` .Fret}}">
+								<label class="boardcell fret{{if .Top}} firstfret{{end}}{{if .Nut}} nut{{end}}" title="{{.Label}}">
 									<input type="radio" name="s{{$s}}" value="{{.Fret}}" {{if .On}}checked{{end}}>
-									<span class="sr">{{$.T "shape.fret" .Fret}}</span>
+									{{if .Finger}}<span class="fingermark" aria-hidden="true">{{.Finger}}</span>{{end}}
+									<span class="sr">{{.Label}}</span>
 								</label>
 							{{end}}
 						</fieldset>

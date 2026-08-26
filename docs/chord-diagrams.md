@@ -548,6 +548,17 @@ for `#chordresult`. Both silently did nothing while every other test passed.
 The result diagrams stay SVG. The editor is a control and the variants are
 pictures; they answer different questions.
 
+### The fingers on the neck
+
+Each dot on the editable neck carries the number of the finger that holds it,
+and says the same in words for a reader who cannot see it — "third fret, ring
+finger". It is the fingering the collection would use, worked out in Go by the
+same rules as everything else: a neck that shows dots and says nothing about how
+to hold them is a puzzle rather than a lesson.
+
+The number is drawn in the paper colour so it reads against the dot in either
+theme, dark on light and light on dark.
+
 ### Hearing it
 
 The neck has a button that plays what is drawn on it.

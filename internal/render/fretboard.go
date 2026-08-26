@@ -31,6 +31,11 @@ type FretCell struct {
 	On   bool
 	Top  bool
 	Nut  bool
+	// Finger is which one holds this note, 1 to 4, and 0 when the cell is not
+	// pressed or nothing sensible can be said. Label says the same in words for
+	// a reader who cannot see the number.
+	Finger int
+	Label  string
 }
 
 // StringRow is one string of the editable neck.
@@ -274,10 +279,16 @@ func boardFor(say *i18n.Printer, v voicing.Voicing, start int, o LabOptions) Fre
 	b := FretboardView{Start: start, Grip: v.Grip(), Pitches: midiList(v.Pitches())}
 	// Cost is set by the lookup, not by parsing a grip, so it is worked out
 	// here for whatever the reader has drawn.
+	// The fingering is worked out here rather than left to the reader: it is
+	// the same rule the rest of the collection is held by, and a neck that
+	// shows dots and says nothing about which finger goes on them is a puzzle
+	// rather than a lesson.
+	var fingers []voicing.Finger
 	if v.Reach() > 0 {
 		scored := voicing.Score(v)
 		b.Level = say.T(scored.Level().Key())
 		b.Strain = scored.Strain()
+		fingers = scored.Fingers
 	}
 	if start > 1 {
 		b.Down = labURLAt(o, v.Grip(), start-1)
@@ -297,12 +308,20 @@ func boardFor(say *i18n.Printer, v voicing.Voicing, start int, o LabOptions) Fre
 			row.Name = say.T(stringKey(i, "short"))
 		}
 		for n := start; n < start+labFrets; n++ {
-			row.Cells = append(row.Cells, FretCell{
+			cell := FretCell{
 				Fret: n,
 				On:   int(f) == n,
 				Top:  n == start && start > 1,
 				Nut:  n == start && start == 1,
-			})
+			}
+			cell.Label = say.T("shape.fret", n)
+			if cell.On && i < len(fingers) {
+				if k := fingers[i]; k >= 1 && k <= 4 {
+					cell.Finger = int(k)
+					cell.Label += ", " + say.T(fingerKey(int(k)))
+				}
+			}
+			row.Cells = append(row.Cells, cell)
 		}
 		b.Strings = append(b.Strings, row)
 	}
