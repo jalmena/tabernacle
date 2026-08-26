@@ -1,0 +1,260 @@
+{
+  "about": [
+    "What a guitarist said about shapes on a neck, written down before the model",
+    "that has to reproduce it. Every entry here came from a person playing the",
+    "shape and saying what it was like, not from anything the code produced.",
+    "",
+    "A grip reads sixth string first: 'x-3-2-0-1-0' is an open C. Fingers read",
+    "the same way, '-' for a string nobody holds: '- 3 2 - 1 -'.",
+    "",
+    "The rule this file exists to enforce: a model is measured against all of it",
+    "at once, never against the last case that came in. Fitting one judgement at",
+    "a time is how the model this replaces ended up with twelve terms.",
+    "",
+    "If two judgements here ever turn out to disagree, they are written down as",
+    "disagreeing and the player arbitrates. None do today."
+  ],
+  "chords": [
+    {
+      "symbol": "Em7",
+      "level": "trivial",
+      "why": "two fingers, nothing out of place"
+    },
+    {
+      "symbol": "Em",
+      "level": "trivial"
+    },
+    {
+      "symbol": "E7",
+      "level": "trivial"
+    },
+    {
+      "symbol": "Fmaj7",
+      "level": "trivial",
+      "why": "the perfect descending diagonal, a finger to a fret",
+      "pending": "the pair-weight model does not reproduce this"
+    },
+    {
+      "symbol": "A",
+      "level": "trivial",
+      "why": "the other shape a hand rests in: three fingers in a row on one fret"
+    },
+    {
+      "symbol": "E",
+      "level": "easy"
+    },
+    {
+      "symbol": "C",
+      "level": "easy",
+      "why": "a hair past Fmaj7, which is the one the player calls trivial"
+    },
+    {
+      "symbol": "D",
+      "level": "easy"
+    },
+    {
+      "symbol": "Am",
+      "level": "easy"
+    },
+    {
+      "symbol": "Dm",
+      "level": "easy"
+    },
+    {
+      "symbol": "G",
+      "level": "easy"
+    },
+    {
+      "symbol": "Abm7",
+      "level": "moderate",
+      "pending": "the pair-weight model does not reproduce this"
+    },
+    {
+      "symbol": "Gm7",
+      "level": "moderate",
+      "pending": "the pair-weight model does not reproduce this"
+    },
+    {
+      "symbol": "C#m",
+      "level": "moderate"
+    },
+    {
+      "symbol": "Bm7",
+      "level": "moderate"
+    },
+    {
+      "symbol": "Bm",
+      "level": "moderate"
+    },
+    {
+      "symbol": "B",
+      "level": "moderate",
+      "pending": "the pair-weight model does not reproduce this"
+    },
+    {
+      "symbol": "F#",
+      "level": "moderate"
+    },
+    {
+      "symbol": "Bb",
+      "level": "moderate",
+      "pending": "the pair-weight model does not reproduce this"
+    },
+    {
+      "symbol": "F",
+      "level": "moderate",
+      "why": "a player treats every barre as one kind of thing, near the nut or away from it"
+    }
+  ],
+  "bands": [
+    {
+      "grip": "1-3-1-0-0-0",
+      "level": "moderate",
+      "why": "index and middle at the first fret, little finger reaching the third on the string between them"
+    },
+    {
+      "grip": "1-4-1-0-0-0",
+      "level": "complex",
+      "why": "the same, one fret further out",
+      "pending": "the pair-weight model does not reproduce this"
+    },
+    {
+      "grip": "1-5-1-0-0-0",
+      "level": "inhuman",
+      "why": "and one further still",
+      "pending": "the pair-weight model does not reproduce this"
+    },
+    {
+      "grip": "1-5-1-5-0-0",
+      "level": "inhuman",
+      "why": "two pairs interleaved four frets apart",
+      "pending": "the pair-weight model does not reproduce this"
+    }
+  ],
+  "ordered": [
+    {
+      "easier": "1-3-0-0-0-0",
+      "harder": "1-3-1-0-0-0",
+      "why": "the second is the first with a note added, and adding a note is work"
+    },
+    {
+      "easier": "1-3-0-0-0-0",
+      "harder": "1-3-0-1-0-0",
+      "why": "the same again: one more note, one more finger, more work"
+    },
+    {
+      "easier": "x-x-5-7-x-x",
+      "harder": "x-6-5-7-x-x",
+      "pending": "the pair-weight model does not reproduce this"
+    },
+    {
+      "easier": "x-3-2-1-x-x",
+      "harder": "4-3-2-1-x-x"
+    },
+    {
+      "easier": "x-5-6-x-x-x",
+      "harder": "x-5-7-x-x-x"
+    },
+    {
+      "easier": "x-5-7-x-x-x",
+      "harder": "x-5-8-x-x-x"
+    }
+  ],
+  "ratios": [
+    {
+      "a": "x-3-2-1-x-x",
+      "b": "4-3-2-1-x-x",
+      "times": 2.0,
+      "tolerance": 0.25,
+      "why": "three fingers in a diagonal, then the little finger joins them",
+      "pending": "the pair-weight model does not reproduce this"
+    },
+    {
+      "a": "x-1-3-3-3-1",
+      "b": "x-3-5-5-5-3",
+      "times": 1.5,
+      "tolerance": 0.3,
+      "why": "the same barre is half again as hard at the first fret as away from it",
+      "pending": "the pair-weight model does not reproduce this"
+    }
+  ],
+  "pairs": {
+    "about": [
+      "One fret of separation between two fingers, quoted by the player as a",
+      "ratio: if the index and the middle are one unit of awkward, the middle",
+      "and the ring are half again and the ring and the little finger nearly",
+      "three times. Measured one string apart, hand along the fret."
+    ],
+    "unit": {
+      "fingers": "index-middle",
+      "grip": "x-5-6-x-x-x"
+    },
+    "quoted": [
+      {
+        "fingers": "index-middle",
+        "times": 1.0
+      },
+      {
+        "fingers": "middle-ring",
+        "times": 1.5
+      },
+      {
+        "fingers": "ring-pinky",
+        "times": 3.0
+      }
+    ],
+    "tolerance": 0.35
+  },
+  "fingering": [
+    {
+      "grip": "1-3-1-0-0-0",
+      "fingers": "1 4 2 - - -",
+      "why": "the first fret spends two fingers, the empty second fret spends the ring, so the third is the little finger's",
+      "pending": "the pair-weight model does not reproduce this"
+    },
+    {
+      "grip": "x-x-5-7-x-x",
+      "fingers": "- - 1 3 - -",
+      "why": "skip a finger for the skipped fret: each finger takes its own, as the picking exercises teach",
+      "pending": "the pair-weight model does not reproduce this"
+    },
+    {
+      "grip": "x-3-2-1-x-x",
+      "fingers": "- 3 2 1 - -"
+    },
+    {
+      "grip": "4-3-2-1-x-x",
+      "fingers": "4 3 2 1 - -"
+    },
+    {
+      "grip": "1-3-3-2-1-1",
+      "fingers": "1 3 4 2 1 1",
+      "why": "the F: ring on the graver string, little finger on the higher one"
+    },
+    {
+      "grip": "x-0-2-2-2-0",
+      "fingers": "- - 1 2 3 -"
+    },
+    {
+      "grip": "0-2-2-1-0-0",
+      "fingers": "- 2 3 1 - -",
+      "why": "held with the middle and ring so the index is free"
+    }
+  ],
+  "invalid": [
+    {
+      "grip": "1-5-1-5-0-0",
+      "why": "the middle finger would have to duck under the little one",
+      "pending": "the pair-weight model does not reproduce this"
+    }
+  ],
+  "invariant": {
+    "about": [
+      "Fretting a string that was silent or open can never make a shape easier.",
+      "True of every shape, not a judgement about any one of them.",
+      "The pair-weight model breaks it four times; the count may not grow, and",
+      "must reach nought."
+    ],
+    "known_inversions": 4
+  }
+}
