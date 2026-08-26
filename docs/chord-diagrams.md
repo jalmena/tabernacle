@@ -129,76 +129,102 @@ shape and not about where it happens to sit in a list.
 
 #### Strain
 
+Strain is not a sum of penalties. It is the cost of the easiest way a hand can
+actually be laid on the neck to hold the shape, which is a different kind of
+question and the reason this model replaced the one before it.
+
+**The neck is not evenly spaced**, and that one fact carries most of the model.
+Frets fall where the string divides, so they crowd together as they climb: the
+first is 36.4 mm wide, the sixth 27.2, the twelfth 19.3. Knuckles do not move —
+they sit about 21 mm apart whatever fret the hand is over. Those two numbers meet
+at the eleventh fret. Below it, one finger per fret is a stretch; above it, it is
+the shape the hand is already in. Everything a guitarist says about the nut being
+harder starts there, and none of it has to be written down as a rule.
+
+**The hand is a line of knuckles and four fingers.** Three numbers place it: where
+the palm sits, and how far the knuckle line is turned from the neck. Turned along
+the neck, the fingers land one to a fret. Turned across the strings, they land in
+a row on one fret. Those are the two postures a player rests in, and they are not
+two cases — they are one angle with two values, and real chords sit all along it.
+
+Each finger runs from its own knuckle to its note. Reaching sideways lengthens it,
+exactly as a finger does. What a shape costs is what it asks of each one:
+
+| | |
+| --- | --- |
+| Reaching | past the finger's length, or pulled up short of it |
+| Fanning | pointing off straight ahead, free for the first stretch and then charged |
+| Tendons | two fingers pulled to different lengths, weighted by which pair |
+| Pressing | holding each note down, and holding a bar flat across several |
+| Wrist | turning the knuckle line past what it gives |
+
+**Fingers in the order they grow in.** Projected onto the knuckle line, the
+fingertips must run index, middle, ring, little. A hand cannot put its middle
+finger on the far side of its ring finger — that is not expensive, it is not a
+thing. This one rule does the work of four the old model needed a term for each
+of: crossing over, filling order, a finger trapped between two others, and a hand
+asked to face two ways at once. And because the projection is along the knuckle
+line, it reads as one finger per fret when the hand is along the neck and as the
+index on the graver string when it is across.
+
+**Fingers are not equally independent**, and that is a tendon rather than a
+weighting. The stiffnesses between index and middle, middle and ring, ring and
+little are one, one and a half, and three — the numbers a guitarist quotes.
+Fingers further apart in the hand get the links in series, so a pair with an idle
+finger between them comes out slacker than either link on its own, which is the
+slack a player feels when the ring finger has nothing to do. That falls out of
+the arithmetic; nobody wrote it.
+
+**What a finger will not do at any price.** Past a certain length, curl or fan,
+there is no placement, and the answer stops being a number. That is the whole of
+what inhuman means here: not a large score, a refusal.
+
+**A shape with no fingering at all** — one asking for more fingers than a hand has
+— starts above the last band and is then charged 40 for each finger it is short,
+so being two short ranks past being one short.
+
+**Where the numbers come from**, and the tally is meant to be checkable:
+
 | | | |
 | --- | --- | --- |
-| Posture | ×7 | how far the fingers are from where the hand rests |
-| Stretch | ×8 per fret | the width of the hand along the neck |
-| Spread | ×4 | the width of the hand across the strings |
-| Fretted notes | ×4 each | |
-| Crowding | ×8 | fingertips past the second on one fret, behind a barre |
-| Silent inside | ×8 | a muted string between two ringing ones |
-| Open inside | ×3 | an open string between two fretted ones |
-| Barre | +6, +1 per string | and +6 at the first fret, +2 at the second |
-| Thumb | ×6 | |
+| `scale`, `nutSpread`, `twelfthSpread` | measured | a common steel-string, and a ruler settles them |
+| `knuckleGap`, `reach` | measured | one guitarist's hand, and a large one |
+| `stiff` | quoted | 1 : 1½ : 3, said by the player in those words |
+| every cost, and the seven bands | fitted | see below |
+| `weak` | fitted, and not geometry | the little finger is weak, which no length says |
+| `nutCost` | fitted, and standing in for something | see below |
 
-**Posture** is the term that matters most: how far a shape drags the hand out of
-the position it rests in. A hand at rest covers four frets with one finger each
-— index on the lowest, then middle, ring, little. Two fingers are as far apart
-as they want to be when the frets between them match the fingers between them,
-and every fret beyond that is a stretch. Two fingers on one fret cost nothing,
-which is why a barre with the ring and little finger side by side is
-comfortable.
+Fitted means fitted **once**, by `TestFitTheHandToWhatThePlayerSaid` in
+`calibrate_test.go`, which walks every constant against the whole of
+`internal/voicing/testdata/judgements.json` at a time and keeps what satisfies
+most of it. That file is what a guitarist said about shapes on a neck, written
+down before the model that has to reproduce it. The test is skipped unless
+`FIT=1` because it takes an hour, and it lives in the tree so the constants can
+be re-derived rather than believed.
 
-Width alone cannot say this, and that was the bug. Index on the first fret and
-little finger on the fourth is the hand doing nothing unusual; index on the
-first and ring on the fourth is the same three frets and a real stretch. A model
-built on span scored them the same, and preferred a contortion like
-`x 2 1 4 0 2` over B's barre.
+Two of them are honest about being something else. `weak` is not a length: the
+little finger is weak and the ring finger is not much better, and without saying
+so the model handed three-note diagonals to the index, ring and little fingers,
+which lies flatter on a neck whose frets are wider than the knuckles are and
+which nobody plays. And `nutCost` stands in for everything about the end of the
+neck that is not length.
 
-Fingers are not equally independent, so every distance is weighted by which pair
-is being pulled apart: index to middle ×1, middle to ring ×2, ring to little ×3.
-The index and the middle finger come apart almost for free; the ring and the
-little finger share a tendon, and prising those two apart is the most awkward
-thing a left hand is asked to do. It is why an open G, whose middle and ring
-fingers sit four strings apart, is learnt in an afternoon, and why the same
-distance between the ring and the little finger is a shape most players never
-hold. A finger behind one that should be behind it costs three frets' worth,
-weighted the same way.
+Why `nutCost` has to exist at all is worth writing down. Near the nut more string
+is left ringing, so it swings wider for the same pluck and takes a firmer stop
+before it rattles on the fret. That is real, it is geometry, and it is about a
+twentieth between the first fret and the second — while a player puts the first
+fret at half again. The rest is the nut being a hard stop the string cannot give
+against and the wrist having to come further round to reach it, neither of which
+this model has. So it is one fitted number with a name, rather than a derivation
+that would be a fiction.
 
-**Spread** is the other distance. Two fingers on one fret are not the same thing
-on neighbouring strings as they are on the sixth and the first, which is a hand
-opened as far as it goes — and posture cannot see it, because along the frets
-those two fingers are in the same place. Neighbouring fingers only, and only
-past four strings, which is the width an open G already asks for.
-
-**Crowding** is three fingertips on one fret behind a barre, arching over an
-index already lying across the neck. On its own, three fingers on a fret is
-ordinary — an open A and an open G both do it and nobody calls either hard — so
-it counts only when there is a barre under them. It is the difference between
-the E-shape barre and the A-shape one, and why B is a step past F.
-
-**A wide barre** costs more the nearer the nut it is laid, and not in one step:
-the strings are highest and tightest at the first fret and a little less so at
-the second, which is the whole difference between F and F#. The drop between the
-two has to beat the three points a fret of position costs, or they cancel and
-the two chords come out level; it cannot be much more than that either, or Bb
-abandons the first-fret A shape everybody plays for a barre at the sixth. Which
-leaves a wide barre at the third fret costing what one at the first does, the
-position term having caught up — nobody is going to notice, and the two numbers
-are not worth more machinery.
-
-**An open string between two fretted ones** costs more the further up the neck
-its neighbours are: the muting hazard nobody thinks about until they hear it.
-
-**A shape with no fingering at all** — one asking for more fingers than a hand
-has — starts above the last band and is then charged 40 for each finger it is
-short, so that being two short ranks past being one short. Every other term
-measures something a hand is doing, so without a fingering they measure nothing,
-and these had been coming out *cheaper* than merely difficult shapes.
-
-That sum lives in `strain` and not in `Level`, so the number shown beside the
-word is the number the word came from. When it lived in `Level` the page said
-`Inhuman (64)`, which is a band the number is nowhere near.
+**Why not a sum of weights.** The model this replaced had twelve terms, each one
+added to save a shape the eleven before it got wrong. It could not be fixed,
+because everything that kept breaking it — crossings, trapped fingers, filling
+order — is a property of the whole hand and no sum over pairs can see one. Its
+last week produced a shape that scored *less* than the notes inside it, an
+unholdable position rated moderate, and the same two notes costing twelve or
+nothing depending on which finger got them.
 
 #### The words
 
@@ -391,9 +417,19 @@ E major and A major still come out with three separate fingers, F and Bm with
 the full barre, and F/C with the small one across the top two strings — not
 because they are named anywhere, but because that is what wins.
 
-Deterministic and without the thumb. Fingers go on in order of fret and then of
-string, which is what a player does — it is why the ordinary D and Dm come out
-with the fingering they are taught with.
+Which fingers are used is chosen, not taken in turn from the index. Every choice
+of which of the four to use is tried and the one the hand settles on most easily
+is kept — never more than a handful, six ways for two fingers and four for three.
+Fingers still go on in order of fret and then of string, because a hand cannot
+cross them over; what is chosen is which of them are on the neck at all.
+
+Taken in turn from the index, two notes two frets apart came out as the index and
+the middle finger, which no hand does. Nothing anywhere says which finger ought to
+go where. The knuckles are 21 mm apart and the frets are wider than that near the
+nut, so skipping a finger to skip a fret is simply what the hand settles on, and
+what a player calls one finger per fret is that settling written down.
+
+Deterministic and without the thumb.
 
 A barre is laid only when four fingers are not enough, which is the only reason
 anyone lays one. Asking the question that way needs no special cases: E major and

@@ -2,6 +2,7 @@ package voicing
 
 import (
 	"cmp"
+	"math"
 	"slices"
 
 	"github.com/jalmena/tabernacle/internal/chord"
@@ -221,7 +222,10 @@ func fret(v *Voicing) bool {
 	withBarre.Frets = v.Frets
 
 	okPlain := fretWith(&plain, false)
-	okBarre := fretWith(&withBarre, true)
+	// Only work the barre out when there could be one. Without this the same
+	// fingering gets found twice for most shapes, and finding it is the
+	// expensive part.
+	okBarre := couldBarre(*v) && fretWith(&withBarre, true)
 	switch {
 	case okPlain && okBarre:
 		if withBarre.Cost < plain.Cost {
@@ -237,6 +241,26 @@ func fret(v *Voicing) bool {
 		return false
 	}
 	return true
+}
+
+// couldBarre reports whether a barre is even on the table for this shape.
+func couldBarre(v Voicing) bool {
+	lowest, fretted := 0, 0
+	for _, f := range v.Frets {
+		if f <= 0 {
+			continue
+		}
+		fretted++
+		if lowest == 0 || int(f) < lowest {
+			lowest = int(f)
+		}
+	}
+	if lowest == 0 {
+		return false
+	}
+	v.Position = lowest
+	_, ok := barreFor(v, fretted)
+	return ok
 }
 
 // fretWith works out one fingering, with a barre or without.
@@ -280,19 +304,78 @@ func fretWith(v *Voicing, barre bool) bool {
 		}
 		return cmp.Compare(a, b)
 	})
-	next := Finger(1)
+	first := Index
 	if v.HasBarre() {
-		next = 2
+		first = Middle
 	}
-	for _, i := range assign {
-		if next > 4 {
-			return false
+	return chooseFingers(v, assign, first)
+}
+
+// chooseFingers hands the notes out to fingers, trying every choice of which
+// fingers to use and keeping the one the hand settles on most easily.
+//
+// Fingers still go on in order of fret and then of string, because a hand cannot
+// cross them over. What is chosen is which of the four are used at all, and
+// there are never more than a handful of ways: six for two fingers, four for
+// three, one for all of them.
+//
+// Taking them in turn from the index — which is what this replaces — meant two
+// notes two frets apart came out as the index and the middle finger, which no
+// hand does. Nothing here says which finger ought to go where. The knuckles are
+// twenty-one millimetres apart and the frets are wider than that near the nut,
+// so skipping a finger to skip a fret is simply what the hand settles on, and
+// what a player calls one finger per fret is that settling written down.
+func chooseFingers(v *Voicing, assign []int, first Finger) bool {
+	if len(assign) == 0 {
+		v.Cost = cost(*v)
+		return true
+	}
+	if len(assign) > int(Pinky-first)+1 {
+		return false
+	}
+
+	best, ok := math.Inf(1), false
+	var chosen []Finger
+	var pick func(at int, next Finger, used []Finger)
+	pick = func(at int, next Finger, used []Finger) {
+		if at == len(assign) {
+			for j, i := range assign {
+				v.Fingers[i] = used[j]
+			}
+			if c, fits := place(*v); fits && c < best {
+				best, ok = c, true
+				chosen = append(chosen[:0], used...)
+			}
+			return
 		}
-		v.Fingers[i] = next
-		next++
+		for f := next; int(Pinky-f)+1 >= len(assign)-at; f++ {
+			pick(at+1, f+1, append(used, f))
+		}
 	}
-	v.Cost = cost(*v)
-	return true
+	pick(0, first, make([]Finger, 0, len(assign)))
+	if ok {
+		for j, i := range assign {
+			v.Fingers[i] = chosen[j]
+		}
+		// The placement that won is the shape's difficulty. Working it out
+		// again from scratch here doubled the cost of generating a chord.
+		v.Cost = scored(*v, best) + 3*v.Position + 6*silent(v.Frets)
+		return true
+	}
+	{
+		// No choice of fingers lets the hand reach. Leave the first one on so
+		// the shape can still be described, and let strain say what it is.
+		next := first
+		for _, i := range assign {
+			if next > Pinky {
+				return false
+			}
+			v.Fingers[i] = next
+			next++
+		}
+		v.Cost = cost(*v)
+		return true
+	}
 }
 
 // barreFor says where the index finger would lie if it lay flat across the

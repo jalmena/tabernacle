@@ -2,55 +2,13 @@ package voicing
 
 import (
 	"testing"
-
-	"github.com/jalmena/tabernacle/internal/chord"
 )
 
-// The bands are only worth anything if the chords a player already has an
-// opinion about land where that opinion says they should.
-func TestTheLevelsLandWhereAPlayerWouldPutThem(t *testing.T) {
-	for _, tc := range []struct {
-		sym  string
-		want Level
-	}{
-		// Two and three fingers, no barre and no stretch: the first chords
-		// anybody holds, A among them — three fingertips in a row on one fret.
-		{"Em7", Trivial},
-		{"Em", Trivial},
-		{"A", Trivial},
-		{"E7", Trivial},
-		// The rest of the open chords.
-		{"E", Easy},
-		{"Am", Easy},
-		{"D", Easy},
-		{"C", Easy},
-		{"G", Easy},
-		// The barres everybody fights and then masters.
-		{"F", Moderate},
-		{"Bm", Moderate},
-		// B is the A-shape barre, a step past the other two: three fingertips
-		// arch over an index already lying across the neck. It is the chord
-		// that stops people who have already got F.
-		{"B", Advanced},
-		{"Bb", Advanced},
-	} {
-		t.Run(tc.sym, func(t *testing.T) {
-			c, err := chord.Parse(tc.sym)
-			if err != nil {
-				t.Fatal(err)
-			}
-			g, ok := Generate(c, GenerateOptions{})
-			if !ok || len(g.Root.Shapes) == 0 {
-				t.Fatalf("%s has no shape", tc.sym)
-			}
-			v := g.Root.Shapes[0]
-			if got := v.Level(); got != tc.want {
-				t.Errorf("%s (%s, cost %d) is level %d, want %d",
-					tc.sym, v.Grip(), v.Cost, got, tc.want)
-			}
-		})
-	}
-}
+// Where the levels are anchored now lives in testdata/judgements.json, checked
+// by TestTheChordsLandWhereThePlayerPutThem. A list here as well was a second
+// opinion nobody had asked for, and the two had already drifted apart: this one
+// said B and Bb were advanced while the player who was asked put every barre in
+// one band.
 
 // The scale has to be a scale: harder shapes never come out easier.
 func TestTheLevelsNeverGoBackwards(t *testing.T) {
@@ -65,8 +23,8 @@ func TestTheLevelsNeverGoBackwards(t *testing.T) {
 }
 
 // A shape drawn on the neck arrives with frets and nothing else. Scoring it has
-// to work out the fingering too, or posture measures nothing and every drawing
-// comes back comfortable.
+// to work out the fingering too, or there is nothing for the hand to be placed
+// on and every drawing comes back comfortable.
 func TestScoringADrawnShapeWorksOutTheFingers(t *testing.T) {
 	drawn := func(grip string) Voicing {
 		frets, ok := ParseGrip(grip)
@@ -81,49 +39,22 @@ func TestScoringADrawnShapeWorksOutTheFingers(t *testing.T) {
 	if easy.Cost >= hard.Cost {
 		t.Errorf("E major costs %d and a contortion costs %d", easy.Cost, hard.Cost)
 	}
-	if posture(easy) != 0 {
-		t.Errorf("E major strains the hand by %d, want 0", posture(easy))
+	for _, v := range []Voicing{easy, hard} {
+		if len(v.Fingers) != len(v.Frets) {
+			t.Fatalf("%s came back with no fingering to place a hand on", v.Grip())
+		}
 	}
-	if posture(hard) == 0 {
-		t.Errorf("the contortion strains the hand by 0, which cannot be right")
+	if _, ok := place(easy); !ok {
+		t.Error("E major cannot be held, which cannot be right")
 	}
 	if easy.Level() != Trivial && easy.Level() != Easy {
 		t.Errorf("E major came out level %d", easy.Level())
 	}
 }
 
-// The same barre is harder the nearer the nut it is laid: the strings are
-// highest and tightest at the first fret. It is the whole difference between F
-// and F#, which are one shape and one fret apart.
-func TestTheSameBarreIsHarderAtTheFirstFret(t *testing.T) {
-	first := func(sym string) Voicing {
-		t.Helper()
-		c, err := chord.Parse(sym)
-		if err != nil {
-			t.Fatal(err)
-		}
-		g, ok := Generate(c, GenerateOptions{})
-		if !ok || len(g.Root.Shapes) == 0 {
-			t.Fatalf("%s has no shape", sym)
-		}
-		return g.Root.Shapes[0]
-	}
-
-	for _, tc := range []struct{ nut, next string }{
-		{"F", "F#"}, // the E shape, at the first fret and at the second
-		{"Bb", "B"}, // the A shape, likewise
-	} {
-		a, b := first(tc.nut), first(tc.next)
-		if a.Position != 1 || b.Position != 2 {
-			t.Fatalf("%s is at fret %d and %s at fret %d; this test needs 1 and 2",
-				tc.nut, a.Position, tc.next, b.Position)
-		}
-		if a.Cost <= b.Cost {
-			t.Errorf("%s at the first fret costs %d and %s at the second costs %d",
-				tc.nut, a.Cost, tc.next, b.Cost)
-		}
-	}
-}
+// That the same barre is harder at the first fret than at the second is one of
+// the ratios in testdata/judgements.json, where the number a guitarist actually
+// quoted for it — half again — is written down instead of only its direction.
 
 // The same shape is the same shape wherever it sits. Frets narrow as they
 // climb, so if anything a barre is easier high up than low down — it is

@@ -170,8 +170,8 @@
       "pending": "the pair-weight model does not reproduce this"
     },
     {
-      "a": "x-1-3-3-3-1",
-      "b": "x-3-5-5-5-3",
+      "a": "x-3-5-5-5-3",
+      "b": "x-1-3-3-3-1",
       "times": 1.5,
       "tolerance": 0.3,
       "why": "the same barre is half again as hard at the first fret as away from it",
