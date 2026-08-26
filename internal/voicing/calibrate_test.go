@@ -217,14 +217,6 @@ func knobs() []knob {
 		{"weakRing", &weak[2], 0.02, 12},
 		{"weakPinky", &weak[3], 0.05, 30},
 		{"maxFan", &maxFan, 26, 62},
-		{"knuckleGap", &knuckleGap, 17, 25},
-		{"reachIndex", &reach[0], 74, 98},
-		{"reachMiddle", &reach[1], 82, 106},
-		{"reachRing", &reach[2], 78, 101},
-		{"reachPinky", &reach[3], 60, 82},
-		{"stiffIM", &stiff[0], 0.6, 1.6},
-		{"stiffMR", &stiff[1], 0.9, 2.6},
-		{"stiffRP", &stiff[2], 1.6, 5.0},
 		{"maxReach", &maxReach, 1.02, 1.30},
 		{"minReach", &minReach, 0.35, 0.72},
 	}
@@ -236,6 +228,33 @@ func both(s spec) (int, float64, []string) {
 	return p, penalty(s), bad
 }
 
+// The bands are part of what was judged too: a player calling a chord easy is
+// saying where a line falls as much as what the shape costs, so the lines move
+// with everything else.
+var bandf [len(levels)]float64
+
+func bandKnobs() []knob {
+	var ks []knob
+	for i := range levels {
+		bandf[i] = float64(levels[i])
+		ks = append(ks, knob{fmt.Sprintf("band%d", i), &bandf[i], 4, 400})
+	}
+	return ks
+}
+
+// pushBands writes them back, keeping them in order: a band that does not end
+// after the one below it is not a band.
+func pushBands() {
+	prev := 0
+	for i := range bandf {
+		v := int(bandf[i] + 0.5)
+		if v <= prev {
+			v = prev + 1
+		}
+		levels[i], prev = v, v
+	}
+}
+
 func TestFitTheHandToWhatThePlayerSaid(t *testing.T) {
 	const held = 40 // judgements in the corpus
 	if os.Getenv("FIT") == "" {
@@ -243,13 +262,14 @@ func TestFitTheHandToWhatThePlayerSaid(t *testing.T) {
 	}
 	s := spec1()
 	score := func() (int, float64) {
+		pushBands()
 		p, pen, _ := both(s)
 		return p, pen
 	}
 	bestPass, bestPen := score()
 	fmt.Printf("start %d/%d  penalty %.2f\n", bestPass, held, bestPen)
 
-	ks := knobs()
+	ks := append(knobs(), bandKnobs()...)
 	for round := range 9 {
 		moved := false
 		for _, k := range ks {
@@ -272,10 +292,12 @@ func TestFitTheHandToWhatThePlayerSaid(t *testing.T) {
 			break
 		}
 	}
+	pushBands()
 	fmt.Println("--- what to write into hand.go")
 	for _, k := range ks {
 		fmt.Printf("%-14s = %.4f\n", k.name, *k.at)
 	}
+	fmt.Printf("levels = %v\n", levels)
 	_, _, bad := grade(s)
 	for _, b := range bad {
 		fmt.Printf("still owed: %s\n", b)

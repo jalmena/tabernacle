@@ -21,13 +21,19 @@ import "math"
 // has no trigonometry in it, why the angles are a fixed table, and why each
 // angle starts from where the last one finished.
 
-// turns are the angles of the knuckle line that get tried, in degrees from the
-// neck. Nought is a finger to a fret and ninety is the fingers in a row across
+// The angles of the knuckle line that get tried, in degrees from the
+// neck.
+const (
+	turnFrom = -10.0
+	turnTo   = 100.0
+)
+
+// turns are those angles on a five-degree grid, worked out once. Nought is a finger to a fret and ninety is the fingers in a row across
 // the strings; a hand plays somewhere between and both ends are comfortable.
-var turns = func() [12]struct{ deg, ux, uy, px, py float64 } {
-	var t [12]struct{ deg, ux, uy, px, py float64 }
+var turns = func() [23]struct{ deg, ux, uy, px, py float64 } {
+	var t [23]struct{ deg, ux, uy, px, py float64 }
 	for i := range t {
-		deg := -10 + 10*float64(i)
+		deg := -10 + 5*float64(i)
 		rad := deg * math.Pi / 180
 		t[i].deg = deg
 		t[i].ux, t[i].uy = math.Cos(rad), math.Sin(rad)
@@ -50,25 +56,52 @@ func place(v Voicing) (float64, bool) {
 	var lay laying
 	lay.load(tips, n)
 
-	best, at, found := math.Inf(1), -1, false
+	// Each angle starts the palm where the last one left it, as well as from the
+	// shape's own guess. Five degrees does not move the hand far, so most of the
+	// searching is already done when a new angle begins.
+	var coarse [len(turns)]float64
+	best, found := math.Inf(1), false
 	for i := range turns {
-		// Each angle starts the palm where the last one left it. Ten degrees
-		// does not move the hand far, so the search begins near the answer and
-		// most of the work disappears.
-		if c, ok := lay.cost(i); ok && c < best {
-			best, at, found = c, i, true
+		coarse[i] = math.Inf(1)
+		if c, ok := lay.cost(i); ok {
+			coarse[i] = c
+			if c < best {
+				best, found = c, true
+			}
 		}
 	}
 	if !found {
-		return 0, false
+		// Nothing on the grid. Before calling a shape unholdable — which is a
+		// strong thing to say and the page says it in words — sweep finely,
+		// because the angles at which a hand will go somewhere at all can be a
+		// narrow band and five degrees can step over it. Rare, so the cost of
+		// looking properly here is paid by almost nothing.
+		for deg := turnFrom; deg <= turnTo; deg += 1 {
+			if c, ok := lay.costAt(deg); ok && c < best {
+				best, found = c, true
+			}
+		}
+		if !found {
+			return 0, false
+		}
+		return best + extra, true
 	}
 
-	// The winning angle, looked at closely. Where the fingers change the order
-	// they have to lie in, the cost steps rather than curves, so it is worth
-	// walking in from both sides rather than trusting a smooth minimum.
-	for _, d := range [6]float64{-7, -4, -2, 2, 4, 7} {
-		if c, ok := lay.costAt(turns[at].deg + d); ok && c < best {
-			best = c
+	// Then the angles worth a closer look, which is not only the best one. The
+	// cost does not fall away smoothly: where the fingers change the order they
+	// have to lie in it steps, so the surface has more than one valley and the
+	// deepest is not always under the lowest coarse reading. Looking only under
+	// that one came out a quarter over the answer on shapes with two ways to
+	// hold them.
+	margin := best * 1.35
+	for i := range turns {
+		if coarse[i] > margin {
+			continue
+		}
+		for _, d := range [4]float64{-3.5, -1.75, 1.75, 3.5} {
+			if c, ok := lay.costAt(turns[i].deg + d); ok && c < best {
+				best = c
+			}
 		}
 	}
 	return best + extra, true
@@ -151,21 +184,30 @@ func (l *laying) lay(deg, ux, uy, px, py float64) (float64, bool) {
 	sinFree := math.Sin(freeFan * math.Pi / 180)
 	sinMax := math.Sin(maxFan * math.Pi / 180)
 
-	if !l.warm {
-		l.ax, l.ay = l.guess(ux, uy, px, py)
-	}
-	c, ok := l.settle(ux, uy, px, py, sinFree, sinMax)
-	if !ok {
-		// Nowhere from here. Try again from the shape's own guess before
-		// giving up, in case the last angle left the palm somewhere useless.
-		l.ax, l.ay = l.guess(ux, uy, px, py)
-		if c, ok = l.settle(ux, uy, px, py, sinFree, sinMax); !ok {
-			l.warm = false
-			return 0, false
+	// Two starting places, and the better of them wins. Where the last angle
+	// left the palm is usually within a millimetre or two of where this one
+	// wants it, which is what makes the search quick; but not always, and a
+	// search that walks downhill from a bad start stops at the first flat spot
+	// it finds. Trying the shape's own guess as well caught placements coming
+	// out half again over what they cost, and a handful of shapes being called
+	// unholdable when a hand holds them.
+	best, found := 0.0, false
+	bx, by := 0.0, 0.0
+	if l.warm {
+		if c, ok := l.settle(ux, uy, sinFree, sinMax); ok {
+			best, bx, by, found = c, l.ax, l.ay, true
 		}
 	}
-	l.warm = true
-	return c + turn + spread, true
+	l.ax, l.ay = l.guess(ux, uy, px, py)
+	if c, ok := l.settle(ux, uy, sinFree, sinMax); ok && (!found || c < best) {
+		best, bx, by, found = c, l.ax, l.ay, true
+	}
+	if !found {
+		l.warm = false
+		return 0, false
+	}
+	l.ax, l.ay, l.warm = bx, by, true
+	return best + turn + spread, true
 }
 
 // guess puts the palm where it would be if every finger lay straight out from
@@ -246,25 +288,25 @@ func (l *laying) at(ax, ay, ux, uy, sinFree, sinMax float64) (float64, bool) {
 // settle walks the palm one axis at a time, halving the step each round, until
 // it stops finding anywhere better. It starts from wherever the last angle
 // finished, which is usually within a millimetre or two.
-func (l *laying) settle(ux, uy, px, py, sinFree, sinMax float64) (float64, bool) {
+func (l *laying) settle(ux, uy, sinFree, sinMax float64) (float64, bool) {
 	best, ok := l.at(l.ax, l.ay, ux, uy, sinFree, sinMax)
 	if !ok {
-		l.ax, l.ay = l.guess(ux, uy, px, py)
-		if best, ok = l.at(l.ax, l.ay, ux, uy, sinFree, sinMax); !ok {
-			// Cast about a little before deciding the hand will not go here.
-			for _, d := range [4][2]float64{{18, 0}, {-18, 0}, {0, 18}, {0, -18}} {
-				if c, fits := l.at(l.ax+d[0], l.ay+d[1], ux, uy, sinFree, sinMax); fits {
-					l.ax, l.ay, best, ok = l.ax+d[0], l.ay+d[1], c, true
-					break
-				}
-			}
-			if !ok {
-				return 0, false
+		// Cast about a little before deciding the hand will not go here.
+		for _, d := range [8][2]float64{
+			{14, 0}, {-14, 0}, {0, 14}, {0, -14},
+			{30, 0}, {-30, 0}, {0, 30}, {0, -30},
+		} {
+			if c, fits := l.at(l.ax+d[0], l.ay+d[1], ux, uy, sinFree, sinMax); fits {
+				l.ax, l.ay, best, ok = l.ax+d[0], l.ay+d[1], c, true
+				break
 			}
 		}
+		if !ok {
+			return 0, false
+		}
 	}
-	for step := 8.0; step >= 0.5; step /= 2 {
-		for range 3 {
+	for step := 16.0; step >= 0.25; step /= 2 {
+		for range 24 {
 			moved := false
 			for _, d := range [4][2]float64{{step, 0}, {-step, 0}, {0, step}, {0, -step}} {
 				if c, fits := l.at(l.ax+d[0], l.ay+d[1], ux, uy, sinFree, sinMax); fits && c < best {
