@@ -102,14 +102,15 @@ that is not the chord.
 
 ## Ordering
 
-Shapes are sorted by a playability cost: fretted notes, stretch, posture,
-spread, barre, position, muted and open strings inside the shape, thumbed notes.
-The weights matter less than two properties, both pinned by tests:
+Shapes are sorted by a playability cost: what it takes to lay a hand on the neck
+and hold the shape, plus two preferences about what a chord reference prints
+first. How that is worked out is *How hard a shape is* below; what matters here
+is that the model is approximate and three properties are not:
 
-1. A shape somebody wrote down for this chord comes first, whatever the weights
-   make of it. The weights are a model of a hand and they are approximate; a
-   curated entry is a decision. Sorting on cost alone let a tuning change knock
-   Bb off the first-fret A shape everybody plays and onto a barre at the sixth.
+1. A shape somebody wrote down for this chord comes first, whatever the model
+   makes of it. The model is a model of a hand; a curated entry is a decision.
+   Sorting on the model alone let a tuning change knock Bb off the first-fret A
+   shape everybody plays and onto a barre at the sixth.
 2. An open shape always beats a barre.
 3. The order is deterministic, because the interface says "2 de 4" and a deep
    link names a shape.

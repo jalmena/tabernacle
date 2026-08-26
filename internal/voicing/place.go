@@ -39,16 +39,16 @@ var turns = func() [12]struct{ deg, ux, uy, px, py float64 } {
 // place is what the best hand placement for this shape costs, and whether there
 // is one.
 func place(v Voicing) (float64, bool) {
-	tips, extra, ok := tipsOf(v)
+	tips, n, extra, ok := tipsOf(v)
 	if !ok {
 		return 0, false
 	}
-	if len(tips) == 0 {
+	if n == 0 {
 		return extra, true // nothing fretted: open strings and a still hand
 	}
 
 	var lay laying
-	lay.load(tips)
+	lay.load(tips, n)
 
 	best, at, found := math.Inf(1), -1, false
 	for i := range turns {
@@ -83,9 +83,9 @@ type laying struct {
 	warm   bool
 }
 
-func (l *laying) load(tips []tip) {
+func (l *laying) load(tips [4]tip, n int) {
 	*l = laying{}
-	for _, t := range tips {
+	for _, t := range tips[:n] {
 		i := int(t.finger - Index)
 		l.tx[i], l.ty[i], l.used[i] = t.x, t.y, true
 		l.n++
@@ -191,7 +191,7 @@ func (l *laying) guess(ux, uy, px, py float64) (float64, float64) {
 //
 // A placement that asks a finger for more than it has is refused, not charged.
 // That is the whole of what inhuman means here.
-func (l *laying) at(ax, ay, ux, uy, px, py, sinFree, sinMax float64) (float64, bool) {
+func (l *laying) at(ax, ay, ux, uy, sinFree, sinMax float64) (float64, bool) {
 	var ext [4]float64
 	total := 0.0
 	for i := range 4 {
@@ -208,9 +208,10 @@ func (l *laying) at(ax, ay, ux, uy, px, py, sinFree, sinMax float64) (float64, b
 		ext[i] = length - r
 		total += weak[i] + asymmetric(ext[i], stretchCost, curlCost)
 
-		// How far round from straight ahead the finger points, as the sine of
-		// the angle. A hand fans without noticing, so there is a free band,
-		// then a price, and then a limit.
+		// How far round from straight ahead the finger points, taken as the
+		// sine of the angle off the knuckle line's perpendicular — which is
+		// what a component along the knuckle line is. A hand fans without
+		// noticing, so there is a free band, then a price, and then a limit.
 		lat := math.Abs(dx*ux+dy*uy) / length
 		if lat > sinMax {
 			return 0, false
@@ -239,8 +240,6 @@ func (l *laying) at(ax, ay, ux, uy, px, py, sinFree, sinMax float64) (float64, b
 		}
 		prev, first = i, false
 	}
-	_ = px
-	_ = py
 	return total, true
 }
 
@@ -248,13 +247,13 @@ func (l *laying) at(ax, ay, ux, uy, px, py, sinFree, sinMax float64) (float64, b
 // it stops finding anywhere better. It starts from wherever the last angle
 // finished, which is usually within a millimetre or two.
 func (l *laying) settle(ux, uy, px, py, sinFree, sinMax float64) (float64, bool) {
-	best, ok := l.at(l.ax, l.ay, ux, uy, px, py, sinFree, sinMax)
+	best, ok := l.at(l.ax, l.ay, ux, uy, sinFree, sinMax)
 	if !ok {
 		l.ax, l.ay = l.guess(ux, uy, px, py)
-		if best, ok = l.at(l.ax, l.ay, ux, uy, px, py, sinFree, sinMax); !ok {
+		if best, ok = l.at(l.ax, l.ay, ux, uy, sinFree, sinMax); !ok {
 			// Cast about a little before deciding the hand will not go here.
 			for _, d := range [4][2]float64{{18, 0}, {-18, 0}, {0, 18}, {0, -18}} {
-				if c, fits := l.at(l.ax+d[0], l.ay+d[1], ux, uy, px, py, sinFree, sinMax); fits {
+				if c, fits := l.at(l.ax+d[0], l.ay+d[1], ux, uy, sinFree, sinMax); fits {
 					l.ax, l.ay, best, ok = l.ax+d[0], l.ay+d[1], c, true
 					break
 				}
@@ -268,7 +267,7 @@ func (l *laying) settle(ux, uy, px, py, sinFree, sinMax float64) (float64, bool)
 		for range 3 {
 			moved := false
 			for _, d := range [4][2]float64{{step, 0}, {-step, 0}, {0, step}, {0, -step}} {
-				if c, fits := l.at(l.ax+d[0], l.ay+d[1], ux, uy, px, py, sinFree, sinMax); fits && c < best {
+				if c, fits := l.at(l.ax+d[0], l.ay+d[1], ux, uy, sinFree, sinMax); fits && c < best {
 					l.ax, l.ay, best, moved = l.ax+d[0], l.ay+d[1], c, true
 				}
 			}
@@ -286,9 +285,10 @@ func (l *laying) settle(ux, uy, px, py, sinFree, sinMax float64) (float64, bool)
 // A barre is one finger, so it gets one place to be — the middle of what it
 // lies across — and pays for the whole length of it. Every string under it still
 // has to be pressed.
-func tipsOf(v Voicing) ([]tip, float64, bool) {
+func tipsOf(v Voicing) ([4]tip, int, float64, bool) {
+	var tips [4]tip
 	if len(v.Fingers) < len(v.Frets) {
-		return nil, 0, false
+		return tips, 0, 0, false
 	}
 
 	var barre *Barre
@@ -308,7 +308,7 @@ func tipsOf(v Voicing) ([]tip, float64, bool) {
 		}
 		k := v.Fingers[i]
 		if k < Index || k > Thumb {
-			return nil, 0, false
+			return tips, 0, 0, false
 		}
 		extra += press(i, f)
 		e := &at[k-Index]
@@ -317,12 +317,12 @@ func tipsOf(v Voicing) ([]tip, float64, bool) {
 			continue
 		}
 		if f != e.fret {
-			return nil, 0, false // one finger cannot hold two frets
+			return tips, 0, 0, false // one finger cannot hold two frets
 		}
 		e.lo, e.hi = min(e.lo, i), max(e.hi, i)
 	}
 
-	var tips []tip
+	n := 0
 	for k := Index; k <= Thumb; k++ {
 		e := at[k-Index]
 		if !e.held {
@@ -340,15 +340,17 @@ func tipsOf(v Voicing) ([]tip, float64, bool) {
 		if e.hi > e.lo {
 			// Laid flat across several strings.
 			if k == Pinky || barre == nil || barre.Finger != k {
-				return nil, 0, false
+				return tips, 0, 0, false
 			}
 			span := stringAt(e.hi, x) - stringAt(e.lo, x)
 			extra += barreCost + barreSpanCost*span
-			tips = append(tips, tip{finger: k, x: x,
-				y: (stringAt(e.lo, x) + stringAt(e.hi, x)) / 2})
+			tips[n] = tip{finger: k, x: x,
+				y: (stringAt(e.lo, x) + stringAt(e.hi, x)) / 2}
+			n++
 			continue
 		}
-		tips = append(tips, tip{finger: k, x: x, y: stringAt(e.lo, x)})
+		tips[n] = tip{finger: k, x: x, y: stringAt(e.lo, x)}
+		n++
 	}
-	return tips, extra, true
+	return tips, n, extra, true
 }
