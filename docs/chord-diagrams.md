@@ -673,6 +673,17 @@ angle of each finger is not, and cannot survive the squashing.
 
 The overlay is an SVG laid over the grid with a viewBox counting strings across
 and frets down, so it stretches with the board and no pixel is measured anywhere.
+Its width is said outright rather than left to `left: 0` with `right: 0`: an svg
+is a replaced element, so with an automatic width a browser uses its intrinsic
+three hundred pixels and drops the right edge, which made the box half again as
+wide as the strings under it and stretched everything in the drawing to match.
+
+The hand hangs outside the frets, a palm being behind the neck rather than on it,
+but it is slid back down when it would leave the card — which happens whenever
+the palm ends up above the nut, as it does for a hand lying across the strings.
+Sliding keeps what the picture is for, since how far apart the knuckles sit along
+the neck survives it and where the palm sits along the neck is not something a
+reader is reading off this drawing.
 Its strokes are in those units too, and not in pixels: a pixel width would need
 `vector-effect: non-scaling-stroke`, which is not dependable when the box is
 stretched by different amounts across and down — a stroke asked not to scale

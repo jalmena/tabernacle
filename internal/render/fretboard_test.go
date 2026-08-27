@@ -336,3 +336,27 @@ func TestNoHandIsDrawnForAnEmptyNeck(t *testing.T) {
 		t.Error("a hand was drawn over six open strings")
 	}
 }
+
+// The hand hangs outside the frets on purpose — a palm is behind the neck, not
+// on it — but not so far that it leaves the card it is drawn on.
+func TestTheDrawnHandStaysOnTheCard(t *testing.T) {
+	for _, grip := range []string{
+		"x-3-2-0-1-0", "x-x-0-2-3-2", "0-2-2-1-0-0", "1-3-3-2-1-1",
+		"x-0-2-2-2-0", "3-2-0-0-0-3", "x-2-4-4-4-2", "1-5-1-0-0-0",
+	} {
+		frets, ok := voicing.ParseGrip(grip)
+		if !ok {
+			t.Fatalf("%s: not a grip", grip)
+		}
+		b := boardFor(say, voicing.Voicing{Tuning: voicing.Standard(), Frets: frets}, 1, LabOptions{})
+		if b.Hand == nil {
+			continue
+		}
+		for _, f := range b.Hand.Fingers {
+			if f.KnuckleY < -0.5 || f.KnuckleY > float64(b.Hand.Rows)+0.5 {
+				t.Errorf("%s: finger %d has its knuckle at row %.2f, off the card",
+					grip, f.Number, f.KnuckleY)
+			}
+		}
+	}
+}

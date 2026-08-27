@@ -1247,7 +1247,15 @@ input[type="file"].filepick:focus-visible { outline: 2px solid var(--accent); ou
 .boardhand {
 	position: absolute;
 	left: 0;
-	right: 0;
+	/* Width said outright, and not left to left: 0 with right: 0.
+	 *
+	 * An svg is a replaced element, so with an automatic width the browser uses
+	 * its intrinsic three hundred pixels and drops the right edge on the floor.
+	 * The box came out half again as wide as the strings under it and everything
+	 * in the drawing was stretched by that much — near enough at the sixth
+	 * string, where the box starts, and further out with every column, which is
+	 * exactly what it looked like. */
+	width: 100%;
 	top: calc(var(--name) + 2 * var(--mark));
 	height: calc(var(--cell) * 5);
 	overflow: visible;

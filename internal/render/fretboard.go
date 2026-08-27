@@ -721,13 +721,39 @@ func handFor(v voicing.Voicing, start int) *HandView {
 	//
 	// What it gives up is the true angle of each finger, which cannot survive
 	// the squashing and is not what anybody is reading the picture for.
+	// And slid down the neck if the palm has ended up above the nut, which is
+	// where it goes for a hand lying across the strings. The drawing hangs
+	// outside the board on purpose, but a hand two frets above the first one is
+	// off the card and over whatever the page has put beside it.
+	//
+	// Sliding keeps what the picture is for. How far apart the knuckles sit
+	// along the neck is the whole of how the hand is turned, and that survives a
+	// slide; where the palm sits along the neck is not something a reader is
+	// reading off this drawing.
+	top, bottom := ks[0].y, ks[len(ks)-1].y
+	for _, k := range ks {
+		top, bottom = math.Min(top, k.y), math.Max(bottom, k.y)
+	}
+	slide := 0.0
+	if top < -handOverhang {
+		slide = -handOverhang - top
+	}
+	if b := bottom + slide; b > float64(labFrets)+handOverhang {
+		slide -= b - float64(labFrets) - handOverhang
+	}
 	for i := range h.Fingers {
 		h.Fingers[i].KnuckleX = handKnuckleLine
+		h.Fingers[i].KnuckleY += slide
 	}
-	h.KnuckleX1, h.KnuckleY1 = handKnuckleLine, ks[0].y
-	h.KnuckleX2, h.KnuckleY2 = handKnuckleLine, ks[len(ks)-1].y
+	h.KnuckleX1, h.KnuckleY1 = handKnuckleLine, ks[0].y+slide
+	h.KnuckleX2, h.KnuckleY2 = handKnuckleLine, ks[len(ks)-1].y+slide
 	return h
 }
+
+// handOverhang is how far past the drawn frets the knuckles may hang, in fret
+// heights. Enough to read as a hand behind the neck rather than one squashed
+// into the window, little enough to stay on the card.
+const handOverhang = 0.45
 
 // handKnuckleLine is where the drawn knuckles sit, in the coordinates the grid
 // is drawn in: the strings run down the middles of the columns, from a half to
