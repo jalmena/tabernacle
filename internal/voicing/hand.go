@@ -112,7 +112,7 @@ var (
 // not go, and the answer stops being a number and becomes a refusal.
 var (
 	maxFan   = 26.0 // degrees a finger can point off straight ahead
-	maxReach = 1.02 // of its length, straightened out
+	maxReach = 1.10 // of its length, straightened out
 	minReach = 0.35 // of its length, curled up as far as it goes
 )
 

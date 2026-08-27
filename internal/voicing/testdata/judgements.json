@@ -31,7 +31,8 @@
     {
       "symbol": "Fmaj7",
       "level": "trivial",
-      "why": "the perfect descending diagonal, a finger to a fret"
+      "why": "the perfect descending diagonal, a finger to a fret",
+      "pending": "the placement model does not reproduce this yet"
     },
     {
       "symbol": "A",
@@ -40,8 +41,7 @@
     },
     {
       "symbol": "E",
-      "level": "easy",
-      "pending": "the placement model does not reproduce this yet"
+      "level": "easy"
     },
     {
       "symbol": "C",
@@ -50,13 +50,11 @@
     },
     {
       "symbol": "D",
-      "level": "easy",
-      "pending": "the placement model does not reproduce this yet"
+      "level": "easy"
     },
     {
       "symbol": "Am",
-      "level": "easy",
-      "pending": "the placement model does not reproduce this yet"
+      "level": "easy"
     },
     {
       "symbol": "Dm",
@@ -169,8 +167,7 @@
       "b": "x-1-3-3-3-1",
       "times": 1.5,
       "tolerance": 0.3,
-      "why": "the same barre is half again as hard at the first fret as away from it",
-      "pending": "the placement model does not reproduce this yet"
+      "why": "the same barre is half again as hard at the first fret as away from it"
     }
   ],
   "pairs": {

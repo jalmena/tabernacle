@@ -30,7 +30,11 @@ func TestPrimaryShapes(t *testing.T) {
 		{"C", "x 3 2 0 1 0"},
 		{"D", "x x 0 2 3 2"},
 		{"E", "0 2 2 1 0 0"},
-		{"G", "3 2 0 0 3 3"},
+		// Three fingers, with the second string left open. The four-finger G is
+		// the same shape with the second string held at the third fret, and both
+		// are played — this is the one a beginner is taught and the one a
+		// guitarist asked for.
+		{"G", "3 2 0 0 0 3"},
 		{"A", "x 0 2 2 2 0"},
 		{"Am", "x 0 2 2 1 0"},
 		{"Dm", "x x 0 2 3 1"},

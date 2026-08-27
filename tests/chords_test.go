@@ -171,7 +171,7 @@ func TestTheChordPageLeadsWithTheShapeEveryoneKnows(t *testing.T) {
 	for sym, want := range map[string]string{
 		"C":  "x-3-2-0-1-0",
 		"F":  "1-3-3-2-1-1",
-		"G":  "3-2-0-0-3-3",
+		"G":  "3-2-0-0-0-3",
 		"Am": "x-0-2-2-1-0",
 		"D":  "x-x-0-2-3-2",
 		"E":  "0-2-2-1-0-0",

@@ -210,12 +210,18 @@ so being two short ranks past being one short.
 | `weak` | fitted, and not geometry | the little finger is weak, which no length says |
 | `nutCost` | fitted, and standing in for something | see below |
 
-It reproduces thirty-four of the forty judgements. The six it does not are
+It reproduces thirty-seven of the forty judgements. The six it does not are
 listed as owed in the corpus, and the test complains both when a new failure
 appears and when a listed one starts holding, so the list can only shrink and
 cannot be forgotten. The model it replaced managed twenty-six, and broke the
 invariant that fretting one more string cannot make a shape easier four times
 over; this one does not break it at all.
+
+The three still owed are one disagreement each. Two are the little finger
+reaching back over the index for a note between it and the middle finger, which
+the player calls a band harder than the model does. The third is Fmaj7: the
+model has it level with an open E and the player calls it easier than anything
+else with three fingers on it.
 
 Fitted means fitted **once**, by `TestFitTheHandToWhatThePlayerSaid` in
 `calibrate_test.go`, which walks every constant against the whole of
@@ -272,9 +278,9 @@ produce is nothing anybody plays:
 
 | | strain | |
 | --- | --- | --- |
-| Trivial | ≤ 8 | Em7 2, Em 4, E7 5, D 6, A 6, E 8, Am 8 |
-| Easy | ≤ 16 | Fmaj7 9, C 9, Dm 9, G 12 |
-| Moderate | ≤ 35 | Abm7 20, Gm7 20, Bm7 21, C#m 23, Bm 24, F# 27, F 28, Bb 30, B 32 |
+| Trivial | ≤ 5 | Em7 2, Em 4, E7 5, A 5 |
+| Easy | ≤ 16 | D 6, Am 7, Fmaj7 8, E 8, Dm 8, G 8, C 9 |
+| Moderate | ≤ 35 | Abm7 20, Gm7 20, Bm7 20, C#m 21, Bm 23, F# 25, B 26, F 27, Bb 30 |
 | Advanced | ≤ 43 | |
 | Complex | ≤ 51 | |
 | Extreme | ≤ 59 | |
