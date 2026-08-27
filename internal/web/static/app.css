@@ -1254,28 +1254,40 @@ input[type="file"].filepick:focus-visible { outline: 2px solid var(--accent); ou
 	pointer-events: none;
 	opacity: 0.55;
 }
+/* Strokes are in the drawing's own units, where one is a string across and a
+ * fret down, and not in pixels.
+ *
+ * A pixel width would need vector-effect: non-scaling-stroke, and that is not
+ * dependable here: the box is stretched by different amounts across and down, and
+ * a stroke asked not to scale under a non-uniform transform came out as a band a
+ * quarter of the card wide. What looked like lines missing the dots were blots
+ * whose edges happened to land near them.
+ *
+ * The cost of doing it this way is that a stroke is half again as thick across as
+ * it is down, the cells being taller than they are wide. At these widths nobody
+ * can see it. */
 .handknuckles {
 	stroke: var(--accent);
-	stroke-width: 7;
+	stroke-width: 0.14;
 	stroke-linecap: round;
 	opacity: 0.45;
 }
 .handfinger {
 	stroke: var(--accent);
-	stroke-width: 3;
+	stroke-width: 0.07;
 	stroke-linecap: round;
 }
 /* A finger lying flat across several strings. It is the same finger as the line
  * that reaches it, drawn as what it is. */
 .handbar {
 	stroke: var(--accent);
-	stroke-width: 6;
+	stroke-width: 0.16;
 	stroke-linecap: round;
 	opacity: 0.7;
 }
 /* A finger asked for more than it reaches. It is the one doing the work, and
  * saying which one is most of what the drawing is for. */
-.handfinger.pulled { stroke: var(--warn-rule); stroke-width: 4; }
+.handfinger.pulled { stroke: var(--warn-rule); stroke-width: 0.1; }
 @media (prefers-reduced-motion: no-preference) {
 	.boardhand { transition: opacity 120ms ease; }
 }

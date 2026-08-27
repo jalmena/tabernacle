@@ -673,6 +673,13 @@ angle of each finger is not, and cannot survive the squashing.
 
 The overlay is an SVG laid over the grid with a viewBox counting strings across
 and frets down, so it stretches with the board and no pixel is measured anywhere.
+Its strokes are in those units too, and not in pixels: a pixel width would need
+`vector-effect: non-scaling-stroke`, which is not dependable when the box is
+stretched by different amounts across and down — a stroke asked not to scale
+under that came out as a band a quarter of the card wide, and what looked like
+lines missing their dots were blots whose edges happened to land near them. The
+price is that a stroke is half again as thick across as down, the cells being
+taller than they are wide, and at these widths nobody can see it.
 It takes no clicks — the cells underneath are radio buttons and reaching them is
 the point of the board — and it is hidden from a screen reader, which is already
 told which finger goes where by every cell's own label. It does not print.

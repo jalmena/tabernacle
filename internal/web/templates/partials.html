@@ -335,18 +335,15 @@
 						     viewBox="0 0 6 {{.Rows}}" preserveAspectRatio="none">
 							<line class="handknuckles"
 							      x1="{{f2 .KnuckleX1}}" y1="{{f2 .KnuckleY1}}"
-							      x2="{{f2 .KnuckleX2}}" y2="{{f2 .KnuckleY2}}"
-							      vector-effect="non-scaling-stroke"></line>
+							      x2="{{f2 .KnuckleX2}}" y2="{{f2 .KnuckleY2}}"></line>
 							{{range .Fingers}}
 								<line class="handfinger{{if .Stretched}} pulled{{end}}"
 								      x1="{{f2 .KnuckleX}}" y1="{{f2 .KnuckleY}}"
-								      x2="{{f2 .TipX}}" y2="{{f2 .TipY}}"
-								      vector-effect="non-scaling-stroke"></line>
+								      x2="{{f2 .TipX}}" y2="{{f2 .TipY}}"></line>
 								{{if .Barred}}
 									<line class="handbar"
 									      x1="{{f2 .BarFrom}}" y1="{{f2 .TipY}}"
-									      x2="{{f2 .BarTo}}" y2="{{f2 .TipY}}"
-									      vector-effect="non-scaling-stroke"></line>
+									      x2="{{f2 .BarTo}}" y2="{{f2 .TipY}}"></line>
 								{{end}}
 							{{end}}
 						</svg>
