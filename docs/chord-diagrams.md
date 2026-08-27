@@ -654,7 +654,10 @@ pictures; they answer different questions.
 The board shows the hand the difficulty was worked out with, translucent, over
 the shape: a line for the knuckles past the first string — the side a left hand
 comes over, thumb behind the neck and fingers curling over the edge nearest the
-floor — and one line for each finger reaching across to the note it holds. The finger asked for more
+floor — and one line for each finger reaching across to the note it holds. A
+finger lying flat across several strings is drawn as the bar it is rather than as
+a fingertip at the middle of what it covers, which came out as a line ending in
+the gap between two dots and read as the drawing having missed. The finger asked for more
 than it reaches is drawn in the warning colour, because that is the one doing the
 work and saying which one is most of what the picture is for.
 
