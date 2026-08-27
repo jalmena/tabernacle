@@ -148,6 +148,13 @@ the neck, the fingers land one to a fret. Turned across the strings, they land i
 a row on one fret. Those are the two postures a player rests in, and they are not
 two cases — they are one angle with two values, and real chords sit all along it.
 
+The turn is not free, and it has to not be. A hand holding two notes has three
+ways to move and only two of them spoken for, so a free angle could always be
+turned until any two notes fitted perfectly and one fret apart came out the same
+as four. So the wrist has a resting turn and leaving it costs; and how far apart
+a pair sits **measured along the knuckle line** is charged separately from
+everything else, because it is the one thing moving the palm cannot change.
+
 Each finger runs from its own knuckle to its note. Reaching sideways lengthens it,
 exactly as a finger does. What a shape costs is what it asks of each one:
 
@@ -189,8 +196,8 @@ so being two short ranks past being one short.
 | | | |
 | --- | --- | --- |
 | `scale`, `nutSpread`, `twelfthSpread` | measured | a common steel-string, and a ruler settles them |
-| `knuckleGap`, `reach` | measured | one guitarist's hand, and a large one |
 | `stiff` | quoted | 1 : 1½ : 3, said by the player in those words |
+| `knuckleGap`, `reach` | fitted inside what a hand allows | see below |
 | every cost, and the seven bands | fitted | see below |
 | `weak` | fitted, and not geometry | the little finger is weak, which no length says |
 | `nutCost` | fitted, and standing in for something | see below |
@@ -203,12 +210,26 @@ down before the model that has to reproduce it. The test is skipped unless
 `FIT=1` because it takes an hour, and it lives in the tree so the constants can
 be re-derived rather than believed.
 
-Two of them are honest about being something else. `weak` is not a length: the
-little finger is weak and the ring finger is not much better, and without saying
-so the model handed three-note diagonals to the index, ring and little fingers,
-which lies flatter on a neck whose frets are wider than the knuckles are and
-which nobody plays. And `nutCost` stands in for everything about the end of the
-neck that is not length.
+Three of them are honest about being something else.
+
+`knuckleGap` and `reach` look like ruler readings and are not. What the model
+needs is where the fingers pivot and how far each one reaches **in the posture a
+hand takes on a neck**, and that is not the same as a finger's length: the index
+lies flatter, being the one that goes across for a barre, and the middle is more
+arched, so the order a ruler gives is not the order the neck sees. Fitting them
+was worth ten of the forty judgements — but only inside bounds a hand allows,
+and the little finger's range stops below the others' so no amount of fitting can
+hand it the longest reach. Let loose entirely, the fit produced a hand with a
+middle finger shorter than its index, which is not a hand: it is the fitting
+covering for something the model has not got.
+
+`weak` is not a length at all: the little finger is weak and the ring finger is
+not much better, and without saying so the model handed three-note diagonals to
+the index, ring and little fingers — which lies flatter on a neck whose frets are
+wider than the knuckles are, and which nobody plays.
+
+And `nutCost` stands in for everything about the end of the neck that is not
+length.
 
 Why `nutCost` has to exist at all is worth writing down. Near the nut more string
 is left ringing, so it swings wider for the same pluck and takes a firmer stop

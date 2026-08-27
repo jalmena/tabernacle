@@ -24,9 +24,14 @@ package voicing
 // against run from 36.4 mm at the nut to 19.3 mm at the twelfth.
 var knuckleGap = 21.0
 
-// Knuckle to fingertip with the hand curled as it is for playing, index to
-// little finger. The little finger being short is why the sixth string costs it
-// something, without anybody having to say so.
+// How far each finger reaches from its knuckle with the hand curled as it is for
+// playing, index to little finger.
+//
+// Not the length of the finger. A hand on a neck holds the index flatter — it is
+// the one that lies across for a barre — and the middle more arched, so what each
+// one reaches in that posture is not the order a ruler gives. These are fitted
+// like the costs, inside bounds a hand allows: the little finger reaches least,
+// which is why the sixth string costs it something without anybody saying so.
 var reach = [4]float64{85, 93, 88, 70}
 
 // How hard it is to stretch two fingers by different amounts, index-middle,
@@ -62,7 +67,7 @@ var weak = [4]float64{0, 0, 0.54, 8.87}
 var (
 	stretchCost = 0.0174 // per mm² reached past a finger's length
 	curlCost    = 0.0017 // per mm² pulled up short of it
-	freeFan     = 10.8   // degrees a finger points off straight without noticing
+	freeFan     = 18.0   // degrees a finger points off straight without noticing
 	fanCost     = 0.055  // per degree² past that
 	spreadCost  = 0.0176 // per mm² a pair sits wider apart than its knuckles do
 	squeezeCost = 0.0060 // per mm² it sits closer
@@ -106,7 +111,7 @@ var (
 // shape that is merely hard and one that is not a shape: past them the hand does
 // not go, and the answer stops being a number and becomes a refusal.
 var (
-	maxFan   = 26.0  // degrees a finger can point off straight ahead
+	maxFan   = 42.0  // degrees a finger can point off straight ahead
 	maxReach = 1.10  // of its length, straightened out
 	minReach = 0.595 // of its length, curled up as far as it goes
 )

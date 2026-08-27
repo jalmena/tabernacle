@@ -217,6 +217,15 @@ func knobs() []knob {
 		{"weakRing", &weak[2], 0.02, 12},
 		{"weakPinky", &weak[3], 0.05, 30},
 		{"maxFan", &maxFan, 26, 62},
+		// The hand's own measurements, inside what a hand allows. The little
+		// finger's range stops below the others' so that no amount of fitting
+		// can hand it the longest reach, which is the one ordering that is not
+		// up for discussion.
+		{"knuckleGap", &knuckleGap, 16, 23},
+		{"reachIndex", &reach[0], 80, 100},
+		{"reachMiddle", &reach[1], 80, 104},
+		{"reachRing", &reach[2], 78, 98},
+		{"reachPinky", &reach[3], 62, 77},
 		{"maxReach", &maxReach, 1.02, 1.30},
 		{"minReach", &minReach, 0.35, 0.72},
 	}
