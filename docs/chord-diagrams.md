@@ -174,6 +174,13 @@ Every one of them is asymmetric, because a hand is. Curling up costs less than
 reaching out, and closing a pair costs less than opening one — closing is what
 curling does anyway.
 
+**A finger points away from its knuckle**, over the strings, and not back into
+the palm. Obvious enough to be left out, and leaving it out was expensive: with
+the fan measured as an angle off the knuckle line, a finger aimed a hundred and
+eighty degrees the wrong way reads as perfectly straight. A first fret and a
+fifth on the string beside it came out easy, held with an index pointing at the
+nut and a middle finger pointing at the body.
+
 **Fingers in the order they grow in.** Projected onto the knuckle line, the
 fingertips must run index, middle, ring, little. A hand cannot put its middle
 finger on the far side of its ring finger — that is not expensive, it is not a
@@ -210,7 +217,7 @@ so being two short ranks past being one short.
 | `weak` | fitted, and not geometry | the little finger is weak, which no length says |
 | `nutCost` | fitted, and standing in for something | see below |
 
-It reproduces thirty-seven of the forty judgements. The six it does not are
+It reproduces thirty-six of the forty judgements. The six it does not are
 listed as owed in the corpus, and the test complains both when a new failure
 appears and when a listed one starts holding, so the list can only shrink and
 cannot be forgotten. The model it replaced managed twenty-six, and broke the

@@ -194,12 +194,12 @@ func (l *laying) lay(deg, ux, uy, px, py float64) (float64, bool) {
 	best, found := 0.0, false
 	bx, by := 0.0, 0.0
 	if l.warm {
-		if c, ok := l.settle(ux, uy, sinFree, sinMax); ok {
+		if c, ok := l.settle(ux, uy, px, py, sinFree, sinMax); ok {
 			best, bx, by, found = c, l.ax, l.ay, true
 		}
 	}
 	l.ax, l.ay = l.guess(ux, uy, px, py)
-	if c, ok := l.settle(ux, uy, sinFree, sinMax); ok && (!found || c < best) {
+	if c, ok := l.settle(ux, uy, px, py, sinFree, sinMax); ok && (!found || c < best) {
 		best, bx, by, found = c, l.ax, l.ay, true
 	}
 	if !found {
@@ -233,7 +233,7 @@ func (l *laying) guess(ux, uy, px, py float64) (float64, float64) {
 //
 // A placement that asks a finger for more than it has is refused, not charged.
 // That is the whole of what inhuman means here.
-func (l *laying) at(ax, ay, ux, uy, sinFree, sinMax float64) (float64, bool) {
+func (l *laying) at(ax, ay, ux, uy, px, py, sinFree, sinMax float64) (float64, bool) {
 	var ext [4]float64
 	total := 0.0
 	for i := range 4 {
@@ -250,10 +250,20 @@ func (l *laying) at(ax, ay, ux, uy, sinFree, sinMax float64) (float64, bool) {
 		ext[i] = length - r
 		total += weak[i] + asymmetric(ext[i], stretchCost, curlCost)
 
-		// How far round from straight ahead the finger points, taken as the
-		// sine of the angle off the knuckle line's perpendicular — which is
-		// what a component along the knuckle line is. A hand fans without
-		// noticing, so there is a free band, then a price, and then a limit.
+		// A finger points away from its knuckle, over the strings. It does not
+		// point back into the palm, and measuring only how far round it had
+		// turned let it: with the angle taken from the knuckle line, a finger
+		// aimed a hundred and eighty degrees the wrong way reads as perfectly
+		// straight. A first fret and a fifth on the strings beside it came out
+		// easy, held with an index pointing at the nut and a middle finger
+		// pointing at the body.
+		if dx*px+dy*py <= 0 {
+			return 0, false
+		}
+
+		// How far round from straight ahead it points, as the sine of the
+		// angle. A hand fans without noticing, so there is a free band, then a
+		// price, and then a limit.
 		lat := math.Abs(dx*ux+dy*uy) / length
 		if lat > sinMax {
 			return 0, false
@@ -288,15 +298,39 @@ func (l *laying) at(ax, ay, ux, uy, sinFree, sinMax float64) (float64, bool) {
 // settle walks the palm one axis at a time, halving the step each round, until
 // it stops finding anywhere better. It starts from wherever the last angle
 // finished, which is usually within a millimetre or two.
-func (l *laying) settle(ux, uy, sinFree, sinMax float64) (float64, bool) {
-	best, ok := l.at(l.ax, l.ay, ux, uy, sinFree, sinMax)
+func (l *laying) settle(ux, uy, px, py, sinFree, sinMax float64) (float64, bool) {
+	best, ok := l.at(l.ax, l.ay, ux, uy, px, py, sinFree, sinMax)
 	if !ok {
-		// Cast about a little before deciding the hand will not go here.
-		for _, d := range [8][2]float64{
-			{14, 0}, {-14, 0}, {0, 14}, {0, -14},
-			{30, 0}, {-30, 0}, {0, 30}, {0, -30},
+		// The guess is the average of where the fingers want the palm, and an
+		// average of somewhere and somewhere else can be nowhere: with three
+		// fingers spread down the neck it fell outside what any of them could
+		// reach, and the shape came out unholdable while the same shape with a
+		// fourth finger added placed easily — which cannot be, since taking a
+		// finger away only ever loosens a hand.
+		//
+		// So ask each finger in turn where the palm would be if it were the one
+		// that had to stretch furthest, which is where a hand actually ends up,
+		// and only then cast about.
+		for i := range 4 {
+			if !l.used[i] {
+				continue
+			}
+			ax := l.tx[i] - float64(i)*knuckleGap*ux - reach[i]*px
+			ay := l.ty[i] - float64(i)*knuckleGap*uy - reach[i]*py
+			if c, fits := l.at(ax, ay, ux, uy, px, py, sinFree, sinMax); fits {
+				l.ax, l.ay, best, ok = ax, ay, c, true
+				break
+			}
+		}
+	}
+	if !ok {
+		// Cast about before deciding the hand will not go here.
+		for _, d := range [12][2]float64{
+			{10, 0}, {-10, 0}, {0, 10}, {0, -10},
+			{24, 0}, {-24, 0}, {0, 24}, {0, -24},
+			{18, 18}, {18, -18}, {-18, 18}, {-18, -18},
 		} {
-			if c, fits := l.at(l.ax+d[0], l.ay+d[1], ux, uy, sinFree, sinMax); fits {
+			if c, fits := l.at(l.ax+d[0], l.ay+d[1], ux, uy, px, py, sinFree, sinMax); fits {
 				l.ax, l.ay, best, ok = l.ax+d[0], l.ay+d[1], c, true
 				break
 			}
@@ -309,7 +343,7 @@ func (l *laying) settle(ux, uy, sinFree, sinMax float64) (float64, bool) {
 		for range 24 {
 			moved := false
 			for _, d := range [4][2]float64{{step, 0}, {-step, 0}, {0, step}, {0, -step}} {
-				if c, fits := l.at(l.ax+d[0], l.ay+d[1], ux, uy, sinFree, sinMax); fits && c < best {
+				if c, fits := l.at(l.ax+d[0], l.ay+d[1], ux, uy, px, py, sinFree, sinMax); fits && c < best {
 					l.ax, l.ay, best, moved = l.ax+d[0], l.ay+d[1], c, true
 				}
 			}

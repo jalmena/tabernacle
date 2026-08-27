@@ -223,6 +223,13 @@ func TestAddingANoteNeverMakesAShapeEasier(t *testing.T) {
 		"1-3-0-0-0-0", "x-3-2-0-1-0", "0-2-2-1-0-0", "x-x-0-2-3-2",
 		"x-0-2-2-1-0", "3-2-0-0-3-3", "x-x-3-2-1-0", "x-0-2-2-2-0",
 		"5-x-x-x-x-x", "x-x-5-7-x-x", "1-x-1-1-x-x", "x-2-4-4-3-2",
+		// Shapes stretched down the neck, where the hand runs out of ways to
+		// be placed and the search has to find the few that are left. A first
+		// fret and a fifth beside it scored inhuman on its own and easy with a
+		// third note added, which is how the little of this list there was
+		// missed a hole big enough to drive a chord through.
+		"1-5-0-0-0-0", "1-5-1-0-0-0", "x-x-1-5-x-x", "1-x-x-5-x-x",
+		"x-1-x-5-1-x", "5-x-1-x-x-x", "x-5-5-1-x-x", "1-1-5-x-x-x",
 	}
 	inversions := 0
 	for _, g := range base {
