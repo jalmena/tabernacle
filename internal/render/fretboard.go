@@ -1,6 +1,7 @@
 package render
 
 import (
+	"math"
 	"net/url"
 	"slices"
 	"strconv"
@@ -639,6 +640,13 @@ type HandFinger struct {
 	// Stretched marks a finger asked for more than it comfortably reaches, so
 	// the drawing can say which one is doing the work.
 	Stretched bool
+	// Bar is the run of strings a flattened finger lies across, when it lies
+	// across more than one. A barre is not a fingertip and drawing it as one
+	// left the line ending in the gap between two dots, which reads as the
+	// drawing having missed rather than as a bar.
+	Barred  bool
+	BarFrom float64
+	BarTo   float64
 }
 
 // handFor draws the placement over a window starting at start.
@@ -655,11 +663,14 @@ func handFor(v voicing.Voicing, start int) *HandView {
 		return nil
 	}
 
-	// The window's first row is the fret it starts on, so a fret sits one row
-	// above the line that ends it.
+	// Into the coordinates the grid is drawn in. A column is a string and a row
+	// is a fret, so the middle of the sixth string's column is a half across and
+	// the middle of the first fret's row is a half down — the half is what was
+	// missing, and it put every line half a string to the side of the dot it was
+	// supposed to touch.
 	at := func(x, y float64) (float64, float64) {
 		s, f := voicing.Where(x, y)
-		return s, f - float64(start-1)
+		return s + 0.5, f - float64(start-1)
 	}
 
 	h := &HandView{Rows: labFrets}
@@ -671,10 +682,22 @@ func handFor(v voicing.Voicing, start int) *HandView {
 		}
 		kx, ky := at(f.KnuckleX, f.KnuckleY)
 		tx, ty := at(f.TipX, f.TipY)
-		h.Fingers = append(h.Fingers, HandFinger{
+		// A fingertip really does sit just behind the fret, which is the bottom
+		// of the cell as the grid draws it. But the dot the reader is looking at
+		// is in the middle of the cell, and a line that stops short of the dot
+		// it belongs to reads as a mistake rather than as precision. So the tip
+		// is drawn where the dot is.
+		ty = math.Floor(ty) + 0.5
+		hf := HandFinger{
 			Number: i + 1, KnuckleX: kx, KnuckleY: ky, TipX: tx, TipY: ty,
 			Stretched: f.Stretch > 0,
-		})
+		}
+		if f.BarTo > f.BarFrom {
+			hf.Barred = true
+			hf.BarFrom = float64(f.BarFrom) + 0.5
+			hf.BarTo = float64(f.BarTo) + 0.5
+		}
+		h.Fingers = append(h.Fingers, hf)
 		ks = append(ks, knuckle{kx, ky})
 	}
 	if len(ks) == 0 {
@@ -706,9 +729,9 @@ func handFor(v voicing.Voicing, start int) *HandView {
 	return h
 }
 
-// handKnuckleLine is where the drawn knuckles sit, in the same string
-// coordinates as the notes: nought is the sixth string and five is the first, so
-// this is a little past the first, on the side the hand comes over. Far enough
-// out to read as a hand behind the neck rather than a seventh string, near
-// enough to stay inside the card.
-const handKnuckleLine = 5.6
+// handKnuckleLine is where the drawn knuckles sit, in the coordinates the grid
+// is drawn in: the strings run down the middles of the columns, from a half to
+// five and a half, so this is two thirds of a column past the first string — the
+// side the hand comes over. Far enough out to read as a hand behind the neck
+// rather than a seventh string, near enough to stay inside the card.
+const handKnuckleLine = 6.15

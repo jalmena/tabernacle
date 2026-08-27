@@ -1265,6 +1265,14 @@ input[type="file"].filepick:focus-visible { outline: 2px solid var(--accent); ou
 	stroke-width: 3;
 	stroke-linecap: round;
 }
+/* A finger lying flat across several strings. It is the same finger as the line
+ * that reaches it, drawn as what it is. */
+.handbar {
+	stroke: var(--accent);
+	stroke-width: 6;
+	stroke-linecap: round;
+	opacity: 0.7;
+}
 /* A finger asked for more than it reaches. It is the one doing the work, and
  * saying which one is most of what the drawing is for. */
 .handfinger.pulled { stroke: var(--warn-rule); stroke-width: 4; }

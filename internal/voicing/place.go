@@ -119,6 +119,7 @@ func place(v Voicing) (float64, bool) {
 // laying is one shape's fingertips, ready to be tried at angle after angle.
 type laying struct {
 	tx, ty [4]float64
+	lo, hi [4]int // the strings each finger holds, the same when it holds one
 	used   [4]bool
 	n      int
 	ax, ay float64 // where the palm ended up last time, and where to start
@@ -130,6 +131,7 @@ func (l *laying) load(tips [4]tip, n int) {
 	for _, t := range tips[:n] {
 		i := int(t.finger - Index)
 		l.tx[i], l.ty[i], l.used[i] = t.x, t.y, true
+		l.lo[i], l.hi[i] = t.lo, t.hi
 		l.n++
 	}
 }
@@ -430,11 +432,12 @@ func tipsOf(v Voicing) ([4]tip, int, float64, bool) {
 			span := stringAt(e.hi, x) - stringAt(e.lo, x)
 			extra += barreCost + barreSpanCost*span
 			tips[n] = tip{finger: k, x: x,
-				y: (stringAt(e.lo, x) + stringAt(e.hi, x)) / 2}
+				y:  (stringAt(e.lo, x) + stringAt(e.hi, x)) / 2,
+				lo: e.lo, hi: e.hi}
 			n++
 			continue
 		}
-		tips[n] = tip{finger: k, x: x, y: stringAt(e.lo, x)}
+		tips[n] = tip{finger: k, x: x, y: stringAt(e.lo, x), lo: e.lo, hi: e.lo}
 		n++
 	}
 	return tips, n, extra, true
@@ -463,6 +466,9 @@ type Fingertip struct {
 	KnuckleX, KnuckleY float64
 	TipX, TipY         float64
 	Stretch            float64 // millimetres past what the finger reaches, negative when curled
+	// Bar is the strings a flattened finger lies across, lowest first, when it
+	// holds more than one. Equal when it is a fingertip like any other.
+	BarFrom, BarTo int
 }
 
 // Hold works out the best placement for a shape and says where the hand went.
@@ -509,6 +515,7 @@ func Hold(v Voicing) (Held, bool) {
 			KnuckleX: kx, KnuckleY: ky,
 			TipX: lay.tx[i], TipY: lay.ty[i],
 			Stretch: math.Sqrt((lay.tx[i]-kx)*(lay.tx[i]-kx)+(lay.ty[i]-ky)*(lay.ty[i]-ky)) - reach[i],
+			BarFrom: lay.lo[i], BarTo: lay.hi[i],
 		}
 	}
 	return h, true
@@ -524,8 +531,15 @@ func Where(x, y float64) (str, fret float64) {
 	if x >= scale {
 		x = scale - 0.01
 	}
-	if x > 0 {
+	switch {
+	case x > 0:
 		fret = -12 * math.Log2(1-x/scale)
+	default:
+		// Past the nut, where a palm often is, counted in first frets so the
+		// number keeps going instead of stopping. Clamping it there put every
+		// hand whose palm sat behind the nut in the same place, at the very top
+		// of the picture.
+		fret = x / fretAt(1)
 	}
 	w := spreadAt(math.Max(0, x))
 	return (y + w/2) * 5 / w, fret

@@ -306,9 +306,11 @@ func TestTheDrawnHandLandsOnTheBoard(t *testing.T) {
 				if f.Number < 1 || f.Number > 4 {
 					t.Errorf("finger %d is not one of the four", f.Number)
 				}
-				// Tips land on the board; knuckles sit behind the sixth string,
-				// which is where a hand is.
-				if f.TipX < -0.01 || f.TipX > 5.01 {
+				// Tips land on a string, and the strings run down the middles of
+				// the columns: a half across for the sixth and five and a half
+				// for the first. Knuckles sit past the first, which is the side
+				// the hand comes over.
+				if f.TipX < 0.49 || f.TipX > 5.51 {
 					t.Errorf("finger %d holds a note at %.2f, off the strings", f.Number, f.TipX)
 				}
 				if f.TipY < 0 || f.TipY > float64(b.Hand.Rows) {
@@ -316,7 +318,7 @@ func TestTheDrawnHandLandsOnTheBoard(t *testing.T) {
 				}
 				// The hand comes over the neck from the first string, so its
 				// knuckles are past that side and never on the strings.
-				if f.KnuckleX <= 5 {
+				if f.KnuckleX <= 5.5 {
 					t.Errorf("finger %d has its knuckle at %.2f, on the strings", f.Number, f.KnuckleX)
 				}
 			}

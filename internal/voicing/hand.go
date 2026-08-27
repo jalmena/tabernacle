@@ -148,6 +148,7 @@ func wrist(deg float64) (float64, bool) {
 type tip struct {
 	finger Finger
 	x, y   float64 // where on the board the fingertip has to land
+	lo, hi int     // the strings it holds, the same when it holds one
 	extra  float64 // what this note costs to hold down, barre and all
 }
 

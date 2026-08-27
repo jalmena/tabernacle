@@ -342,6 +342,12 @@
 								      x1="{{f2 .KnuckleX}}" y1="{{f2 .KnuckleY}}"
 								      x2="{{f2 .TipX}}" y2="{{f2 .TipY}}"
 								      vector-effect="non-scaling-stroke"></line>
+								{{if .Barred}}
+									<line class="handbar"
+									      x1="{{f2 .BarFrom}}" y1="{{f2 .TipY}}"
+									      x2="{{f2 .BarTo}}" y2="{{f2 .TipY}}"
+									      vector-effect="non-scaling-stroke"></line>
+								{{end}}
 							{{end}}
 						</svg>
 					{{end}}
