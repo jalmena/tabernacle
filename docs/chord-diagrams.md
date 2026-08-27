@@ -160,11 +160,17 @@ exactly as a finger does. What a shape costs is what it asks of each one:
 
 | | |
 | --- | --- |
-| Reaching | past the finger's length, or pulled up short of it |
+| Reaching | past what the finger reaches, or pulled up short of it |
 | Fanning | pointing off straight ahead, free for the first stretch and then charged |
+| Spacing | a pair sitting wider apart along the knuckle line than the knuckles do |
 | Tendons | two fingers pulled to different lengths, weighted by which pair |
+| The finger itself | using the ring or the little finger at all |
 | Pressing | holding each note down, and holding a bar flat across several |
-| Wrist | turning the knuckle line past what it gives |
+| Wrist | turning away from where the forearm rests |
+
+Every one of them is asymmetric, because a hand is. Curling up costs less than
+reaching out, and closing a pair costs less than opening one — closing is what
+curling does anyway.
 
 **Fingers in the order they grow in.** Projected onto the knuckle line, the
 fingertips must run index, middle, ring, little. A hand cannot put its middle

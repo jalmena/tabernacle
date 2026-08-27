@@ -15,10 +15,10 @@ package voicing
 // that can be checked against a hand.
 //
 // Which of them are measured and which are fitted is said at each one, and the
-// tally is kept honest in docs/chord-diagrams.md.
+// tally is kept honest in docs/chord-diagrams.md. The hand they describe is a
+// large one — a guitarist's — because it is the hand the judgements in
+// testdata/judgements.json came from.
 
-// The hand these numbers describe is a large one — a guitarist's — because it is
-// the hand the judgements in testdata/judgements.json came from.
 // Between the knuckles of two fingers side by side. This is the number the whole
 // model turns on: it does not change with the fret, and the frets it is compared
 // against run from 36.4 mm at the nut to 19.3 mm at the twelfth.
