@@ -314,7 +314,9 @@ func TestTheDrawnHandLandsOnTheBoard(t *testing.T) {
 				if f.TipY < 0 || f.TipY > float64(b.Hand.Rows) {
 					t.Errorf("finger %d holds a note at row %.2f, outside the window", f.Number, f.TipY)
 				}
-				if f.KnuckleX >= 0 {
+				// The hand comes over the neck from the first string, so its
+				// knuckles are past that side and never on the strings.
+				if f.KnuckleX <= 5 {
 					t.Errorf("finger %d has its knuckle at %.2f, on the strings", f.Number, f.KnuckleX)
 				}
 			}

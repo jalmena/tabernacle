@@ -1238,6 +1238,10 @@ input[type="file"].filepick:focus-visible { outline: 2px solid var(--accent); ou
  * header rows and runs the height of the window, and the viewBox counts in those
  * same units. Nothing about it needs to know how wide the page is.
  *
+ * The knuckles are drawn a little past the first string, which is the side a
+ * left hand comes over, so the overlay spills that way and the card leaves room
+ * for it.
+ *
  * It never takes a click: the cells underneath are radio buttons and reaching
  * them is the whole point of the board. */
 .boardhand {

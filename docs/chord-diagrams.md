@@ -175,7 +175,13 @@ reaching out, and closing a pair costs less than opening one — closing is what
 curling does anyway.
 
 **A finger points away from its knuckle**, over the strings, and not back into
-the palm. Obvious enough to be left out, and leaving it out was expensive: with
+the palm. Which way that is took embarrassingly long to get right: a left hand
+goes under the neck with the thumb behind it and the fingers curling over the
+edge nearest the floor, which in playing position is the first string. The palm
+is on that side and the sixth string is the one furthest from it — which is why
+reaching it with the little finger costs something. The model said exactly that
+in words while its geometry had the hand on the other side of the neck, and it
+took a guitarist looking at the drawing to notice. Obvious enough to be left out, and leaving it out was expensive: with
 the fan measured as an angle off the knuckle line, a finger aimed a hundred and
 eighty degrees the wrong way reads as perfectly straight. A first fret and a
 fifth on the string beside it came out easy, held with an index pointing at the
@@ -646,15 +652,16 @@ pictures; they answer different questions.
 ### The hand on the neck
 
 The board shows the hand the difficulty was worked out with, translucent, over
-the shape: a line for the knuckles behind the sixth string and one for each
-finger reaching from its knuckle to the note it holds. The finger asked for more
+the shape: a line for the knuckles past the first string — the side a left hand
+comes over, thumb behind the neck and fingers curling over the edge nearest the
+floor — and one line for each finger reaching across to the note it holds. The finger asked for more
 than it reaches is drawn in the warning colour, because that is the one doing the
 work and saying which one is most of what the picture is for.
 
 It is drawn foreshortened. A palm sits the length of a finger off the fretboard —
 eight or nine string widths, wider than the neck itself — so to scale the
 knuckles would be off the side of the page and a reader would see four lines
-entering from the left. The knuckles are brought to a line just behind the sixth
+entering from the left. The knuckles are brought to a line just past the first
 string, which keeps the thing worth looking at: how far apart they sit **along**
 the neck, which is the whole of how the hand is turned. Bunched at one fret is a
 hand lying across the strings; spread down three is a hand lying along the neck

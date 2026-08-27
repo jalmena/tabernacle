@@ -37,7 +37,7 @@ var turns = func() [23]struct{ deg, ux, uy, px, py float64 } {
 		rad := deg * math.Pi / 180
 		t[i].deg = deg
 		t[i].ux, t[i].uy = math.Cos(rad), math.Sin(rad)
-		t[i].px, t[i].py = -math.Sin(rad), math.Cos(rad)
+		t[i].px, t[i].py = math.Sin(rad), -math.Cos(rad)
 	}
 	return t
 }()
@@ -107,6 +107,15 @@ func place(v Voicing) (float64, bool) {
 	return best + extra, true
 }
 
+// The fingers come over the neck from the first string, not the sixth.
+//
+// A left hand goes under the neck with the thumb behind it and the fingers
+// curling over the edge nearest the floor, which in playing position is the
+// first string. So the palm is on that side and the sixth string is the one
+// furthest from it — which is why reaching it with the little finger costs
+// something, and why this was wrong for as long as it was: the model said that
+// in words while its geometry had the hand on the other side of the neck.
+
 // laying is one shape's fingertips, ready to be tried at angle after angle.
 type laying struct {
 	tx, ty [4]float64
@@ -132,7 +141,7 @@ func (l *laying) cost(i int) (float64, bool) {
 
 func (l *laying) costAt(deg float64) (float64, bool) {
 	rad := deg * math.Pi / 180
-	return l.lay(deg, math.Cos(rad), math.Sin(rad), -math.Sin(rad), math.Cos(rad))
+	return l.lay(deg, math.Cos(rad), math.Sin(rad), math.Sin(rad), -math.Cos(rad))
 }
 
 // lay puts the knuckle line at one angle and works out what holding the shape

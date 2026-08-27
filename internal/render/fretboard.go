@@ -686,7 +686,10 @@ func handFor(v voicing.Voicing, start int) *HandView {
 	// neck itself. To scale, the knuckles would be off the side of the page and
 	// a reader would see four lines entering from the left.
 	//
-	// So the knuckles are brought to a line just behind the sixth string. What
+	// So the knuckles are brought to a line just past the first string, which is
+	// the side a left hand comes over: the thumb goes behind the neck and the
+	// fingers curl over the edge nearest the floor, reaching across toward the
+	// sixth. What
 	// that keeps is the thing worth looking at: how far apart they sit **along**
 	// the neck, which is the whole of how the hand is turned. Knuckles bunched
 	// at one fret is a hand lying across the strings; knuckles spread down three
@@ -696,14 +699,16 @@ func handFor(v voicing.Voicing, start int) *HandView {
 	// What it gives up is the true angle of each finger, which cannot survive
 	// the squashing and is not what anybody is reading the picture for.
 	for i := range h.Fingers {
-		h.Fingers[i].KnuckleX = -handStandoff
+		h.Fingers[i].KnuckleX = handKnuckleLine
 	}
-	h.KnuckleX1, h.KnuckleY1 = -handStandoff, ks[0].y
-	h.KnuckleX2, h.KnuckleY2 = -handStandoff, ks[len(ks)-1].y
+	h.KnuckleX1, h.KnuckleY1 = handKnuckleLine, ks[0].y
+	h.KnuckleX2, h.KnuckleY2 = handKnuckleLine, ks[len(ks)-1].y
 	return h
 }
 
-// handStandoff is how far behind the sixth string the drawn knuckles sit, in
-// string widths. Far enough to read as a hand behind the neck rather than a
-// fifth row of dots, near enough to stay on the page.
-const handStandoff = 0.6
+// handKnuckleLine is where the drawn knuckles sit, in the same string
+// coordinates as the notes: nought is the sixth string and five is the first, so
+// this is a little past the first, on the side the hand comes over. Far enough
+// out to read as a hand behind the neck rather than a seventh string, near
+// enough to stay inside the card.
+const handKnuckleLine = 5.6
