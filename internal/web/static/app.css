@@ -1571,3 +1571,74 @@ body.scripted select.tonepick { display: block; }
 [dir="rtl"] .chordref {
 	direction: ltr;
 }
+
+
+/* The editor that shows a song as fields and sections.
+ *
+ * Laid out so the shape of the form is the shape of a song: what the song is
+ * first, then its parts in the order they are sung, then the one row of things
+ * that act on the whole of it. */
+.songfields {
+	border: 1px solid var(--rule);
+	border-radius: var(--radius);
+	padding: 0.9rem 1rem 0.4rem;
+	margin: 0 0 1rem;
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+	gap: 0 1rem;
+}
+.songfields legend { padding: 0 0.4rem; font-weight: 600; font-size: 0.9rem; }
+.field { margin: 0 0 0.8rem; display: flex; flex-direction: column; gap: 0.25rem; }
+/* The title, the artist and the notes are worth a whole row; a capo is not. */
+.field.wide { grid-column: 1 / -1; }
+.field label { font-size: 0.8125rem; color: var(--ink-faint); }
+.field input, .field textarea, .sectionlabel, .sectionbody {
+	font: inherit;
+	color: var(--ink);
+	background: var(--paper);
+	border: 1px solid var(--rule);
+	border-radius: var(--radius);
+	padding: 0.4rem 0.55rem;
+	min-inline-size: 0;
+}
+.field textarea, .sectionbody { resize: vertical; }
+.sectionbody {
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-size: 0.9375rem;
+	inline-size: 100%;
+	white-space: pre;
+	overflow-wrap: normal;
+	overflow-x: auto;
+}
+
+.songsection {
+	border: 1px solid var(--rule);
+	border-radius: var(--radius);
+	padding: 0.7rem 0.8rem 0.8rem;
+	margin: 0 0 0.7rem;
+}
+.sectionhead {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	margin-bottom: 0.5rem;
+}
+.sectionlabel { flex: 1 1 auto; font-weight: 600; }
+.sectiontools { display: flex; gap: 0.25rem; flex: 0 0 auto; }
+.btn-icon {
+	padding: 0.25rem 0.5rem;
+	line-height: 1.1;
+	background: none;
+	border: 1px solid transparent;
+}
+.btn-icon:hover { border-color: var(--rule); }
+.btn-icon.danger:hover { border-color: var(--rule); color: var(--accent); }
+
+.addsection {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.4rem;
+	margin: 0 0 1.2rem;
+}
+.addlabel { font-size: 0.8125rem; color: var(--ink-faint); margin-right: 0.15rem; }

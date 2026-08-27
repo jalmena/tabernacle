@@ -235,8 +235,11 @@ func TestLoadingAFileFillsTheEditorWithoutSaving(t *testing.T) {
 		t.Fatalf("loading = %d\n%s", w.Code, w.Body.String())
 	}
 	body := w.Body.String()
-	if !strings.Contains(body, "title: Nueva Canción") {
-		t.Errorf("the file's text is not in the editor:\n%s", body)
+	// Loaded into the fields, which is where a song is edited now. A file that
+	// would not parse would come back as its text instead, which is where
+	// somebody fixing one needs to be.
+	if !strings.Contains(body, `name="title" value="Nueva Canción"`) {
+		t.Errorf("the file is not in the editor:\n%s", body)
 	}
 	if !strings.Contains(body, "Cargado: cualquiera.song") {
 		t.Error("the page does not say which file arrived")

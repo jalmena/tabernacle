@@ -356,6 +356,27 @@ type editorBody struct {
 	ErrMessage string
 	ErrLine    int
 	CancelURL  string
+
+	// Compose is the song shown as fields and sections. Plain says the reader
+	// asked for the file itself instead, which is the escape hatch and the way
+	// to reach anything the fields cannot express.
+	Compose composed
+	Kinds   []kindChoice
+}
+
+// kindChoice is one button on the add-a-section row.
+type kindChoice struct {
+	Kind string
+	Name string
+}
+
+// kindChoices are the sections offered, named in the reader's language.
+func kindChoices(say *i18n.Printer) []kindChoice {
+	out := make([]kindChoice, 0, len(sectionKinds))
+	for _, k := range sectionKinds {
+		out = append(out, kindChoice{Kind: string(k), Name: say.T("section." + string(k))})
+	}
+	return out
 }
 
 func (s *Server) handleNewSong(w http.ResponseWriter, r *http.Request) {
@@ -365,21 +386,34 @@ func (s *Server) handleNewSong(w http.ResponseWriter, r *http.Request) {
 		Action:      "/songs",
 		CancelURL:   "/",
 		Placeholder: newSongPlaceholder,
+		Kinds:       kindChoices(say),
 	}))
 }
 
 func (s *Server) handleCreateSong(w http.ResponseWriter, r *http.Request) {
 	say := i18n.For(s.langFor(r))
-	text := r.PostFormValue("text")
+	body := editorBody{
+		Title:       say.T("library.empty.add"),
+		Action:      "/songs",
+		CancelURL:   "/",
+		Placeholder: newSongPlaceholder,
+		Kinds:       kindChoices(say),
+	}
+	c := readCompose(r)
+	if act(r, &c, say) {
+		// A section added, removed or moved, or the reader asking for the file
+		// instead of the fields. Nothing is written: the page comes back with
+		// the change made, which is how this works with no script at all.
+		body.Compose, body.Text = c, c.text()
+		s.render(w, r, http.StatusOK, "editor.html", s.page(r, "library.empty.add", body))
+		return
+	}
+
+	text := c.text()
+	body.Compose, body.Text = c, text
 	slug, err := s.lib.CreateFromText(r.Context(), text)
 	if err != nil {
-		s.renderEditorError(w, r, editorBody{
-			Title:       say.T("library.empty.add"),
-			Action:      "/songs",
-			CancelURL:   "/",
-			Text:        text,
-			Placeholder: newSongPlaceholder,
-		}, err)
+		s.renderEditorError(w, r, body, err)
 		return
 	}
 	s.redirect(w, r, "/songs/"+slug, "created")
@@ -400,6 +434,7 @@ func (s *Server) handleLoadIntoEditor(w http.ResponseWriter, r *http.Request) {
 		Action:      "/songs",
 		CancelURL:   "/",
 		Placeholder: newSongPlaceholder,
+		Kinds:       kindChoices(say),
 	}
 
 	r.Body = http.MaxBytesReader(w, r.Body, s.cfg.MaxSongBytes+(1<<16))
@@ -444,7 +479,15 @@ func (s *Server) handleLoadIntoEditor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	body.Text = strings.ReplaceAll(strings.ReplaceAll(string(data), "\r\n", "\n"), "\r", "\n")
+	body.Text = newlines(string(data))
+	// Shown as fields when the file can be taken apart, and as the file itself
+	// when it cannot — which for an upload is the useful half of the time, since
+	// a file somebody is loading is often one they are trying to fix.
+	if p, err := song.Take([]byte(body.Text)); err == nil {
+		body.Compose = composed{Parts: p}
+	} else {
+		body.Compose = composed{Plain: true, Raw: body.Text}
+	}
 	body.Loaded = safeName(files[0].Filename)
 	// The text is shown, not saved. If it does not parse, the reader sees the
 	// line to fix before anything reaches the collection.
@@ -467,33 +510,57 @@ func (s *Server) handleEditSong(w http.ResponseWriter, r *http.Request) {
 		s.resolve(w, r, err)
 		return
 	}
-	s.render(w, r, http.StatusOK, "editor.html", s.page(r, "title.edit", editorBody{
-		Title:     "Editar el archivo",
+	say := i18n.For(s.langFor(r))
+	body := editorBody{
+		Title:     say.T("editor.edit"),
 		Action:    "/songs/" + slug,
 		Slug:      slug,
 		Text:      string(data),
 		Hash:      hash,
 		Editing:   true,
 		CancelURL: "/songs/" + slug,
-	}))
+		Kinds:     kindChoices(say),
+	}
+	// Shown as fields when it can be taken apart, and as the file when it
+	// cannot. A song that will not parse is exactly the one somebody needs the
+	// file for, so that is where they are put, with the mistake in front of them.
+	//
+	// The collection does not normally hold one — a file that fails to parse is
+	// recorded as broken rather than offered for editing — so this is a guard
+	// against the day the two disagree, not a path anybody walks.
+	if p, err := song.Take(data); err == nil {
+		body.Compose = composed{Parts: p}
+	} else {
+		body.Compose = composed{Plain: true, Raw: string(data)}
+	}
+	s.render(w, r, http.StatusOK, "editor.html", s.page(r, "title.edit", body))
 }
 
 func (s *Server) handleSaveSong(w http.ResponseWriter, r *http.Request) {
+	say := i18n.For(s.langFor(r))
 	slug := r.PathValue("slug")
-	text := r.PostFormValue("text")
 	hash := r.PostFormValue("hash")
 
+	c := readCompose(r)
+	body := editorBody{
+		Title:     say.T("editor.edit"),
+		Action:    "/songs/" + slug,
+		Slug:      slug,
+		Hash:      hash,
+		Editing:   true,
+		CancelURL: "/songs/" + slug,
+		Kinds:     kindChoices(say),
+	}
+	if act(r, &c, say) {
+		body.Compose, body.Text = c, c.text()
+		s.render(w, r, http.StatusOK, "editor.html", s.page(r, "editor.edit", body))
+		return
+	}
+
+	text := c.text()
+	body.Compose, body.Text = c, text
 	newSlug, err := s.lib.SaveRaw(r.Context(), slug, text, hash)
 	if err != nil {
-		body := editorBody{
-			Title:     "Editar el archivo",
-			Action:    "/songs/" + slug,
-			Slug:      slug,
-			Text:      text,
-			Hash:      hash,
-			Editing:   true,
-			CancelURL: "/songs/" + slug,
-		}
 		if errors.Is(err, library.ErrConflict) {
 			// Both versions matter here, so the user is told rather than having
 			// one of them quietly discarded.

@@ -118,9 +118,12 @@ func TestEditAndSaveRaw(t *testing.T) {
 	ts := newTestServer(t, basicSongs())
 	slug := "traditional-amazing-grace"
 
+	// The editor opens as fields, so the song arrives in them rather than as the
+	// text of the file. The file is a button away and still saves the same way,
+	// which is what the rest of this test is about.
 	form := ts.get(t, "/songs/"+slug+"/edit").Body.String()
-	if !strings.Contains(form, "title: Amazing Grace") {
-		t.Fatal("the editor does not show the file")
+	if !strings.Contains(form, `name="title" value="Amazing Grace"`) {
+		t.Fatal("the editor does not show the song")
 	}
 	// The hash of the loaded version travels with the form, which is how a
 	// competing edit is detected rather than clobbered.

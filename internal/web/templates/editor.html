@@ -35,15 +35,104 @@
 			</p>
 		{{end}}
 
+		{{/* Two ways of editing the same song, and one way of saving it. Whichever
+		     is on screen, what the form posts is turned into the text of a .song
+		     file and handed to the same code that has always written them.
+
+		     Every button here is a submit. Adding a section, throwing one away
+		     and moving one all go to the server and come back with the change
+		     made, the way transposing and the fret window already do, so none of
+		     the editor needs a script to reach it. */}}
 		<form method="post" action="{{.Action}}" class="editor">
 			{{if .Hash}}<input type="hidden" name="hash" value="{{.Hash}}">{{end}}
-			<textarea id="songtext" name="text" rows="26" spellcheck="false" autocapitalize="off"
-			          autocomplete="off" aria-label="{{$.T `editor.label`}}"
-			          placeholder="{{.Placeholder}}">{{.Text}}</textarea>
-			<div class="filters">
-				<button class="btn" type="submit">{{$.T "action.save"}}</button>
-				<a class="btn btn-quiet" href="{{.CancelURL}}">{{$.T "action.cancel"}}</a>
-			</div>
+
+			{{if .Compose.Plain}}
+				<input type="hidden" name="plain" value="1">
+				<textarea id="songtext" name="text" rows="26" spellcheck="false" autocapitalize="off"
+				          autocomplete="off" aria-label="{{$.T `editor.label`}}"
+				          placeholder="{{.Placeholder}}">{{.Text}}</textarea>
+				<div class="filters">
+					<button class="btn" type="submit">{{$.T "action.save"}}</button>
+					<button class="btn btn-quiet" type="submit" name="fielder" value="1"
+					        formnovalidate>{{$.T "editor.byfields"}}</button>
+					<a class="btn btn-quiet" href="{{.CancelURL}}">{{$.T "action.cancel"}}</a>
+				</div>
+			{{else}}
+				{{with .Compose.Parts}}
+					<fieldset class="songfields">
+						<legend>{{$.T "editor.about"}}</legend>
+						<p class="field wide">
+							<label for="f-title">{{$.T "editor.field.title"}}</label>
+							<input id="f-title" name="title" value="{{.Title}}" required
+							       autocomplete="off" spellcheck="false">
+						</p>
+						<p class="field wide">
+							<label for="f-artist">{{$.T "editor.field.artist"}}</label>
+							<input id="f-artist" name="artist" value="{{.Artist}}" autocomplete="off">
+						</p>
+						<p class="field">
+							<label for="f-key">{{$.T "editor.field.key"}}</label>
+							<input id="f-key" name="key" value="{{.Key}}" autocomplete="off"
+							       spellcheck="false" placeholder="G">
+						</p>
+						<p class="field">
+							<label for="f-capo">{{$.T "editor.field.capo"}}</label>
+							<input id="f-capo" name="capo" value="{{.Capo}}" type="number"
+							       min="0" max="12" inputmode="numeric">
+						</p>
+						<p class="field">
+							<label for="f-tuning">{{$.T "editor.field.tuning"}}</label>
+							<input id="f-tuning" name="tuning" value="{{.Tuning}}" autocomplete="off"
+							       spellcheck="false" placeholder="EADGBE">
+						</p>
+						<p class="field">
+							<label for="f-genre">{{$.T "editor.field.genre"}}</label>
+							<input id="f-genre" name="genre" value="{{.Genre}}" autocomplete="off">
+						</p>
+						<p class="field wide">
+							<label for="f-notes">{{$.T "editor.field.notes"}}</label>
+							<textarea id="f-notes" name="notes" rows="2">{{.Notes}}</textarea>
+						</p>
+					</fieldset>
+
+					{{range $i, $sec := .Sections}}
+						<fieldset class="songsection">
+							<legend class="sr">{{$.T "editor.section" (add $i 1)}}</legend>
+							<div class="sectionhead">
+								<input class="sectionlabel" name="label{{$i}}" value="{{$sec.Label}}"
+								       autocomplete="off" aria-label="{{$.T `editor.section.name`}}"
+								       placeholder="{{$.T `editor.section.name`}}">
+								<span class="sectiontools">
+									<button class="btn btn-icon" type="submit" name="up{{$i}}" value="1"
+									        formnovalidate title="{{$.T `editor.section.up`}}">↑</button>
+									<button class="btn btn-icon" type="submit" name="down{{$i}}" value="1"
+									        formnovalidate title="{{$.T `editor.section.down`}}">↓</button>
+									<button class="btn btn-icon danger" type="submit" name="del{{$i}}" value="1"
+									        formnovalidate title="{{$.T `editor.section.remove`}}">🗑</button>
+								</span>
+							</div>
+							<textarea class="sectionbody" name="body{{$i}}" rows="6" spellcheck="false"
+							          autocapitalize="off" autocomplete="off"
+							          aria-label="{{$.T `editor.section.lines`}}">{{$sec.Body}}</textarea>
+						</fieldset>
+					{{end}}
+				{{end}}
+
+				<div class="addsection">
+					<span class="addlabel">{{$.T "editor.add"}}</span>
+					{{range $.Body.Kinds}}
+						<button class="btn btn-quiet" type="submit" name="add" value="{{.Kind}}"
+						        formnovalidate>+ {{.Name}}</button>
+					{{end}}
+				</div>
+
+				<div class="filters">
+					<button class="btn" type="submit">{{$.T "action.save"}}</button>
+					<button class="btn btn-quiet" type="submit" name="plainer" value="1"
+					        formnovalidate>{{$.T "editor.byfile"}}</button>
+					<a class="btn btn-quiet" href="{{.CancelURL}}">{{$.T "action.cancel"}}</a>
+				</div>
+			{{end}}
 		</form>
 	{{end}}
 </main>
