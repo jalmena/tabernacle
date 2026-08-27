@@ -430,3 +430,94 @@ func tipsOf(v Voicing) ([4]tip, int, float64, bool) {
 	}
 	return tips, n, extra, true
 }
+
+// Held is where the hand ends up: the placement the model settled on, in the
+// millimetres the neck is measured in.
+//
+// It exists so the page can draw the hand it worked the difficulty out with. A
+// model nobody can see is a model nobody can argue with, and every mistake in
+// this one so far was found by somebody looking at a shape and saying that is
+// not how you hold it.
+type Held struct {
+	// Turn is the angle of the knuckle line, in degrees from the neck: nought
+	// lays the fingers one to a fret, ninety lays them in a row across.
+	Turn float64
+	// Palm is the first knuckle, and the rest follow it along the line.
+	PalmX, PalmY float64
+	Fingers      [4]Fingertip
+}
+
+// Fingertip is one finger of a placement, with where its knuckle sits and where
+// its tip has to land.
+type Fingertip struct {
+	Used               bool
+	KnuckleX, KnuckleY float64
+	TipX, TipY         float64
+	Stretch            float64 // millimetres past what the finger reaches, negative when curled
+}
+
+// Hold works out the best placement for a shape and says where the hand went.
+//
+// It repeats what place does rather than having place carry the answer around,
+// because place runs several thousand times for a chord and once for a picture.
+func Hold(v Voicing) (Held, bool) {
+	tips, n, _, ok := tipsOf(v)
+	if !ok || n == 0 {
+		return Held{}, false
+	}
+	var lay laying
+	lay.load(tips, n)
+
+	best, at, found := math.Inf(1), 0.0, false
+	for deg := turnFrom; deg <= turnTo; deg += 0.5 {
+		var one laying
+		one.load(tips, n)
+		if c, ok := one.costAt(deg); ok && c < best {
+			best, at, found = c, deg, true
+		}
+	}
+	if !found {
+		return Held{}, false
+	}
+
+	// Once more at the angle that won, to leave the palm where it settled.
+	lay.warm = false
+	if _, ok := lay.costAt(at); !ok {
+		return Held{}, false
+	}
+
+	rad := at * math.Pi / 180
+	ux, uy := math.Cos(rad), math.Sin(rad)
+	h := Held{Turn: at, PalmX: lay.ax, PalmY: lay.ay}
+	for i := range 4 {
+		if !lay.used[i] {
+			continue
+		}
+		kx := lay.ax + float64(i)*knuckleGap*ux
+		ky := lay.ay + float64(i)*knuckleGap*uy
+		h.Fingers[i] = Fingertip{
+			Used:     true,
+			KnuckleX: kx, KnuckleY: ky,
+			TipX: lay.tx[i], TipY: lay.ty[i],
+			Stretch: math.Sqrt((lay.tx[i]-kx)*(lay.tx[i]-kx)+(lay.ty[i]-ky)*(lay.ty[i]-ky)) - reach[i],
+		}
+	}
+	return h, true
+}
+
+// Where converts a point on the neck into the coordinates a chord grid is drawn
+// in: how far along the strings, sixth at nought and first at five, and how far
+// down the frets, counted from the nut.
+//
+// Both come back fractional, because a knuckle does not sit on a fret line any
+// more than it sits on a string.
+func Where(x, y float64) (str, fret float64) {
+	if x >= scale {
+		x = scale - 0.01
+	}
+	if x > 0 {
+		fret = -12 * math.Log2(1-x/scale)
+	}
+	w := spreadAt(math.Max(0, x))
+	return (y + w/2) * 5 / w, fret
+}

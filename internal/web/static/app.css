@@ -1229,7 +1229,44 @@ input[type="file"].filepick:focus-visible { outline: 2px solid var(--accent); ou
 }
 /* Narrower than it is tall, so the grid reads as an upright neck at a
  * glance and never as a table. */
-.boardstrings { display: flex; flex: 0 1 12.5rem; }
+.boardstrings { display: flex; flex: 0 1 12.5rem; position: relative; }
+
+/* The hand the difficulty was worked out with, laid over the neck.
+ *
+ * It sits exactly on the fret grid without a pixel being measured: the columns
+ * are the strings and the rows are the frets, so the box starts below the three
+ * header rows and runs the height of the window, and the viewBox counts in those
+ * same units. Nothing about it needs to know how wide the page is.
+ *
+ * It never takes a click: the cells underneath are radio buttons and reaching
+ * them is the whole point of the board. */
+.boardhand {
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: calc(var(--name) + 2 * var(--mark));
+	height: calc(var(--cell) * 5);
+	overflow: visible;
+	pointer-events: none;
+	opacity: 0.55;
+}
+.handknuckles {
+	stroke: var(--accent);
+	stroke-width: 7;
+	stroke-linecap: round;
+	opacity: 0.45;
+}
+.handfinger {
+	stroke: var(--accent);
+	stroke-width: 3;
+	stroke-linecap: round;
+}
+/* A finger asked for more than it reaches. It is the one doing the work, and
+ * saying which one is most of what the drawing is for. */
+.handfinger.pulled { stroke: var(--warn-rule); stroke-width: 4; }
+@media (prefers-reduced-motion: no-preference) {
+	.boardhand { transition: opacity 120ms ease; }
+}
 .boardstring { flex: 1 1 0; min-inline-size: 0; border: 0; margin: 0; padding: 0; }
 .stringname {
 	height: var(--name);

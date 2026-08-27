@@ -86,6 +86,11 @@ type FretboardView struct {
 	// scraped into it, and the difference between two shapes in the same band
 	// is exactly what somebody comparing them wants to see.
 	Strain int
+
+	// Hand is the placement the difficulty was worked out with, drawn over the
+	// board. Nil when nothing is fretted, or when no hand fits the shape at all
+	// — there is no picture to draw of a hand that cannot be put there.
+	Hand *HandView
 }
 
 // ReadingView is one name for the notes drawn on the board.
@@ -290,6 +295,7 @@ func boardFor(say *i18n.Printer, v voicing.Voicing, start int, o LabOptions) Fre
 		b.Strain = scored.Strain()
 		fingers = scored.Fingers
 	}
+	b.Hand = handFor(v, start)
 	if start > 1 {
 		b.Down = labURLAt(o, v.Grip(), start-1)
 	}
@@ -604,3 +610,100 @@ func midiList(midi []int) string {
 	}
 	return strings.Join(out, ",")
 }
+
+// HandView is the hand the difficulty was worked out with, drawn over the neck.
+//
+// The model places a hand and reads the difficulty off what that costs, and
+// until now the hand was invisible: the page said a number and the number was
+// the end of it. Every mistake found in the model so far was found by somebody
+// looking at a shape and saying that is not how you hold it, so showing the hand
+// is showing the working.
+//
+// Coordinates are in cells of the drawn grid — nought to six across the strings,
+// nought at the top of the window and one per fret down it — so the overlay
+// stretches with the board however the page is sized.
+type HandView struct {
+	Fingers []HandFinger
+	// Knuckles is the line the fingers come off, from the index to the little
+	// finger, whether or not every one of them is holding something.
+	KnuckleX1, KnuckleY1 float64
+	KnuckleX2, KnuckleY2 float64
+	Rows                 int // how many frets the window shows
+}
+
+// HandFinger is one finger of the drawn hand.
+type HandFinger struct {
+	Number             int
+	KnuckleX, KnuckleY float64
+	TipX, TipY         float64
+	// Stretched marks a finger asked for more than it comfortably reaches, so
+	// the drawing can say which one is doing the work.
+	Stretched bool
+}
+
+// handFor draws the placement over a window starting at start.
+//
+// A point off the window is kept rather than clipped: a hand whose palm sits
+// above the first fret drawn is telling the reader something true, and the
+// drawing lets it hang over the edge.
+func handFor(v voicing.Voicing, start int) *HandView {
+	if v.Reach() == 0 {
+		return nil
+	}
+	held, ok := voicing.Hold(voicing.Score(v))
+	if !ok {
+		return nil
+	}
+
+	// The window's first row is the fret it starts on, so a fret sits one row
+	// above the line that ends it.
+	at := func(x, y float64) (float64, float64) {
+		s, f := voicing.Where(x, y)
+		return s, f - float64(start-1)
+	}
+
+	h := &HandView{Rows: labFrets}
+	type knuckle struct{ x, y float64 }
+	var ks []knuckle
+	for i, f := range held.Fingers {
+		if !f.Used {
+			continue
+		}
+		kx, ky := at(f.KnuckleX, f.KnuckleY)
+		tx, ty := at(f.TipX, f.TipY)
+		h.Fingers = append(h.Fingers, HandFinger{
+			Number: i + 1, KnuckleX: kx, KnuckleY: ky, TipX: tx, TipY: ty,
+			Stretched: f.Stretch > 0,
+		})
+		ks = append(ks, knuckle{kx, ky})
+	}
+	if len(ks) == 0 {
+		return nil
+	}
+
+	// The hand is drawn foreshortened, because a palm sits the length of a finger
+	// off the fretboard — eight or nine string widths, which is wider than the
+	// neck itself. To scale, the knuckles would be off the side of the page and
+	// a reader would see four lines entering from the left.
+	//
+	// So the knuckles are brought to a line just behind the sixth string. What
+	// that keeps is the thing worth looking at: how far apart they sit **along**
+	// the neck, which is the whole of how the hand is turned. Knuckles bunched
+	// at one fret is a hand lying across the strings; knuckles spread down three
+	// is a hand lying along the neck with a finger to each. Where every tip
+	// lands, and which finger is on it, are exactly what the model used.
+	//
+	// What it gives up is the true angle of each finger, which cannot survive
+	// the squashing and is not what anybody is reading the picture for.
+	for i := range h.Fingers {
+		h.Fingers[i].KnuckleX = -handStandoff
+	}
+	h.KnuckleX1, h.KnuckleY1 = -handStandoff, ks[0].y
+	h.KnuckleX2, h.KnuckleY2 = -handStandoff, ks[len(ks)-1].y
+	return h
+}
+
+// handStandoff is how far behind the sixth string the drawn knuckles sit, in
+// string widths. Far enough to read as a hand behind the neck rather than a
+// fifth row of dots, near enough to stay on the page.
+const handStandoff = 0.6

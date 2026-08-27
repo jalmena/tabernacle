@@ -281,3 +281,54 @@ func TestTheNeckNamesItsFingers(t *testing.T) {
 		}
 	}
 }
+
+// The hand drawn over the neck is the hand the difficulty was worked out with,
+// and it has to line up with the grid it is laid on.
+func TestTheDrawnHandLandsOnTheBoard(t *testing.T) {
+	for _, tc := range []struct{ what, grip string }{
+		{"a barre", "1-3-3-2-1-1"},
+		{"a diagonal", "x-3-2-1-x-x"},
+		{"three fingers across one fret", "x-0-2-2-2-0"},
+		{"one finger", "x-x-x-x-x-3"},
+	} {
+		t.Run(tc.what, func(t *testing.T) {
+			frets, ok := voicing.ParseGrip(tc.grip)
+			if !ok {
+				t.Fatalf("%s: not a grip", tc.grip)
+			}
+			b := boardFor(say, voicing.Voicing{Tuning: voicing.Standard(), Frets: frets}, 1, LabOptions{})
+			if b.Hand == nil {
+				t.Fatal("no hand was drawn for a shape a hand can hold")
+			}
+			held := 0
+			for _, f := range b.Hand.Fingers {
+				held++
+				if f.Number < 1 || f.Number > 4 {
+					t.Errorf("finger %d is not one of the four", f.Number)
+				}
+				// Tips land on the board; knuckles sit behind the sixth string,
+				// which is where a hand is.
+				if f.TipX < -0.01 || f.TipX > 5.01 {
+					t.Errorf("finger %d holds a note at %.2f, off the strings", f.Number, f.TipX)
+				}
+				if f.TipY < 0 || f.TipY > float64(b.Hand.Rows) {
+					t.Errorf("finger %d holds a note at row %.2f, outside the window", f.Number, f.TipY)
+				}
+				if f.KnuckleX >= 0 {
+					t.Errorf("finger %d has its knuckle at %.2f, on the strings", f.Number, f.KnuckleX)
+				}
+			}
+			if held == 0 {
+				t.Error("a hand with no fingers on it")
+			}
+		})
+	}
+}
+
+// Nothing fretted is nothing to draw.
+func TestNoHandIsDrawnForAnEmptyNeck(t *testing.T) {
+	frets, _ := voicing.ParseGrip("0-0-0-0-0-0")
+	if b := boardFor(say, voicing.Voicing{Tuning: voicing.Standard(), Frets: frets}, 1, LabOptions{}); b.Hand != nil {
+		t.Error("a hand was drawn over six open strings")
+	}
+}

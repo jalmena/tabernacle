@@ -324,6 +324,27 @@
 					<span class="startfret">{{.Board.Start}}</span>
 				</div>
 				<div class="boardstrings">
+					{{/* The hand the difficulty was worked out with, laid over the
+					     neck. Decorative and hidden from a screen reader, which
+					     is already told which finger goes where by every cell's
+					     own label. It stretches with the grid rather than being
+					     measured in pixels: the viewBox counts strings across and
+					     frets down, which is what the columns and rows are. */}}
+					{{with .Board.Hand}}
+						<svg class="boardhand noprint" aria-hidden="true" focusable="false"
+						     viewBox="0 0 6 {{.Rows}}" preserveAspectRatio="none">
+							<line class="handknuckles"
+							      x1="{{f2 .KnuckleX1}}" y1="{{f2 .KnuckleY1}}"
+							      x2="{{f2 .KnuckleX2}}" y2="{{f2 .KnuckleY2}}"
+							      vector-effect="non-scaling-stroke"></line>
+							{{range .Fingers}}
+								<line class="handfinger{{if .Stretched}} pulled{{end}}"
+								      x1="{{f2 .KnuckleX}}" y1="{{f2 .KnuckleY}}"
+								      x2="{{f2 .TipX}}" y2="{{f2 .TipY}}"
+								      vector-effect="non-scaling-stroke"></line>
+							{{end}}
+						</svg>
+					{{end}}
 					{{range .Board.Strings}}
 						{{$s := .Index}}
 						{{/* One radio group per string, which is what a name does.

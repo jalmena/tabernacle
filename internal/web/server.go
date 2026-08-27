@@ -101,6 +101,9 @@ func funcs() template.FuncMap {
 		"sheet": func(p page, v render.SheetView) sheetArg { return sheetArg{page: p, Sheet: v} },
 		"add":   func(a, b int) int { return a + b },
 		"sub":   func(a, b int) int { return a - b },
+		// Two decimals is finer than a hand is drawn and keeps the markup from
+		// carrying seventeen digits of float for every knuckle.
+		"f2": func(v float64) string { return strconv.FormatFloat(v, 'f', 2, 64) },
 		"plural": func(n int, one, many string) string {
 			if n == 1 {
 				return one

@@ -643,6 +643,34 @@ for `#chordresult`. Both silently did nothing while every other test passed.
 The result diagrams stay SVG. The editor is a control and the variants are
 pictures; they answer different questions.
 
+### The hand on the neck
+
+The board shows the hand the difficulty was worked out with, translucent, over
+the shape: a line for the knuckles behind the sixth string and one for each
+finger reaching from its knuckle to the note it holds. The finger asked for more
+than it reaches is drawn in the warning colour, because that is the one doing the
+work and saying which one is most of what the picture is for.
+
+It is drawn foreshortened. A palm sits the length of a finger off the fretboard —
+eight or nine string widths, wider than the neck itself — so to scale the
+knuckles would be off the side of the page and a reader would see four lines
+entering from the left. The knuckles are brought to a line just behind the sixth
+string, which keeps the thing worth looking at: how far apart they sit **along**
+the neck, which is the whole of how the hand is turned. Bunched at one fret is a
+hand lying across the strings; spread down three is a hand lying along the neck
+with a finger to each. Where every tip lands is exactly what the model used; the
+angle of each finger is not, and cannot survive the squashing.
+
+The overlay is an SVG laid over the grid with a viewBox counting strings across
+and frets down, so it stretches with the board and no pixel is measured anywhere.
+It takes no clicks — the cells underneath are radio buttons and reaching them is
+the point of the board — and it is hidden from a screen reader, which is already
+told which finger goes where by every cell's own label. It does not print.
+
+Why show it at all: every mistake found in the model so far was found by somebody
+looking at a shape and saying *that is not how you hold it*. A model nobody can
+see is a model nobody can argue with.
+
 ### The fingers on the neck
 
 Each dot on the editable neck carries the number of the finger that holds it,
