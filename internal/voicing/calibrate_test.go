@@ -199,6 +199,7 @@ type knob struct {
 
 func knobs() []knob {
 	return []knob{
+		{"gain", &gain, 0.05, 24},
 		{"stretchCost", &stretchCost, 0.005, 0.4},
 		{"curlCost", &curlCost, 0.001, 0.2},
 		{"freeFan", &freeFan, 4, 34},
@@ -213,19 +214,20 @@ func knobs() []knob {
 		{"pressCost", &pressCost, 0.05, 12},
 		{"nutCost", &nutCost, 2, 400},
 		{"damping", &damping, 0.1, 40},
-		{"gain", &gain, 0.05, 12},
 		{"weakRing", &weak[2], 0.02, 12},
 		{"weakPinky", &weak[3], 0.05, 30},
 		{"maxFan", &maxFan, 26, 62},
-		// The hand's own measurements, inside what a hand allows. The little
-		// finger's range stops below the others' so that no amount of fitting
-		// can hand it the longest reach, which is the one ordering that is not
-		// up for discussion.
+		// The hand's own measurements, inside what a hand allows. Bounds rather
+		// than an order, because reach here is what a finger covers in playing
+		// posture and not its length: the little finger is held straighter than
+		// the rest precisely because it is short, so what it covers can come
+		// close to what the middle finger does. What no hand does is make it the
+		// longest, and its range stops short of that.
 		{"knuckleGap", &knuckleGap, 16, 23},
 		{"reachIndex", &reach[0], 80, 100},
 		{"reachMiddle", &reach[1], 80, 104},
 		{"reachRing", &reach[2], 78, 98},
-		{"reachPinky", &reach[3], 62, 77},
+		{"reachPinky", &reach[3], 62, 86},
 		{"maxReach", &maxReach, 1.02, 1.30},
 		{"minReach", &minReach, 0.35, 0.72},
 	}
@@ -237,30 +239,47 @@ func both(s spec) (int, float64, []string) {
 	return p, penalty(s), bad
 }
 
-// The bands are part of what was judged too: a player calling a chord easy is
-// saying where a line falls as much as what the shape costs, so the lines move
-// with everything else.
-var bandf [len(levels)]float64
+// The bands move too, but they cannot be flattened.
+//
+// Where a band falls is part of what was judged: a player calling a chord easy
+// says where a line sits as much as what the shape costs. Let loose entirely the
+// fit squeezed every band down to a point wide and had every shape come out
+// either trivial or inhuman, which satisfies the arithmetic and describes
+// nothing — so a band has to be at least bandFloor across. Below that it is
+// narrower than the model can tell two shapes apart by, and it has stopped being
+// a band.
+const bandFloor = 8
+
+// anchored is how many of the bands real chords settle. The corpus names chords
+// up to the barres and no further, so the top two are not fitted: left free they
+// went where nothing pulled them and stretched one band from forty to four
+// hundred, which makes the words above it unreachable. They follow the last
+// anchored band's width instead, which is what keeps them within reach.
+const anchored = 4
+
+var bandf [anchored]float64
 
 func bandKnobs() []knob {
 	var ks []knob
-	for i := range levels {
+	for i := range bandf {
 		bandf[i] = float64(levels[i])
-		ks = append(ks, knob{fmt.Sprintf("band%d", i), &bandf[i], 4, 400})
+		ks = append(ks, knob{fmt.Sprintf("band%d", i), &bandf[i], 6, 260})
 	}
 	return ks
 }
 
-// pushBands writes them back, keeping them in order: a band that does not end
-// after the one below it is not a band.
 func pushBands() {
 	prev := 0
 	for i := range bandf {
 		v := int(bandf[i] + 0.5)
-		if v <= prev {
-			v = prev + 1
+		if v < prev+bandFloor {
+			v = prev + bandFloor
 		}
 		levels[i], prev = v, v
+	}
+	step := max(bandFloor, levels[anchored-1]-levels[anchored-2])
+	for i := anchored; i < len(levels); i++ {
+		levels[i] = levels[i-1] + step
 	}
 }
 

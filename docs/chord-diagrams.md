@@ -137,10 +137,12 @@ question and the reason this model replaced the one before it.
 **The neck is not evenly spaced**, and that one fact carries most of the model.
 Frets fall where the string divides, so they crowd together as they climb: the
 first is 36.4 mm wide, the sixth 27.2, the twelfth 19.3. Knuckles do not move —
-they sit about 21 mm apart whatever fret the hand is over. Those two numbers meet
-at the eleventh fret. Below it, one finger per fret is a stretch; above it, it is
-the shape the hand is already in. Everything a guitarist says about the nut being
-harder starts there, and none of it has to be written down as a rule.
+they sit the same distance apart whatever fret the hand is over, about 17 mm for
+the hand these numbers describe. The two meet around the fifteenth fret. Below
+it, one finger per fret is a stretch, and the further down the neck the bigger
+one; above it, it is the shape the hand is already in. Everything a guitarist
+says about the nut being harder starts there, and none of it has to be written
+down as a rule.
 
 **The hand is a line of knuckles and four fingers.** Three numbers place it: where
 the palm sits, and how far the knuckle line is turned from the neck. Turned along
@@ -208,6 +210,13 @@ so being two short ranks past being one short.
 | `weak` | fitted, and not geometry | the little finger is weak, which no length says |
 | `nutCost` | fitted, and standing in for something | see below |
 
+It reproduces thirty-four of the forty judgements. The six it does not are
+listed as owed in the corpus, and the test complains both when a new failure
+appears and when a listed one starts holding, so the list can only shrink and
+cannot be forgotten. The model it replaced managed twenty-six, and broke the
+invariant that fretting one more string cannot make a shape easier four times
+over; this one does not break it at all.
+
 Fitted means fitted **once**, by `TestFitTheHandToWhatThePlayerSaid` in
 `calibrate_test.go`, which walks every constant against the whole of
 `internal/voicing/testdata/judgements.json` at a time and keeps what satisfies
@@ -263,17 +272,26 @@ produce is nothing anybody plays:
 
 | | strain | |
 | --- | --- | --- |
-| Trivial | ≤ 16 | Em7 4, Em 8, A 12, E7 16 |
-| Easy | ≤ 40 | E 20, Am 20, D 20, Dm 28, C 28, G 30 |
-| Moderate | ≤ 60 | Bm 49, F# 54, F 58 |
-| Advanced | ≤ 75 | B 64, Bb 68 |
-| Complex | ≤ 92 | |
-| Extreme | ≤ 112 | |
+| Trivial | ≤ 8 | Em7 2, Em 4, E7 5, D 6, A 6, E 8, Am 8 |
+| Easy | ≤ 16 | Fmaj7 9, C 9, Dm 9, G 12 |
+| Moderate | ≤ 35 | Abm7 20, Gm7 20, Bm7 21, C#m 23, Bm 24, F# 27, F 28, Bb 30, B 32 |
+| Advanced | ≤ 43 | |
+| Complex | ≤ 51 | |
+| Extreme | ≤ 59 | |
 | Inhuman | above | |
 
-The first four bands are fixed by real chords; moving them would rename
-something everybody plays. The two above are anchored to nothing, so they sit
-close enough together that the top one can be reached.
+Every barre in one band, near the nut or away from it, which is where a
+guitarist puts them and which the model before this one could not manage —
+it had them spread across three.
+
+The first four edges are fitted against the chords the corpus names, with a
+floor under how narrow a band may be: let loose, the fitting squeezed each one
+down to a point and had every shape come out either trivial or inhuman, which
+satisfies the arithmetic and describes nothing. The top two are not fitted at
+all, because no chord anybody plays anchors them — they follow the width of the
+last band that is anchored, which is what keeps them within reach. Left free,
+they went where nothing pulled them and stretched one band from forty to four
+hundred.
 
 The number is shown beside the word, small: a word alone cannot say that one
 shape is at the top of its band and the next barely scraped in, and the

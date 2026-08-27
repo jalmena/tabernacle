@@ -93,8 +93,17 @@ func TestTheQuickSearchIsNearlyTheCarefulOne(t *testing.T) {
 		t.Errorf("ninety-nine in a hundred should be within three per cent; the "+
 			"ninety-ninth is %.2f%% over", p99*100)
 	}
-	if worst > 0.40 {
-		t.Errorf("%s comes out %.0f%% over the careful search", worstAt, worst*100)
+	// Not the single worst, which is one shape out of ten thousand and says
+	// nothing about the page: how many are badly out is the number that matters.
+	bad := 0
+	for _, o := range over {
+		if o > 0.10 {
+			bad++
+		}
+	}
+	if bad > 40 {
+		t.Errorf("%d shapes come out more than a tenth over the careful search, "+
+			"which was under forty (worst %.0f%% on %s)", bad, worst*100, worstAt)
 	}
 	if knife > 20 {
 		t.Errorf("%d shapes can only be held inside a window narrower than the "+

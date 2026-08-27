@@ -22,7 +22,7 @@ package voicing
 // Between the knuckles of two fingers side by side. This is the number the whole
 // model turns on: it does not change with the fret, and the frets it is compared
 // against run from 36.4 mm at the nut to 19.3 mm at the twelfth.
-var knuckleGap = 21.0
+var knuckleGap = 17.0
 
 // How far each finger reaches from its knuckle with the hand curled as it is for
 // playing, index to little finger.
@@ -32,7 +32,7 @@ var knuckleGap = 21.0
 // one reaches in that posture is not the order a ruler gives. These are fitted
 // like the costs, inside bounds a hand allows: the little finger reaches least,
 // which is why the sixth string costs it something without anybody saying so.
-var reach = [4]float64{85, 93, 88, 70}
+var reach = [4]float64{95.2, 91.84, 88, 86}
 
 // How hard it is to stretch two fingers by different amounts, index-middle,
 // middle-ring, ring-little.
@@ -54,7 +54,7 @@ var stiff = [3]float64{1.0, 1.5, 3.0}
 // not. Without it the model handed a three-note diagonal to the index, ring and
 // little fingers — which lies flatter on a neck whose frets are wider than the
 // knuckles are, and which nobody plays.
-var weak = [4]float64{0, 0, 0.54, 8.87}
+var weak = [4]float64{0, 0, 1.03, 3.07}
 
 // What each kind of demand costs.
 //
@@ -65,19 +65,19 @@ var weak = [4]float64{0, 0, 0.54, 8.87}
 // number that can only be changed by editing the file it lives in is a number
 // that gets changed one case at a time.
 var (
-	stretchCost = 0.0174 // per mm² reached past a finger's length
-	curlCost    = 0.0017 // per mm² pulled up short of it
-	freeFan     = 18.0   // degrees a finger points off straight without noticing
+	stretchCost = 0.0140 // per mm² reached past a finger's length
+	curlCost    = 0.0011 // per mm² pulled up short of it
+	freeFan     = 10.8   // degrees a finger points off straight without noticing
 	fanCost     = 0.055  // per degree² past that
-	spreadCost  = 0.0176 // per mm² a pair sits wider apart than its knuckles do
-	squeezeCost = 0.0060 // per mm² it sits closer
-	tendonCost  = 0.0028 // per mm² of difference between two fingers, times stiff
-	wristCost   = 0.0037 // per degree² turned past what the wrist gives
+	spreadCost  = 0.0123 // per mm² a pair sits wider apart than its knuckles do
+	squeezeCost = 0.0051 // per mm² it sits closer
+	tendonCost  = 0.0016 // per mm² of difference between two fingers, times stiff
+	wristCost   = 0.0025 // per degree² turned past what the wrist gives
 	// A barre is the index laid flat: it stops being a fingertip and becomes a
 	// bar, which is a different thing to ask and costs a flat amount plus the
 	// length of neck it covers.
-	barreCost     = 15.34
-	barreSpanCost = 0.327 // per mm of string it lies across
+	barreCost     = 11.23
+	barreSpanCost = 0.125 // per mm of string it lies across
 	thumbCost     = 9.0   // reaching over the top of the neck, which is a different hand
 	// Holding a note down cleanly. Two parts, and they are not the same kind of
 	// number. The first is geometry: nearer the nut more string is left ringing,
@@ -90,8 +90,8 @@ var (
 	// It stands for everything about the end of the neck that is not length —
 	// the nut being a hard stop the string cannot give against, and the wrist
 	// having to come further round to get there.
-	pressCost = 3.54
-	nutCost   = 45.17 // fitted against "half again as hard at the first fret"
+	pressCost = 0.8051
+	nutCost   = 45.53 // fitted against "half again as hard at the first fret"
 	// The turn of the wrist, in degrees from the neck. Nought lays the knuckles
 	// along the neck, a finger to a fret; ninety lays them across the strings,
 	// the fingers in a row on one. A forearm rests between the two and turning
@@ -102,7 +102,7 @@ var (
 	// always turn until the shape fitted perfectly and every pair of notes came
 	// out the same. Three notes apart on one string and one fret apart are not
 	// the same, and this is what tells them apart.
-	restTurn  = 53.0
+	restTurn  = 54.49
 	wristFrom = -12.0
 	wristTo   = 100.0
 )
@@ -111,16 +111,16 @@ var (
 // shape that is merely hard and one that is not a shape: past them the hand does
 // not go, and the answer stops being a number and becomes a refusal.
 var (
-	maxFan   = 42.0  // degrees a finger can point off straight ahead
-	maxReach = 1.10  // of its length, straightened out
-	minReach = 0.595 // of its length, curled up as far as it goes
+	maxFan   = 26.0 // degrees a finger can point off straight ahead
+	maxReach = 1.02 // of its length, straightened out
+	minReach = 0.35 // of its length, curled up as far as it goes
 )
 
 // damping is what muting a string in the middle of a shape costs.
 var damping = 4.0
 
 // gain turns what the placement costs into the numbers the levels are banded on.
-var gain = 0.55
+var gain = 0.6422
 
 // A string is harder to stop the thicker it is. Sixth to first, relative.
 var tension = [6]float64{1.30, 1.20, 1.12, 1.00, 0.94, 0.90}

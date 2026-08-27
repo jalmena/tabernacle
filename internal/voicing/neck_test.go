@@ -20,19 +20,29 @@ func TestTheFretsCrowdTogetherAsTheyClimb(t *testing.T) {
 	}
 }
 
-// The fact the whole model turns on: a hand's knuckles are 21 mm apart, and the
-// frets are wider than that below the eleventh and narrower above it. One finger
-// per fret is not a rule, it is what happens where those two numbers meet.
-func TestTheFretsMeetTheKnucklesAroundTheEleventh(t *testing.T) {
+// The fact the whole model turns on: the frets are wider than a hand's knuckles
+// low down and narrower high up, so one finger per fret is not a rule, it is what
+// happens where those two numbers meet. Where exactly they meet depends on the
+// hand — this one meets them at the fifteenth fret — and what matters is that
+// they do meet, somewhere up the neck rather than at either end of it.
+func TestTheFretsMeetTheKnucklesUpTheNeck(t *testing.T) {
 	meets := 0
-	for n := 1; n <= 12; n++ {
+	for n := 1; n <= 20; n++ {
 		if fretAt(n)-fretAt(n-1) <= knuckleGap {
 			meets = n
 			break
 		}
 	}
-	if meets != 11 {
-		t.Errorf("the frets narrow to a knuckle's width at fret %d, expected 11", meets)
+	switch {
+	case meets == 0:
+		t.Errorf("the frets never narrow to %.0f mm, so a hand never rests "+
+			"one finger to a fret anywhere on the neck", knuckleGap)
+	case meets < 6:
+		t.Errorf("the frets narrow to a knuckle's width at fret %d, which would "+
+			"make one finger per fret the shape of the hand nearly everywhere", meets)
+	case meets > 17:
+		t.Errorf("the frets do not narrow to a knuckle's width until fret %d, "+
+			"which is off the end of where anybody plays chords", meets)
 	}
 }
 

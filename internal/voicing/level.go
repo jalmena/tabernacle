@@ -54,7 +54,7 @@ func (l Level) Key() string {
 //
 // The two above them are anchored to nothing, so they are set close enough
 // together that the top band can actually be reached.
-var levels = [...]int{16, 40, 60, 75, 92, 112}
+var levels = [6]int{8, 16, 35, 43, 51, 59}
 
 // levelFor puts one strain into its band.
 func levelFor(strain int) Level {
