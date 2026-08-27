@@ -53,6 +53,14 @@ type entry struct {
 // YAML and quietly misreads it. Every file accepted here is also valid YAML
 // with the same meaning, so adopting a real YAML parser later would not be a
 // format break.
+// frontMatterLines is how many lines the metadata block takes up, delimiters
+// included. It is the same walk parseFrontMatter does, for callers that want to
+// know where the body starts and nothing else.
+func frontMatterLines(lines []string) (int, error) {
+	_, n, err := parseFrontMatter(lines)
+	return n, err
+}
+
 func parseFrontMatter(lines []string) ([]entry, int, error) {
 	if len(lines) == 0 || strings.TrimRight(lines[0], " \t") != frontMatterDelim {
 		return nil, 0, &SyntaxError{Line: 1, Key: "parse.start"}

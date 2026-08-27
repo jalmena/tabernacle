@@ -25,27 +25,7 @@ func Marshal(s Song) ([]byte, error) {
 	}
 
 	var b strings.Builder
-	b.WriteString(frontMatterDelim + "\n")
-	writeField(&b, "title", quoteIfNeeded(s.Title))
-	if s.Artist != "" {
-		writeField(&b, "artist", quoteIfNeeded(s.Artist))
-	}
-	if s.Key != "" {
-		writeField(&b, "key", quoteIfNeeded(s.Key))
-	}
-	if s.Capo != 0 {
-		writeField(&b, "capo", strconv.Itoa(s.Capo))
-	}
-	if s.Tuning != "" {
-		writeField(&b, "tuning", quoteIfNeeded(s.Tuning))
-	}
-	if s.Genre != "" {
-		writeField(&b, "genre", quoteIfNeeded(s.Genre))
-	}
-	if s.Notes != "" {
-		writeNotes(&b, s.Notes)
-	}
-	b.WriteString(frontMatterDelim + "\n")
+	b.WriteString(Front(s))
 
 	for _, sec := range s.Sections {
 		b.WriteString("\n")
@@ -69,6 +49,39 @@ func Marshal(s Song) ([]byte, error) {
 		}
 	}
 	return []byte(b.String()), nil
+}
+
+// Front writes just the metadata block, delimiters and all.
+//
+// Separate from Marshal because an editor that shows the fields one by one needs
+// to put them back together while the song is still half written — before there
+// is a title, which is the one thing Marshal insists on. What comes out of here
+// is checked when it is parsed, which is where a half-written song should be
+// told about it.
+func Front(s Song) string {
+	var b strings.Builder
+	b.WriteString(frontMatterDelim + "\n")
+	writeField(&b, "title", quoteIfNeeded(s.Title))
+	if s.Artist != "" {
+		writeField(&b, "artist", quoteIfNeeded(s.Artist))
+	}
+	if s.Key != "" {
+		writeField(&b, "key", quoteIfNeeded(s.Key))
+	}
+	if s.Capo != 0 {
+		writeField(&b, "capo", strconv.Itoa(s.Capo))
+	}
+	if s.Tuning != "" {
+		writeField(&b, "tuning", quoteIfNeeded(s.Tuning))
+	}
+	if s.Genre != "" {
+		writeField(&b, "genre", quoteIfNeeded(s.Genre))
+	}
+	if s.Notes != "" {
+		writeNotes(&b, s.Notes)
+	}
+	b.WriteString(frontMatterDelim + "\n")
+	return b.String()
 }
 
 func writeField(b *strings.Builder, key, value string) {

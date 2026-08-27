@@ -24,8 +24,7 @@ func Parse(data []byte) (Song, error) {
 	// carriage return is a line ending in every case and never content, so
 	// keeping one would put an invisible control character inside a lyric and
 	// then carry it into filenames and pages.
-	text = strings.ReplaceAll(text, "\r\n", "\n")
-	text = strings.ReplaceAll(text, "\r", "\n")
+	text = newlines(text)
 	lines := strings.Split(text, "\n")
 
 	entries, bodyStart, err := parseFrontMatter(lines)
@@ -243,4 +242,15 @@ func tokenizeLine(text string, line int) ([]Token, error) {
 	}
 	flush()
 	return toks, nil
+}
+
+// newlines makes every line ending the same one.
+//
+// A carriage return is a line ending and not content, whether it comes with a
+// newline after it or on its own, and everything that reads a song has to agree
+// about that — the parser and whatever takes a song apart alike, or one of them
+// finds a metadata block where the other does not.
+func newlines(text string) string {
+	text = strings.ReplaceAll(text, "\r\n", "\n")
+	return strings.ReplaceAll(text, "\r", "\n")
 }
