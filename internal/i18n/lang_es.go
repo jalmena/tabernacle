@@ -383,6 +383,7 @@ var spanish = map[string]string{
 	"editor.loaded":         "Cargado: %s",
 	"editor.line":           "Línea",
 	"editor.label":          "Contenido del archivo .song",
+	"editor.help.fields":    "Rellena lo que es la canción y luego ve añadiendo sus secciones.",
 	"editor.help.paste":     "Pega una canción en formato .song, o carga un archivo.",
 	"editor.help.chords":    "Los acordes van entre corchetes, donde caen:",
 	"editor.help.sections":  "Las secciones empiezan con",

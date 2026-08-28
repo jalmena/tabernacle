@@ -544,3 +544,16 @@ func Where(x, y float64) (str, fret float64) {
 	w := spreadAt(math.Max(0, x))
 	return (y + w/2) * 5 / w, fret
 }
+
+// KnuckleGap is how far apart two knuckles sit, in millimetres. The drawing
+// needs it to say how turned a hand is; nothing else outside this package does.
+func KnuckleGap() float64 { return knuckleGap }
+
+// FretMM is where a fractional fret position falls on the neck, in millimetres.
+// It is the way back from what Where gives.
+func FretMM(fret float64) float64 {
+	if fret <= 0 {
+		return fret * fretAt(1)
+	}
+	return scale * (1 - math.Pow(2, -fret/12))
+}

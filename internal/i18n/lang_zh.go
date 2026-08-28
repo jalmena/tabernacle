@@ -323,6 +323,7 @@ var chinese = map[string]string{
 	"editor.loaded":         "已载入：%s",
 	"editor.line":           "行",
 	"editor.label":          ".song 文件的内容",
+	"editor.help.fields":    "先填写歌曲信息，再逐段添加。",
 	"editor.help.paste":     "粘贴一首 .song 格式的歌，或者载入一个文件。",
 	"editor.help.chords":    "和弦写在方括号里，落在该落的地方：",
 	"editor.help.sections":  "段落以这样开头",

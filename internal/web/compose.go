@@ -101,7 +101,7 @@ func newlines(s string) string {
 // editor needs a script to reach it.
 func act(r *http.Request, c *composed, say *i18n.Printer) bool {
 	switch {
-	case r.PostFormValue("add") != "":
+	case r.PostFormValue("addnow") != "" && r.PostFormValue("add") != "":
 		kind := r.PostFormValue("add")
 		c.Parts.Sections = append(c.Parts.Sections, song.Part{
 			Label: sectionName(say, kind),

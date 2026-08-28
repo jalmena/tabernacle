@@ -323,6 +323,7 @@ var basque = map[string]string{
 	"editor.loaded":         "Kargatuta: %s",
 	"editor.line":           "Lerroa",
 	"editor.label":          ".song fitxategiaren edukia",
+	"editor.help.fields":    "Bete abestiaren datuak eta gero gehitu atalak banan-banan.",
 	"editor.help.paste":     "Itsatsi abesti bat .song formatuan, edo kargatu fitxategi bat.",
 	"editor.help.chords":    "Akordeak kortxete artean doaz, erortzen diren tokian:",
 	"editor.help.sections":  "Atalak honela hasten dira:",

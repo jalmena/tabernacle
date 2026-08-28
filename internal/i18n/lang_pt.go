@@ -323,6 +323,7 @@ var portuguese = map[string]string{
 	"editor.loaded":         "Carregado: %s",
 	"editor.line":           "Linha",
 	"editor.label":          "Conteúdo do ficheiro .song",
+	"editor.help.fields":    "Preenche o que é a música e depois vai acrescentando as secções.",
 	"editor.help.paste":     "Cola uma música em formato .song, ou carrega um ficheiro.",
 	"editor.help.chords":    "Os acordes vão entre parênteses retos, onde caem:",
 	"editor.help.sections":  "As secções começam com",

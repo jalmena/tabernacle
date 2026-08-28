@@ -323,6 +323,7 @@ var italian = map[string]string{
 	"editor.loaded":         "Caricato: %s",
 	"editor.line":           "Riga",
 	"editor.label":          "Contenuto del file .song",
+	"editor.help.fields":    "Compila che cos’è la canzone e poi aggiungi le sue sezioni.",
 	"editor.help.paste":     "Incolla una canzone in formato .song, o carica un file.",
 	"editor.help.chords":    "Gli accordi vanno fra parentesi quadre, dove cadono:",
 	"editor.help.sections":  "Le sezioni cominciano con",

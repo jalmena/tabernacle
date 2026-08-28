@@ -323,6 +323,7 @@ var russian = map[string]string{
 	"editor.loaded":         "Загружено: %s",
 	"editor.line":           "Строка",
 	"editor.label":          "Содержимое файла .song",
+	"editor.help.fields":    "Заполните, что это за песня, а затем добавляйте её части.",
 	"editor.help.paste":     "Вставь песню в формате .song или загрузи файл.",
 	"editor.help.chords":    "Аккорды идут в квадратных скобках, там где они падают:",
 	"editor.help.sections":  "Разделы начинаются с",

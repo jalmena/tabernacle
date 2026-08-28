@@ -705,49 +705,73 @@ func handFor(v voicing.Voicing, start int) *HandView {
 	}
 
 	// The hand is drawn foreshortened, because a palm sits the length of a finger
-	// off the fretboard — eight or nine string widths, which is wider than the
-	// neck itself. To scale, the knuckles would be off the side of the page and
-	// a reader would see four lines entering from the left.
+	// off the fretboard — eight or nine string widths, wider than the neck
+	// itself. To scale, the knuckles would be off the side of the page and a
+	// reader would see four lines entering from the left.
 	//
-	// So the knuckles are brought to a line just past the first string, which is
-	// the side a left hand comes over: the thumb goes behind the neck and the
-	// fingers curl over the edge nearest the floor, reaching across toward the
-	// sixth. What
-	// that keeps is the thing worth looking at: how far apart they sit **along**
-	// the neck, which is the whole of how the hand is turned. Knuckles bunched
-	// at one fret is a hand lying across the strings; knuckles spread down three
-	// is a hand lying along the neck with a finger to each. Where every tip
-	// lands, and which finger is on it, are exactly what the model used.
+	// The knuckles go on a line just past the first string, spaced by how far
+	// apart they really are **along the neck**, which is the whole of how the
+	// hand is turned: bunched at one fret is a hand lying across the strings,
+	// spread down three is a hand lying along it with a finger to each.
 	//
-	// What it gives up is the true angle of each finger, which cannot survive
-	// the squashing and is not what anybody is reading the picture for.
-	// And slid down the neck if the palm has ended up above the nut, which is
+	// Spaced that way and not by where each knuckle really sits. Squashing them
+	// onto a line while keeping the rest of each knuckle's position shortened
+	// every finger by a different amount, and two lines came out crossing when
+	// the fingers they stand for do not cross at all — a picture accusing the
+	// model of something it had not done.
+	span := knuckleFrets(held.Turn, ks[0].y)
+	mid := 0.0
+	for _, f := range h.Fingers {
+		mid += f.TipY
+	}
+	mid /= float64(len(h.Fingers))
+	top := mid - span*float64(len(h.Fingers)-1)/2
+
+	// And slid down the neck if the hand has ended up above the nut, which is
 	// where it goes for a hand lying across the strings. The drawing hangs
 	// outside the board on purpose, but a hand two frets above the first one is
-	// off the card and over whatever the page has put beside it.
-	//
-	// Sliding keeps what the picture is for. How far apart the knuckles sit
-	// along the neck is the whole of how the hand is turned, and that survives a
-	// slide; where the palm sits along the neck is not something a reader is
-	// reading off this drawing.
-	top, bottom := ks[0].y, ks[len(ks)-1].y
-	for _, k := range ks {
-		top, bottom = math.Min(top, k.y), math.Max(bottom, k.y)
-	}
+	// off the card and over whatever the page has put beside it. Sliding keeps
+	// what the picture is for, since the spacing survives it and where the palm
+	// sits along the neck is not something a reader reads off this drawing.
 	slide := 0.0
 	if top < -handOverhang {
 		slide = -handOverhang - top
 	}
-	if b := bottom + slide; b > float64(labFrets)+handOverhang {
+	if b := top + span*float64(len(h.Fingers)-1) + slide; b > float64(labFrets)+handOverhang {
 		slide -= b - float64(labFrets) - handOverhang
 	}
+	// The fingers are drawn from the middle of the hand rather than each from
+	// its own knuckle.
+	//
+	// Four lines from four points can only be drawn without lying if they are
+	// drawn to scale, and to scale they do not fit: a palm is further off the
+	// neck than the neck is wide. Every way of squashing them tried here put a
+	// crossing in the picture sooner or later, and a crossing says the hand is
+	// doing something it is not. Lines from one point cannot cross, and what the
+	// spread of the knuckles has to say is said by the line they sit on.
+	centre := top + span*float64(len(h.Fingers)-1)/2 + slide
 	for i := range h.Fingers {
 		h.Fingers[i].KnuckleX = handKnuckleLine
-		h.Fingers[i].KnuckleY += slide
+		h.Fingers[i].KnuckleY = centre
 	}
-	h.KnuckleX1, h.KnuckleY1 = handKnuckleLine, ks[0].y+slide
-	h.KnuckleX2, h.KnuckleY2 = handKnuckleLine, ks[len(ks)-1].y+slide
+	h.KnuckleX1, h.KnuckleY1 = handKnuckleLine, top+slide
+	h.KnuckleX2, h.KnuckleY2 = handKnuckleLine,
+		top+span*float64(len(h.Fingers)-1)+slide
 	return h
+}
+
+// knuckleFrets is how many frets apart two knuckles sit, at this turn and
+// around this part of the neck.
+//
+// Nought when the hand lies across the strings, most of a fret when it lies
+// along the neck near the nut, less than half of one high up where the frets
+// have closed in.
+func knuckleFrets(turn, near float64) float64 {
+	along := voicing.KnuckleGap() * math.Cos(turn*math.Pi/180)
+	at := math.Max(0, near)
+	_, a := voicing.Where(voicing.FretMM(at), 0)
+	_, b := voicing.Where(voicing.FretMM(at)+along, 0)
+	return math.Abs(b - a)
 }
 
 // handOverhang is how far past the drawn frets the knuckles may hang, in fret

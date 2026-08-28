@@ -323,6 +323,7 @@ var german = map[string]string{
 	"editor.loaded":         "Geladen: %s",
 	"editor.line":           "Zeile",
 	"editor.label":          "Inhalt der .song-Datei",
+	"editor.help.fields":    "Trag ein, was das Lied ist, und füge dann seine Abschnitte hinzu.",
 	"editor.help.paste":     "Füge ein Lied im .song-Format ein, oder lade eine Datei.",
 	"editor.help.chords":    "Akkorde stehen in eckigen Klammern, dort wo sie fallen:",
 	"editor.help.sections":  "Abschnitte fangen an mit",

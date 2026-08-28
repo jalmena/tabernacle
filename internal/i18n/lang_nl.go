@@ -323,6 +323,7 @@ var dutch = map[string]string{
 	"editor.loaded":         "Geladen: %s",
 	"editor.line":           "Regel",
 	"editor.label":          "Inhoud van het .song-bestand",
+	"editor.help.fields":    "Vul in wat het lied is en voeg daarna de delen een voor een toe.",
 	"editor.help.paste":     "Plak een liedje in .song-vorm, of laad een bestand.",
 	"editor.help.chords":    "Akkoorden staan tussen rechte haken, waar ze vallen:",
 	"editor.help.sections":  "Delen beginnen met",

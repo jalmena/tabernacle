@@ -37,10 +37,15 @@ type Part struct {
 	Body  string
 }
 
-// Take pulls a song apart. It reports the parse error rather than guessing when
-// the text is not a song yet.
+// Take pulls a song apart. It reports the error rather than guessing when the
+// text is not a song file at all.
+//
+// A song with no title yet is taken apart happily: an editor holds a half
+// written song most of the time, and refusing to show one as fields until it had
+// a title meant somebody who looked at the file and came back was told to name
+// their song before they could carry on typing it.
 func Take(text []byte) (Parts, error) {
-	s, err := Parse(text)
+	s, err := Draft(text)
 	if err != nil {
 		return Parts{}, err
 	}

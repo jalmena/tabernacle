@@ -323,6 +323,7 @@ var korean = map[string]string{
 	"editor.loaded":         "불러옴: %s",
 	"editor.line":           "줄",
 	"editor.label":          ".song 파일 내용",
+	"editor.help.fields":    "노래 정보를 채운 다음, 부분을 하나씩 추가하세요.",
 	"editor.help.paste":     ".song 형식의 노래를 붙여넣거나 파일을 불러오세요.",
 	"editor.help.chords":    "코드는 대괄호 안에, 떨어지는 자리에 씁니다:",
 	"editor.help.sections":  "구간은 이렇게 시작합니다",

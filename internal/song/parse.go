@@ -16,6 +16,26 @@ import (
 // is not a chord becomes an annotation rather than an error, because "[x2]"
 // and "[Chorus]" are things people really write.
 func Parse(data []byte) (Song, error) {
+	s, err := read(data)
+	if err != nil {
+		return Song{}, err
+	}
+	if err := Validate(s); err != nil {
+		return Song{}, err
+	}
+	return s, nil
+}
+
+// Draft reads a song without insisting it is finished.
+//
+// Everything about the shape of the file is still enforced — an unclosed fence
+// or a field that is not a field is a mistake whenever it is made — but a song
+// with no title yet is a song being written, not a broken one. The editor holds
+// one of those most of the time, and being told about the title belongs at the
+// moment of saving.
+func Draft(data []byte) (Song, error) { return read(data) }
+
+func read(data []byte) (Song, error) {
 	// Editors on Windows and some phone apps prepend a byte order mark.
 	text := strings.TrimPrefix(string(data), "\ufeff")
 
@@ -36,9 +56,6 @@ func Parse(data []byte) (Song, error) {
 		return Song{}, err
 	}
 	if s.Sections, err = parseBody(lines, bodyStart); err != nil {
-		return Song{}, err
-	}
-	if err := Validate(s); err != nil {
 		return Song{}, err
 	}
 	return s, nil

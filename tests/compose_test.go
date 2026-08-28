@@ -22,7 +22,7 @@ func TestASongCanBeAddedByFillingInFields(t *testing.T) {
 	// The empty form offers the sections a song is made of.
 	page := in.page("/songs/new")
 	for _, kind := range []string{"intro", "verse", "chorus", "solo"} {
-		if !strings.Contains(page, `name="add" value="`+kind+`"`) {
+		if !strings.Contains(page, `<option value="`+kind+`">`) {
 			t.Errorf("the form does not offer to add a %s", kind)
 		}
 	}
@@ -31,7 +31,7 @@ func TestASongCanBeAddedByFillingInFields(t *testing.T) {
 	form := url.Values{
 		"title": {"Prueba de campos"}, "artist": {"Nadie"},
 		"key": {"G"}, "capo": {"2"},
-		"add": {"verse"},
+		"add": {"verse"}, "addnow": {"1"},
 	}
 	res := in.post("/songs", form)
 	if res.Status != http.StatusOK {
@@ -48,6 +48,7 @@ func TestASongCanBeAddedByFillingInFields(t *testing.T) {
 	form.Set("label0", "Estrofa")
 	form.Set("body0", "la [G]la")
 	form.Set("add", "solo")
+	form.Set("addnow", "1")
 	res = in.post("/songs", form)
 	if res.Status != http.StatusOK {
 		t.Fatalf("adding a solo = %d, want 200", res.Status)
@@ -58,6 +59,7 @@ func TestASongCanBeAddedByFillingInFields(t *testing.T) {
 
 	// Saved.
 	form.Del("add")
+	form.Del("addnow")
 	form.Set("label1", "Solo")
 	form.Set("body1", "```tab\ne|-0-|\nB|----|\nG|----|\nD|----|\nA|----|\nE|----|\n```")
 	res = in.post("/songs", form)
@@ -152,4 +154,29 @@ func labels(body string) (string, string) {
 		return "", ""
 	}
 	return m[0][1], m[1][1]
+}
+
+// Looking at the file and coming back does not demand a title first.
+//
+// An editor holds a half-written song most of the time. Refusing to show one as
+// fields until it had a title meant somebody who glanced at the file was told to
+// name their song before they could carry on typing it.
+func TestGoingToTheFileAndBackDoesNotDemandATitle(t *testing.T) {
+	in := start(t, nil)
+	in.claim("jose")
+
+	res := in.post("/songs", url.Values{
+		"plain":   {"1"},
+		"text":    {"---\nartist: Nadie\n---\n\n## Estrofa\nla la\n"},
+		"fielder": {"1"},
+	})
+	if res.Status != http.StatusOK {
+		t.Fatalf("going back to the fields = %d, want 200", res.Status)
+	}
+	if !strings.Contains(res.Body, `name="artist" value="Nadie"`) {
+		t.Errorf("a song without a title did not come back as fields\n%s", res.Body)
+	}
+	if !strings.Contains(res.Body, `value="Estrofa"`) {
+		t.Error("its section did not come back either")
+	}
 }

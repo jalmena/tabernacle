@@ -323,6 +323,7 @@ var arabic = map[string]string{
 	"editor.loaded":         "حُمّل: %s",
 	"editor.line":           "السطر",
 	"editor.label":          "محتوى ملف ‎.song",
+	"editor.help.fields":    "املأ بيانات الأغنية ثم أضف أقسامها واحداً تلو الآخر.",
 	"editor.help.paste":     "ألصق أغنية بصيغة ‎.song، أو حمّل ملفًا.",
 	"editor.help.chords":    "تُكتب الأكورات بين قوسين معقوفين، حيث تقع:",
 	"editor.help.sections":  "تبدأ الأقسام بـ",

@@ -323,6 +323,7 @@ var indonesian = map[string]string{
 	"editor.loaded":         "Dimuat: %s",
 	"editor.line":           "Baris",
 	"editor.label":          "Isi berkas .song",
+	"editor.help.fields":    "Isi keterangan lagunya, lalu tambahkan bagian-bagiannya satu per satu.",
 	"editor.help.paste":     "Tempel sebuah lagu dalam format .song, atau muat sebuah berkas.",
 	"editor.help.chords":    "Kunci ditulis dalam kurung siku, tepat di tempatnya jatuh:",
 	"editor.help.sections":  "Bagian dimulai dengan",

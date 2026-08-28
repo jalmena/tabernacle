@@ -1641,4 +1641,13 @@ body.scripted select.tonepick { display: block; }
 	gap: 0.4rem;
 	margin: 0 0 1.2rem;
 }
+.addsection select {
+	font: inherit;
+	color: var(--ink);
+	background: var(--paper);
+	border: 1px solid var(--rule);
+	border-radius: var(--radius);
+	padding: 0.35rem 0.5rem;
+}
+.addsection .btn { padding-inline: 0.7rem; font-weight: 700; }
 .addlabel { font-size: 0.8125rem; color: var(--ink-faint); margin-right: 0.15rem; }

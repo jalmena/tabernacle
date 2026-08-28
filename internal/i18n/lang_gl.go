@@ -323,6 +323,7 @@ var galician = map[string]string{
 	"editor.loaded":         "Cargado: %s",
 	"editor.line":           "Liña",
 	"editor.label":          "Contido do ficheiro .song",
+	"editor.help.fields":    "Enche o que é a canción e despois vai engadindo as súas seccións.",
 	"editor.help.paste":     "Pega unha canción en formato .song, ou carga un ficheiro.",
 	"editor.help.chords":    "Os acordes van entre corchetes, onde caen:",
 	"editor.help.sections":  "As seccións comezan con",

@@ -323,6 +323,7 @@ var japanese = map[string]string{
 	"editor.loaded":         "読み込みました：%s",
 	"editor.line":           "行",
 	"editor.label":          ".song ファイルの中身",
+	"editor.help.fields":    "曲の情報を入力し、セクションを一つずつ追加してください。",
 	"editor.help.paste":     ".song 形式の曲を貼り付けるか、ファイルを読み込んでください。",
 	"editor.help.chords":    "コードは角かっこに入れ、落ちる位置に置きます：",
 	"editor.help.sections":  "セクションはこう始めます",

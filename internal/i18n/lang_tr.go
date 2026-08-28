@@ -323,6 +323,7 @@ var turkish = map[string]string{
 	"editor.loaded":         "Yüklendi: %s",
 	"editor.line":           "Satır",
 	"editor.label":          ".song dosyasının içeriği",
+	"editor.help.fields":    "Şarkının ne olduğunu doldurun, sonra bölümlerini tek tek ekleyin.",
 	"editor.help.paste":     ".song biçiminde bir şarkı yapıştır ya da bir dosya yükle.",
 	"editor.help.chords":    "Akorlar köşeli parantez içinde, düştükleri yerde durur:",
 	"editor.help.sections":  "Bölümler şununla başlar:",

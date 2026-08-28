@@ -323,6 +323,7 @@ var hindi = map[string]string{
 	"editor.loaded":         "लाई गई: %s",
 	"editor.line":           "पंक्ति",
 	"editor.label":          ".song फ़ाइल की सामग्री",
+	"editor.help.fields":    "गाने की जानकारी भरें, फिर उसके खंड एक-एक करके जोड़ें।",
 	"editor.help.paste":     ".song रूप में कोई गाना चिपकाएँ, या कोई फ़ाइल लाएँ।",
 	"editor.help.chords":    "कॉर्ड चौकोर कोष्ठकों में, ठीक वहीं जहाँ वे पड़ते हैं:",
 	"editor.help.sections":  "खंड इससे शुरू होते हैं",

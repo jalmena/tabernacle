@@ -367,6 +367,7 @@ var english = map[string]string{
 	"editor.loaded":         "Loaded: %s",
 	"editor.line":           "Line",
 	"editor.label":          "Contents of the .song file",
+	"editor.help.fields":    "Fill in what the song is, then add its sections one by one.",
 	"editor.help.paste":     "Paste a song in .song format, or load a file.",
 	"editor.help.chords":    "Chords go in brackets, where they fall:",
 	"editor.help.sections":  "Sections start with",

@@ -323,6 +323,7 @@ var catalan = map[string]string{
 	"editor.loaded":         "Carregat: %s",
 	"editor.line":           "Línia",
 	"editor.label":          "Contingut del fitxer .song",
+	"editor.help.fields":    "Omple què és la cançó i després ves afegint-ne les seccions.",
 	"editor.help.paste":     "Enganxa una cançó en format .song, o carrega un fitxer.",
 	"editor.help.chords":    "Els acords van entre claudàtors, on cauen:",
 	"editor.help.sections":  "Les seccions comencen amb",

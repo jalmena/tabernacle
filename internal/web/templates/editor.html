@@ -26,14 +26,19 @@
 			</p>
 		{{end}}
 
-		{{if not .Editing}}
-			<p class="count">
-				{{$.T "editor.help.paste"}}
+		{{/* What the page is for depends on which way the song is being edited.
+		     Filling in fields needs no explanation of a file format; typing the
+		     file does. */}}
+		<p class="count">
+			{{if .Compose.Plain}}
 				{{$.T "editor.help.chords"}} <code>A[G]mazing grace</code>.
 				{{$.T "editor.help.sections"}} <code>## {{$.T "editor.help.verse"}}</code>.
 				{{$.T "editor.help.header"}}
-			</p>
-		{{end}}
+			{{else}}
+				{{$.T "editor.help.fields"}}
+				{{$.T "editor.help.chords"}} <code>A[G]mazing grace</code>.
+			{{end}}
+		</p>
 
 		{{/* Two ways of editing the same song, and one way of saving it. Whichever
 		     is on screen, what the form posts is turned into the text of a .song
@@ -118,13 +123,18 @@
 					{{end}}
 				{{end}}
 
-				<div class="addsection">
-					<span class="addlabel">{{$.T "editor.add"}}</span>
-					{{range $.Body.Kinds}}
-						<button class="btn btn-quiet" type="submit" name="add" value="{{.Kind}}"
-						        formnovalidate>+ {{.Name}}</button>
-					{{end}}
-				</div>
+				{{/* One control rather than eight buttons: the list of section
+				     names is a choice, and a choice is a menu. The plus is the
+				     submit, so with no script it is two clicks and a round trip
+				     like everything else here. */}}
+				<p class="addsection">
+					<label class="addlabel" for="addkind">{{$.T "editor.add"}}</label>
+					<select id="addkind" name="add">
+						{{range $.Body.Kinds}}<option value="{{.Kind}}">{{.Name}}</option>{{end}}
+					</select>
+					<button class="btn" type="submit" name="addnow" value="1" formnovalidate
+					        title="{{$.T `editor.add`}}">+</button>
+				</p>
 
 				<div class="filters">
 					<button class="btn" type="submit">{{$.T "action.save"}}</button>

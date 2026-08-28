@@ -323,6 +323,7 @@ var polish = map[string]string{
 	"editor.loaded":         "Wczytano: %s",
 	"editor.line":           "Wiersz",
 	"editor.label":          "Zawartość pliku .song",
+	"editor.help.fields":    "Wypełnij, czym jest piosenka, a potem dodawaj jej sekcje.",
 	"editor.help.paste":     "Wklej piosenkę w formacie .song albo wczytaj plik.",
 	"editor.help.chords":    "Akordy idą w nawiasach kwadratowych, tam gdzie padają:",
 	"editor.help.sections":  "Sekcje zaczynają się od",

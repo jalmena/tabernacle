@@ -360,3 +360,52 @@ func TestTheDrawnHandStaysOnTheCard(t *testing.T) {
 		}
 	}
 }
+
+// The drawn fingers must not cross, because two crossing lines say the hand is
+// doing something it is not.
+//
+// They did. The knuckles were squashed onto a line while the rest of each
+// knuckle's position was kept, which shortened every finger by a different
+// amount and made two of them cross in the picture when they do not cross on
+// the neck. A guitarist saw it and said the model should be penalising that,
+// which it would have been right to do if it had been true.
+func TestTheDrawnFingersDoNotCross(t *testing.T) {
+	grips := []string{
+		"2-0-0-0-0-1", "x-3-2-0-1-0", "x-x-0-2-3-2", "0-2-2-1-0-0",
+		"1-3-3-2-1-1", "x-0-2-2-2-0", "3-2-0-0-0-3", "x-2-4-4-4-2",
+		"x-x-3-2-1-0", "x-x-0-2-3-1", "1-3-1-0-0-0", "5-x-x-7-x-x",
+		"x-5-7-7-6-5", "0-0-0-2-3-2", "3-x-0-0-0-3", "x-x-5-7-x-x",
+	}
+	for _, grip := range grips {
+		frets, ok := voicing.ParseGrip(grip)
+		if !ok {
+			t.Fatalf("%s: not a grip", grip)
+		}
+		b := boardFor(say, voicing.Voicing{Tuning: voicing.Standard(), Frets: frets}, 1, LabOptions{})
+		if b.Hand == nil {
+			continue
+		}
+		for i, a := range b.Hand.Fingers {
+			for _, c := range b.Hand.Fingers[i+1:] {
+				if cross(a, c) {
+					t.Errorf("%s: the lines for fingers %d and %d cross",
+						grip, a.Number, c.Number)
+				}
+			}
+		}
+	}
+}
+
+// cross reports whether two drawn fingers meet anywhere but their ends.
+func cross(a, b HandFinger) bool {
+	d := func(px, py, qx, qy, rx, ry float64) float64 {
+		return (qx-px)*(ry-py) - (qy-py)*(rx-px)
+	}
+	side := func(px, py, qx, qy, rx, ry, sx, sy float64) bool {
+		u := d(px, py, qx, qy, rx, ry)
+		v := d(px, py, qx, qy, sx, sy)
+		return (u > 0 && v < 0) || (u < 0 && v > 0)
+	}
+	return side(a.KnuckleX, a.KnuckleY, a.TipX, a.TipY, b.KnuckleX, b.KnuckleY, b.TipX, b.TipY) &&
+		side(b.KnuckleX, b.KnuckleY, b.TipX, b.TipY, a.KnuckleX, a.KnuckleY, a.TipX, a.TipY)
+}
