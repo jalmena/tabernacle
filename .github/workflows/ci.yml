@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, tabernacle]
     steps:
       - uses: actions/checkout@v4
 
@@ -52,7 +52,7 @@ jobs:
           go test ./internal/voicing -run FuzzGenerate        -fuzz FuzzGenerate         -fuzztime 20s
 
   image:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, tabernacle]
     steps:
       - uses: actions/checkout@v4
       - name: Build the container image
