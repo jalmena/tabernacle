@@ -272,6 +272,26 @@ func (x *Index) ByHash(ctx context.Context, hash string) (Record, bool, error) {
 	return r, true, nil
 }
 
+// ByTitle finds the songs with a title, compared the way the listing sorts
+// them: regardless of case, accents and a leading article.
+func (x *Index) ByTitle(ctx context.Context, title string) ([]Record, error) {
+	rows, err := x.db.QueryContext(ctx,
+		`SELECT`+selectColumns+` FROM songs s WHERE s.sort_title = ? ORDER BY s.sort_artist`, sortKey(title))
+	if err != nil {
+		return nil, fmt.Errorf("index: find songs by title: %w", err)
+	}
+	defer rows.Close()
+	var out []Record
+	for rows.Next() {
+		r, err := scanRecord(rows)
+		if err != nil {
+			return nil, fmt.Errorf("index: find songs by title: %w", err)
+		}
+		out = append(out, r)
+	}
+	return out, rows.Err()
+}
+
 // loadDetails fills in the chords of already-scanned records with one query
 // rather than one per song.
 func (x *Index) loadDetails(ctx context.Context, recs []*Record) error {

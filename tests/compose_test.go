@@ -3,6 +3,7 @@ package tests
 import (
 	"net/http"
 	"net/url"
+	"reflect"
 	"regexp"
 	"strings"
 	"testing"
@@ -103,11 +104,10 @@ func TestASectionCanBeThrownAwayAndMoved(t *testing.T) {
 	if res.Status != http.StatusOK {
 		t.Fatalf("removing = %d, want 200", res.Status)
 	}
-	if strings.Contains(res.Body, `value="Estrofa"`) {
-		t.Error("the section that was thrown away is still there")
-	}
-	if !strings.Contains(res.Body, `value="Coro"`) {
-		t.Error("the section after it went too")
+	// The names of the sections, not the page's whole text: the list of names
+	// offered for typing holds every kind of section whatever the song has.
+	if got := sectionsIn(res.Body); !reflect.DeepEqual(got, []string{"Intro", "Coro"}) {
+		t.Errorf("after throwing away the second, the sections are %v", got)
 	}
 }
 
@@ -144,6 +144,144 @@ func TestTheFileIsStillThereBehindTheFields(t *testing.T) {
 	if !strings.Contains(res.Body, `value="Ida y vuelta"`) || !strings.Contains(res.Body, `value="Estrofa"`) {
 		t.Errorf("the song did not come back as fields\n%s", res.Body)
 	}
+}
+
+// A chord sheet pasted into the file comes back as fields with its chords moved
+// into the words, since that is how a song copied off a page arrives.
+func TestAPastedChordSheetComesBackAsFields(t *testing.T) {
+	in := start(t, nil)
+	in.claim("jose")
+
+	res := in.post("/songs", url.Values{
+		"plain":   {"1"},
+		"text":    {"ESTRIBILLO:\nAm        G\nuna letra inventada\n"},
+		"fielder": {"1"},
+	})
+	if res.Status != http.StatusOK {
+		t.Fatalf("going to the fields = %d, want 200", res.Status)
+	}
+	if !strings.Contains(res.Body, `value="Estribillo"`) {
+		t.Errorf("the section was not recognised\n%s", res.Body)
+	}
+	if !strings.Contains(res.Body, "[Am]una letra [G]inventada") {
+		t.Errorf("the chords did not move into the words\n%s", res.Body)
+	}
+	// Still the add page, so Añadir is still the lit button.
+	if !strings.Contains(res.Body, `class="btn add on"`) {
+		t.Error("Añadir is not lit after a round trip in the editor")
+	}
+}
+
+// Ticked sections join into one where the first stood, under the name most of
+// them share, or the first one's when none has a majority.
+func TestTickedSectionsJoin(t *testing.T) {
+	in := start(t, nil)
+	in.claim("jose")
+
+	res := in.post("/songs", url.Values{
+		"title":  {"Juntas"},
+		"label0": {"Estrofa"}, "body0": {"uno"},
+		"label1": {"Coro"}, "body1": {"dos"},
+		"label2": {"Estrofa"}, "body2": {"tres"},
+		"label3": {"Puente"}, "body3": {"cuatro"},
+		"pick0": {"1"}, "pick1": {"1"}, "pick2": {"1"},
+		"merge": {"1"},
+	})
+	if res.Status != http.StatusOK {
+		t.Fatalf("joining = %d, want 200", res.Status)
+	}
+	if got := sectionsIn(res.Body); !reflect.DeepEqual(got, []string{"Estrofa", "Puente"}) {
+		t.Errorf("sections after joining = %v", got)
+	}
+	if !strings.Contains(res.Body, "uno\n\ndos\n\ntres") {
+		t.Errorf("the joined text is not one after the other\n%s", res.Body)
+	}
+
+	// A tie goes to the first.
+	res = in.post("/songs", url.Values{
+		"title":  {"Juntas"},
+		"label0": {"Coro"}, "body0": {"a"},
+		"label1": {"Estrofa"}, "body1": {"b"},
+		"pick0": {"1"}, "pick1": {"1"}, "merge": {"1"},
+	})
+	if got := sectionsIn(res.Body); !reflect.DeepEqual(got, []string{"Coro"}) {
+		t.Errorf("a tie went to %v, want the first", got)
+	}
+}
+
+// A section splits in two before a line, both halves keeping its name, and the
+// caret goes to the second half.
+func TestASectionSplitsAtALine(t *testing.T) {
+	in := start(t, nil)
+	in.claim("jose")
+
+	res := in.post("/songs", url.Values{
+		"title":  {"Partida"},
+		"label0": {"Estrofa"}, "body0": {"uno\ndos\n\ntres"},
+		"split0": {"1"}, "at": {"2"},
+	})
+	if res.Status != http.StatusOK {
+		t.Fatalf("splitting = %d, want 200", res.Status)
+	}
+	if got := sectionsIn(res.Body); !reflect.DeepEqual(got, []string{"Estrofa", "Estrofa"}) {
+		t.Errorf("sections after splitting = %v", got)
+	}
+	if !regexp.MustCompile(`name="body1"[^>]*autofocus`).MatchString(res.Body) {
+		t.Error("the caret is not put in the second half")
+	}
+}
+
+// Buttons that change nothing still do not save: ↑ on the first section, and
+// Enter in one of the fields.
+func TestANoOpIsNotASave(t *testing.T) {
+	in := start(t, nil)
+	in.claim("jose")
+
+	for name, extra := range map[string]url.Values{
+		"up on the first": {"up0": {"1"}},
+		"enter":           {"stay": {"1"}},
+	} {
+		form := url.Values{"title": {"Quieta"}, "label0": {"Estrofa"}, "body0": {"la la"}}
+		for k, v := range extra {
+			form[k] = v
+		}
+		if res := in.post("/songs", form); res.Status != http.StatusOK {
+			t.Errorf("%s answered %d, want the editor back", name, res.Status)
+		}
+	}
+	if files := in.songFiles(); len(files) != 0 {
+		t.Errorf("something was saved: %v", files)
+	}
+}
+
+// A new section goes after the one the caret is in when the page says which,
+// and at the end when it does not, as it must without a script.
+func TestANewSectionGoesWhereTheCaretIs(t *testing.T) {
+	in := start(t, nil)
+	in.claim("jose")
+
+	form := url.Values{
+		"title":  {"Orden"},
+		"label0": {"Intro"}, "body0": {"a"},
+		"label1": {"Final"}, "body1": {"b"},
+		"add": {"chorus"}, "addnow": {"1"}, "after": {"0"},
+	}
+	if got := sectionsIn(in.post("/songs", form).Body); !reflect.DeepEqual(got, []string{"Intro", "Estribillo", "Final"}) {
+		t.Errorf("after the first, sections = %v", got)
+	}
+	form.Del("after")
+	if got := sectionsIn(in.post("/songs", form).Body); !reflect.DeepEqual(got, []string{"Intro", "Final", "Estribillo"}) {
+		t.Errorf("with nowhere said, sections = %v", got)
+	}
+}
+
+// sectionsIn lists the section names an editor page holds, in order.
+func sectionsIn(body string) []string {
+	var out []string
+	for _, m := range labelRe.FindAllStringSubmatch(body, -1) {
+		out = append(out, m[1])
+	}
+	return out
 }
 
 var labelRe = regexp.MustCompile(`name="label\d+" value="([^"]*)"`)

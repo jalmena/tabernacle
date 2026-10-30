@@ -12,8 +12,8 @@
 
 		{{if .Report}}
 			<h2>{{$.T "import.result"}}</h2>
+			{{/* How many came in is in the banner at the top. */}}
 			{{if .Report.Added}}
-				<p class="count">{{plural (len .Report.Added) ($.T "import.added.one" (len .Report.Added)) ($.T "import.added" (len .Report.Added))}}</p>
 				<ul class="songlist">
 					{{range .Report.Added}}
 						<li><a href="/songs/{{.Slug}}"><span class="t">{{.Title}}</span>
@@ -36,7 +36,12 @@
 				<h2>{{$.T "import.skipped"}}</h2>
 				<ul class="songlist">
 					{{range .Report.Skipped}}
-						<li><span class="t">{{.Name}}</span> <span class="a">{{.Reason}}</span></li>
+						{{if .Slug}}
+							<li><a href="/songs/{{.Slug}}"><span class="t">{{.Name}}</span>
+								<span class="a">{{.Reason}}</span></a></li>
+						{{else}}
+							<li><span class="t">{{.Name}}</span> <span class="a">{{.Reason}}</span></li>
+						{{end}}
 					{{end}}
 				</ul>
 			{{end}}
@@ -49,10 +54,24 @@
 		<p class="count">
 			{{$.T "import.explain"}}
 		</p>
+		<p class="count">
+			{{$.T "import.sheets"}}
+		</p>
 
+		{{/* The artist is asked for once, for every chord sheet in the upload,
+		     since a sheet does not say who it is by and a folder of them is
+		     usually one artist's. A .song file already says, and keeps its own. */}}
 		<form method="post" action="/import" enctype="multipart/form-data" class="editor">
 			<input class="filepick" type="file" name="files" multiple
-			       accept=".song,.zip,text/plain,application/zip">
+			       accept=".song,.zip,.txt,text/plain,application/zip">
+			<p class="field narrow">
+				<label for="importartist">{{$.T "import.artist"}}</label>
+				<input id="importartist" name="artist" value="{{.Artist}}" autocomplete="off">
+			</p>
+			{{/* Filled in by the script as soon as files are chosen, with the ones
+			     the collection already has. Without it, the import itself leaves
+			     those out and the report says why. */}}
+			<div id="importknown" aria-live="polite"></div>
 			<div class="filters">
 				<button class="btn" type="submit">{{$.T "transfer.import"}}</button>
 				<a class="btn btn-quiet" href="/">{{$.T "action.cancel"}}</a>

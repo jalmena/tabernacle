@@ -150,6 +150,11 @@ func (l *Library) Artists(ctx context.Context) ([]index.ArtistCount, error) {
 // Stats summarises the collection.
 func (l *Library) Stats(ctx context.Context) (index.Stats, error) { return l.idx.Stats(ctx) }
 
+// WithTitle lists the songs that already have a title, by whoever.
+func (l *Library) WithTitle(ctx context.Context, title string) ([]index.Record, error) {
+	return l.idx.ByTitle(ctx, title)
+}
+
 // StartPeriodicSync rescans on an interval until the context is cancelled.
 //
 // A ticker rather than filesystem notifications, for reasons beyond avoiding a

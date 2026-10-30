@@ -239,12 +239,12 @@ document.body.classList.add("scripted");
 	});
 })();
 
-// Loading a file into the editor without a round trip.
+// Loading a file into the editor.
 //
-// The form behind this posts the file and the server sends the editor back with
-// the text in it, which is what happens with scripting off. When scripting is
-// available there is no reason to make the file travel: it is already on this
-// machine, so it is read here and dropped straight into the box.
+// Choosing the file is enough: the form goes to the server, which reads it — a
+// chord sheet included — and sends the editor back with the song in its fields.
+// With scripting off the noscript button does the same. The page that comes back
+// replaces whatever was typed, so that is asked about first.
 //
 // Nothing is saved either way. The reader still has to press Guardar, which is
 // the point — a file whose contents you never saw before it landed is how a
@@ -253,52 +253,225 @@ document.body.classList.add("scripted");
 	"use strict";
 
 	var input = document.getElementById("loadfile");
-	var box = document.getElementById("songtext");
-	if (!input || !box || typeof FileReader === "undefined") return;
-
+	if (!input) return;
 	var bar = input.closest("form");
 	if (!bar) return;
+	var editor = document.querySelector("form.editor");
 
-	function note(text) {
-		var el = bar.querySelector(".quiet");
-		if (!el) {
-			el = document.createElement("span");
-			el.className = "quiet";
-			var sep = bar.querySelector(".sep");
-			bar.insertBefore(el, sep || null);
+	function typed() {
+		if (!editor) return false;
+		var boxes = editor.querySelectorAll("input:not([type=hidden]), textarea");
+		for (var i = 0; i < boxes.length; i++) {
+			if (boxes[i].value.trim() !== "") return true;
 		}
-		el.textContent = text;
+		return false;
 	}
 
 	input.addEventListener("change", function () {
-		var file = input.files && input.files[0];
-		if (!file) return;
-
-		// Well past any real song, and small enough that reading it cannot
-		// become the problem.
-		if (file.size > 4 * 1024 * 1024) {
-			note("Ese archivo es demasiado grande.");
+		if (!input.files || !input.files[0]) return;
+		if (typed() && !window.confirm(bar.getAttribute("data-replace") || "")) {
+			input.value = "";
 			return;
 		}
+		bar.submit();
+	});
+})();
 
-		var reader = new FileReader();
-		reader.onload = function () {
-			var text = String(reader.result || "").replace(/\r\n?/g, "\n");
-			if (box.value.trim() !== "" && !window.confirm(
-				"Ya hay texto en el editor. ¿Reemplazarlo con el archivo?")) {
-				return;
+// The editor's keyboard, and the one button that needs to know where the caret is.
+//
+// Every action is still a button that goes to the server; this only presses
+// them, so the keyboard and the mouse cannot disagree about what happened.
+// Dividing a section needs the line the caret is on, which only a script can
+// tell, so that button stays disabled without one.
+(function () {
+	"use strict";
+
+	var form = document.querySelector("form.editor");
+	if (!form) return;
+	var at = form.querySelector("input[name=at]");
+	var after = form.querySelector("input[name=after]");
+	var merge = form.querySelector("[data-merge]");
+	var count = form.querySelector("[data-count]");
+	var current = null;
+
+	// The keys are worth showing only to somebody with a keyboard: the labels
+	// on the buttons, and the button that lists the rest. A Mac's keys are
+	// called what its keyboard calls them.
+	if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+		document.documentElement.classList.add("haskeys");
+		var keys = form.querySelector("[data-keys]");
+		if (keys) keys.hidden = false;
+		if (/Mac|iPhone|iPad/.test(navigator.platform || "")) {
+			[".hint", ".keys kbd"].forEach(function (sel) {
+				var labels = document.querySelectorAll(sel);
+				for (var k = 0; k < labels.length; k++) {
+					labels[k].textContent = labels[k].textContent
+						.replace(/\bAlt\b/, "⌥").replace(/\bCtrl\b/, "⌘");
+				}
+			});
+		}
+	}
+
+	function picks() { return form.querySelectorAll(".sectionpick:checked"); }
+
+	function press(button) {
+		if (!button) return;
+		button.disabled = false;
+		if (form.requestSubmit) form.requestSubmit(button);
+		else button.click();
+	}
+
+	// The line the second half starts on, counted the way the server counts it:
+	// past any blank lines at the top. A caret after the last word of a line
+	// divides after that line; anywhere else, before it.
+	function lineAt(box) {
+		var v = box.value, pos = box.selectionStart;
+		var lead = v.length - v.replace(/^\n+/, "").length;
+		var line = v.slice(lead, Math.max(pos, lead)).split("\n").length - 1;
+		var start = v.lastIndexOf("\n", pos - 1) + 1;
+		if ((pos >= v.length || v.charAt(pos) === "\n") && pos > start) line++;
+		return line;
+	}
+
+	function refresh() {
+		var splits = form.querySelectorAll("[data-split]");
+		for (var i = 0; i < splits.length; i++) {
+			splits[i].disabled = splits[i].closest(".songsection") !== current;
+		}
+		var n = picks().length;
+		if (merge) merge.disabled = n < 2;
+		if (count) count.textContent = n >= 2 ? "(" + n + ")" : "";
+	}
+
+	// Where the caret is, remembered as it moves, so that a button can be
+	// pressed after the caret has left the box to press it: the line to divide
+	// at, and the section a new one goes after.
+	function track(e) {
+		var box = e.target.closest ? e.target.closest(".songsection") : null;
+		if (box && after) {
+			after.value = Array.prototype.indexOf.call(form.querySelectorAll(".songsection"), box);
+		}
+		if (!e.target.matches || !e.target.matches(".sectionbody")) return;
+		current = box;
+		if (at) at.value = lineAt(e.target);
+		refresh();
+	}
+	["focusin", "keyup", "click", "select"].forEach(function (type) {
+		form.addEventListener(type, track);
+	});
+	form.addEventListener("change", function (e) {
+		if (e.target.matches(".sectionpick")) refresh();
+	});
+	// A section's box grows with what is typed into it, as it was drawn to fit
+	// what it held.
+	form.addEventListener("input", function (e) {
+		var box = e.target;
+		if (!box.matches(".sectionbody")) return;
+		while (box.scrollHeight > box.clientHeight && box.rows < 40) box.rows++;
+	});
+	// The page may have come back with the caret already in a section, put
+	// there before this script was listening.
+	track({ target: document.activeElement || form });
+	refresh();
+
+	form.addEventListener("keydown", function (e) {
+		var target = e.target;
+		if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key === "Enter") {
+			e.preventDefault();
+			press(form.querySelector("[data-save]"));
+			return;
+		}
+		// Enter in a one-line field is not a reason to send the form. In a
+		// section's name it means "done naming", so it goes on to the lines.
+		if (e.key === "Enter" && !e.altKey && target.tagName === "INPUT" && target.type !== "checkbox") {
+			e.preventDefault();
+			var section = target.closest(".songsection");
+			var lines = section && section.querySelector(".sectionbody");
+			if (lines && target.matches(".sectionlabel")) lines.focus();
+			return;
+		}
+		if (!e.altKey || e.ctrlKey || e.metaKey) return;
+
+		var box = (target.closest && target.closest(".songsection")) || current;
+		var button = null;
+		switch (e.code) {
+		case "Enter":
+		case "NumpadEnter":
+			if (box && target.matches(".sectionbody")) {
+				if (at) at.value = lineAt(target);
+				button = box.querySelector("[data-split]");
 			}
-			box.value = text;
-			note("Cargado: " + file.name);
-			box.focus();
-			box.setSelectionRange(0, 0);
-			box.scrollTop = 0;
-		};
-		reader.onerror = function () {
-			// Fall back to the form, which does the same thing server-side.
-			bar.submit();
-		};
-		reader.readAsText(file, "utf-8");
+			break;
+		case "ArrowUp":
+			button = box && box.querySelector("[data-up]");
+			break;
+		case "ArrowDown":
+			button = box && box.querySelector("[data-down]");
+			break;
+		case "KeyX":
+			if (box) {
+				var pick = box.querySelector(".sectionpick");
+				pick.checked = !pick.checked;
+				refresh();
+			}
+			e.preventDefault();
+			return;
+		case "KeyM":
+			// The ticked ones, or failing that this one and the next.
+			if (picks().length < 2 && box) {
+				var next = box.nextElementSibling;
+				if (next && next.matches(".songsection")) {
+					box.querySelector(".sectionpick").checked = true;
+					next.querySelector(".sectionpick").checked = true;
+				}
+			}
+			if (picks().length >= 2) button = merge;
+			break;
+		case "KeyN":
+			button = form.querySelector("button[name=addnow]");
+			break;
+		default:
+			return;
+		}
+		e.preventDefault();
+		press(button);
+	});
+})();
+
+// Saying, as soon as files are chosen for import, which of them the collection
+// already has and by whom, with a button that writes that artist in.
+//
+// Without a script the import itself leaves those songs out and the report
+// says why; this only says so before anything is sent.
+(function () {
+	"use strict";
+
+	var picker = document.querySelector(".filepick");
+	var known = document.getElementById("importknown");
+	var artist = document.getElementById("importartist");
+	if (!picker || !known || !artist) return;
+
+	picker.addEventListener("change", function () {
+		var params = new URLSearchParams();
+		Array.prototype.forEach.call(picker.files || [], function (file) {
+			if (/\.(song|zip)$/i.test(file.name)) return;
+			params.append("t", file.name.replace(/\.[^.]*$/, ""));
+		});
+		if (!params.toString()) {
+			known.innerHTML = "";
+			return;
+		}
+		fetch("/import/known?" + params.toString(), { headers: { "Accept": "text/html" } })
+			.then(function (r) { return r.ok ? r.text() : ""; })
+			.then(function (html) { known.innerHTML = html; })
+			.catch(function () { known.innerHTML = ""; });
+	});
+
+	known.addEventListener("click", function (e) {
+		var button = e.target.closest("[data-artist]");
+		if (!button) return;
+		artist.value = button.getAttribute("data-artist");
+		artist.focus();
 	});
 })();
 

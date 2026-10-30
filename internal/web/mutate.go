@@ -419,14 +419,14 @@ func (s *Server) handleCreateSong(w http.ResponseWriter, r *http.Request) {
 	s.redirect(w, r, "/songs/"+slug, "created")
 }
 
-// handleLoadIntoEditor takes an uploaded .song file and puts its text in the
-// editor, without saving anything.
+// handleLoadIntoEditor takes an uploaded file, a .song file or a chord sheet, and
+// puts it in the editor without saving anything.
 //
-// It is a round trip rather than a purely local read so that it works with
-// scripting off; app.js shortcuts it with a FileReader when it can. Either way
-// nothing is written until the reader presses Guardar, which is the point: an
-// upload you cannot see before it lands is how a collection fills with files
-// nobody meant to add.
+// It is a round trip whether or not scripting is on, because reading a sheet
+// into a song and drawing the fields from the result both happen here. Nothing
+// is written until the reader presses Guardar, which is the point: an upload you
+// cannot see before it lands is how a collection fills with files nobody meant
+// to add.
 func (s *Server) handleLoadIntoEditor(w http.ResponseWriter, r *http.Request) {
 	say := i18n.For(s.langFor(r))
 	body := editorBody{
@@ -479,7 +479,8 @@ func (s *Server) handleLoadIntoEditor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	body.Text = newlines(string(data))
+	body.Loaded = safeName(files[0].Filename)
+	body.Text = newlines(string(asSong(body.Loaded, "", say.T("section.verse"), data)))
 	// Shown as fields when the file can be taken apart, and as the file itself
 	// when it cannot — which for an upload is the useful half of the time, since
 	// a file somebody is loading is often one they are trying to fix.
@@ -488,7 +489,6 @@ func (s *Server) handleLoadIntoEditor(w http.ResponseWriter, r *http.Request) {
 	} else {
 		body.Compose = composed{Plain: true, Raw: body.Text}
 	}
-	body.Loaded = safeName(files[0].Filename)
 	// The text is shown, not saved. If it does not parse, the reader sees the
 	// line to fix before anything reaches the collection.
 	if _, err := song.Parse([]byte(body.Text)); err != nil {

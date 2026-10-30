@@ -23,7 +23,7 @@ telemetry. Reading needs no account; changing anything does.
 | **Capo advice** | where to clamp so a barred song becomes open chords, for the same sound |
 | **Play mode** | the sheet scrolls itself at the pace you set, big enough to read from a stand, screen kept awake |
 | **Print** | A4, light paper themes, no interface on the page |
-| **Authoring** | paste a song in, or edit the file directly |
+| **Authoring** | fill in fields section by section — join, split and move them from the keyboard — or edit the file directly; a sheet with the chords above the words is converted on the way in |
 | **Songbook** | pick any set of songs and print them as one document |
 | **Accounts** | optional; two roles, and reading stays public |
 | **Language** | 19 languages, per person; right-to-left where it belongs |

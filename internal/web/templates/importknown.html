@@ -1,0 +1,23 @@
+{{/* What the import page is told about the files somebody has just chosen: which
+     of them the collection already has, and a button per artist that fills in
+     the artist field. The script swaps this in under the field; empty when
+     there is nothing to say. */}}
+{{with .Body}}{{if .Songs}}
+<div class="importknown">
+	<p class="count">{{$.T "import.known"}}</p>
+	<ul class="songlist">
+		{{range .Songs}}
+			<li><a href="/songs/{{.Slug}}"><span class="t">{{.Title}}</span>
+				{{if .Artist}}<span class="a">{{.Artist}}</span>{{end}}</a></li>
+		{{end}}
+	</ul>
+	{{if .Artists}}
+		<p class="filters">
+			{{range .Artists}}
+				<button class="btn" type="button" data-artist="{{.}}">{{$.T "import.known.use" .}}</button>
+			{{end}}
+		</p>
+	{{end}}
+	<p class="count">{{$.T "import.known.note"}}</p>
+</div>
+{{end}}{{end}}

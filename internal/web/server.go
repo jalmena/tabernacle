@@ -110,6 +110,10 @@ func funcs() template.FuncMap {
 			}
 			return many
 		},
+		// rows sizes a text box to what it holds, so that a section is read
+		// whole rather than through a slot: a line more than it has, and never
+		// fewer than two nor more than forty.
+		"rows": func(s string) int { return min(max(strings.Count(s, "\n")+2, 2), 40) },
 	}
 }
 
@@ -163,6 +167,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /chords", s.handleChords)
 	mux.HandleFunc("GET /chords/fragment", s.handleChordFragment)
 	mux.HandleFunc("GET /import", s.handleImportForm)
+	mux.HandleFunc("GET /import/known", s.handleImportKnown)
 	mux.HandleFunc("GET /export", s.handleExport)
 
 	// Choosing and printing many songs at once. Reading, so public; linked from
@@ -324,7 +329,9 @@ func (s *Server) page(r *http.Request, titleKey string, body any) page {
 
 	section := ""
 	switch {
-	case path == "/songs/new" || path == "/import":
+	// The editor posts to /songs to add a section or turn to the file, and the
+	// page that comes back is still the add page.
+	case path == "/songs/new", path == "/songs" && r.Method == http.MethodPost:
 		section = "add"
 	case path == "/" || strings.HasPrefix(path, "/songs"):
 		section = "songs"
@@ -334,7 +341,7 @@ func (s *Server) page(r *http.Request, titleKey string, body any) page {
 		section = "genres"
 	case strings.HasPrefix(path, "/chords"):
 		section = "chords"
-	case strings.HasPrefix(path, "/settings"), strings.HasPrefix(path, "/songbook"):
+	case strings.HasPrefix(path, "/settings"), strings.HasPrefix(path, "/songbook"), path == "/import":
 		section = "settings"
 	}
 

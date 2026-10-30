@@ -6,15 +6,17 @@
 		<h1>{{.Title}}</h1>
 
 		{{if not .Editing}}
-			{{/* Loading a file lands its text in the box below rather than saving
+			{{/* Loading a file lands it in the editor below rather than saving
 			     it. Nothing reaches the collection until Guardar, so a file with
-			     a mistake in it can be seen and fixed first. */}}
-			<form class="loadbar" method="post" action="/songs/new" enctype="multipart/form-data">
-				<label class="btn btn-quiet" for="loadfile">{{$.T "editor.loadfile"}}</label>
+			     a mistake in it can be seen and fixed first. A chord sheet is read
+			     into fields on the way. */}}
+			<form class="loadbar" method="post" action="/songs/new" enctype="multipart/form-data"
+			      data-replace="{{$.T `editor.replace`}}">
+				<label class="btn" for="loadfile">{{$.T "editor.loadfile"}}</label>
 				<input id="loadfile" type="file" name="file" accept=".song,.txt,text/plain">
-				{{/* Choosing a file is enough: the script reads it here and drops
-				     the text in the box below. With scripting off there is nothing
-				     to trigger that, so the button appears only in that case. */}}
+				{{/* Choosing a file is enough: the script sends the form. With
+				     scripting off there is nothing to trigger that, so the button
+				     appears only in that case. */}}
 				<noscript><button class="btn btn-quiet" type="submit">{{$.T "editor.load"}}</button></noscript>
 				{{if .Loaded}}<span class="quiet">{{$.T "editor.loaded" .Loaded}}</span>{{end}}
 			</form>
@@ -34,6 +36,7 @@
 				{{$.T "editor.help.chords"}} <code>A[G]mazing grace</code>.
 				{{$.T "editor.help.sections"}} <code>## {{$.T "editor.help.verse"}}</code>.
 				{{$.T "editor.help.header"}}
+				{{$.T "editor.help.sheet" ($.T "editor.byfields")}}
 			{{else}}
 				{{$.T "editor.help.fields"}}
 				{{$.T "editor.help.chords"}} <code>A[G]mazing grace</code>.
@@ -57,21 +60,36 @@
 				          autocomplete="off" aria-label="{{$.T `editor.label`}}"
 				          placeholder="{{.Placeholder}}">{{.Text}}</textarea>
 				<div class="filters">
-					<button class="btn" type="submit">{{$.T "action.save"}}</button>
+					<button class="btn btn-primary" type="submit" data-save
+					        title="{{$.T `action.save`}} (Ctrl+{{$.T `key.enter`}})">{{$.T "action.save"}}
+						<kbd class="hint" dir="ltr">Ctrl ↵</kbd></button>
 					<button class="btn btn-quiet" type="submit" name="fielder" value="1"
 					        formnovalidate>{{$.T "editor.byfields"}}</button>
 					<a class="btn btn-quiet" href="{{.CancelURL}}">{{$.T "action.cancel"}}</a>
 				</div>
 			{{else}}
+				{{/* Enter in a one-line field sends the form by the first submit
+				     button in it, which would otherwise be the first section's ↑
+				     or the + that adds one. This is first instead, and does
+				     nothing but come back. */}}
+				<button type="submit" name="stay" value="1" hidden tabindex="-1" formnovalidate></button>
+				{{/* Where the caret is, filled in by the script: the line a section
+				     is divided at, and the section a new one goes after. Without
+				     a script a new section goes at the end. */}}
+				<input type="hidden" name="at" value="">
+				<input type="hidden" name="after" value="">
+				<datalist id="sectionnames">
+					{{range .Kinds}}<option value="{{.Name}}">{{end}}
+				</datalist>
 				{{with .Compose.Parts}}
 					<fieldset class="songfields">
 						<legend>{{$.T "editor.about"}}</legend>
-						<p class="field wide">
+						<p class="field half">
 							<label for="f-title">{{$.T "editor.field.title"}}</label>
 							<input id="f-title" name="title" value="{{.Title}}" required
 							       autocomplete="off" spellcheck="false">
 						</p>
-						<p class="field wide">
+						<p class="field half">
 							<label for="f-artist">{{$.T "editor.field.artist"}}</label>
 							<input id="f-artist" name="artist" value="{{.Artist}}" autocomplete="off">
 						</p>
@@ -104,40 +122,97 @@
 						<fieldset class="songsection">
 							<legend class="sr">{{$.T "editor.section" (add $i 1)}}</legend>
 							<div class="sectionhead">
+								<input class="sectionpick" type="checkbox" name="pick{{$i}}" value="1"
+								       title="{{$.T `editor.section.pick`}} (Alt+X)"
+								       aria-label="{{$.T `editor.section.pick`}}">
 								<input class="sectionlabel" name="label{{$i}}" value="{{$sec.Label}}"
-								       autocomplete="off" aria-label="{{$.T `editor.section.name`}}"
+								       list="sectionnames" autocomplete="off"
+								       aria-label="{{$.T `editor.section.name`}}"
 								       placeholder="{{$.T `editor.section.name`}}">
+								{{/* Line icons drawn in the text colour, so they follow the
+								     theme; the name of each is its title. Removing stands a
+								     little apart, being the one that cannot be taken back. */}}
 								<span class="sectiontools">
+									{{/* Dividing needs the line the caret is on, which only
+									     the script can tell, so it is enabled there and only
+									     for the section the caret is in. */}}
+									<button class="btn btn-icon" type="submit" name="split{{$i}}" value="1"
+									        formnovalidate disabled data-split
+									        title="{{$.T `editor.section.split`}} (Alt+{{$.T `key.enter`}})"><svg
+									        class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle
+									        cx="6" cy="7" r="2.6"/><circle cx="6" cy="17" r="2.6"/><path
+									        d="M8.3 8.4 20 17.5M8.3 15.6 20 6.5"/></svg></button>
 									<button class="btn btn-icon" type="submit" name="up{{$i}}" value="1"
-									        formnovalidate title="{{$.T `editor.section.up`}}">↑</button>
+									        formnovalidate data-up title="{{$.T `editor.section.up`}} (Alt+↑)"><svg
+									        class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path
+									        d="M12 19V5M5.5 11.5 12 5l6.5 6.5"/></svg></button>
 									<button class="btn btn-icon" type="submit" name="down{{$i}}" value="1"
-									        formnovalidate title="{{$.T `editor.section.down`}}">↓</button>
+									        formnovalidate data-down title="{{$.T `editor.section.down`}} (Alt+↓)"><svg
+									        class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path
+									        d="M12 5v14M18.5 12.5 12 19l-6.5-6.5"/></svg></button>
 									<button class="btn btn-icon danger" type="submit" name="del{{$i}}" value="1"
-									        formnovalidate title="{{$.T `editor.section.remove`}}">🗑</button>
+									        formnovalidate title="{{$.T `editor.section.remove`}}"><svg
+									        class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path
+									        d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l.9 12.2a1.5 1.5 0 0 0 1.5 1.3h6.2a1.5 1.5 0 0 0 1.5-1.3L17.5 7M10 11v6M14 11v6"/></svg></button>
 								</span>
 							</div>
-							<textarea class="sectionbody" name="body{{$i}}" rows="6" spellcheck="false"
+							<textarea class="sectionbody" name="body{{$i}}" rows="{{rows $sec.Body}}" spellcheck="false"
 							          autocapitalize="off" autocomplete="off"
+							          {{if eq (add $i 1) $.Body.Compose.Focus}}autofocus{{end}}
 							          aria-label="{{$.T `editor.section.lines`}}">{{$sec.Body}}</textarea>
 						</fieldset>
 					{{end}}
 				{{end}}
 
-				{{/* One control rather than eight buttons: the list of section
-				     names is a choice, and a choice is a menu. The plus is the
-				     submit, so with no script it is two clicks and a round trip
-				     like everything else here. */}}
-				<p class="addsection">
-					<label class="addlabel" for="addkind">{{$.T "editor.add"}}</label>
-					<select id="addkind" name="add">
-						{{range $.Body.Kinds}}<option value="{{.Kind}}">{{.Name}}</option>{{end}}
-					</select>
-					<button class="btn" type="submit" name="addnow" value="1" formnovalidate
-					        title="{{$.T `editor.add`}}">+</button>
-				</p>
+				{{/* The bar that stays at the foot of the screen while the
+				     sections scroll past it: saving, adding a section and joining
+				     the ticked ones are always within reach, however long the
+				     song. One control for adding rather than eight buttons, since
+				     the list of section names is a choice and a choice is a menu.
+
+				     The small key labels show only where there is a keyboard and
+				     a script to listen to it; the rest of the shortcuts are behind
+				     the last button, for the same reason. */}}
+				<div class="editbar">
+					<button class="btn btn-primary" type="submit" data-save
+					        title="{{$.T `action.save`}} (Ctrl+{{$.T `key.enter`}})">{{$.T "action.save"}}
+						<kbd class="hint" dir="ltr">Ctrl ↵</kbd></button>
+					<span class="addsection">
+						<label class="addlabel" for="addkind">{{$.T "editor.add"}}</label>
+						<select id="addkind" name="add">
+							{{range $.Body.Kinds}}<option value="{{.Kind}}">{{.Name}}</option>{{end}}
+						</select>
+						<button class="btn" type="submit" name="addnow" value="1" formnovalidate
+						        title="{{$.T `editor.add`}} (Alt+N)">+</button>
+					</span>
+					{{if gt (len .Compose.Parts.Sections) 1}}
+						<button class="btn merge" type="submit" name="merge" value="1" formnovalidate data-merge
+						        title="{{$.T `editor.merge.hint`}} (Alt+M)">{{$.T "editor.merge"}}
+							<span class="mergecount" data-count></span>
+							<kbd class="hint" dir="ltr">Alt M</kbd></button>
+					{{end}}
+					<button class="btn btn-quiet keysbtn" type="button" popovertarget="keys" hidden data-keys>
+						<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect
+						     x="2.5" y="6" width="19" height="12" rx="2"/><path
+						     d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M8 14h8"/></svg>
+						{{$.T "editor.keys"}}</button>
+				</div>
+
+				{{/* Every shortcut, with what it does. Opened from the bar, closed by
+				     Esc or a click anywhere else; the browser does both. */}}
+				<div id="keys" class="keys" popover>
+					<p class="keystitle">{{$.T "editor.keys"}}</p>
+					<dl>
+						<dt dir="ltr"><kbd>Ctrl</kbd> <kbd>↵</kbd></dt><dd>{{$.T "editor.key.save"}}</dd>
+						<dt dir="ltr"><kbd>Alt</kbd> <kbd>↵</kbd></dt><dd>{{$.T "editor.key.split"}}</dd>
+						<dt dir="ltr"><kbd>Alt</kbd> <kbd>X</kbd></dt><dd>{{$.T "editor.key.pick"}}</dd>
+						<dt dir="ltr"><kbd>Alt</kbd> <kbd>M</kbd></dt><dd>{{$.T "editor.key.merge"}}</dd>
+						<dt dir="ltr"><kbd>Alt</kbd> <kbd>↑</kbd> <kbd>↓</kbd></dt><dd>{{$.T "editor.key.move"}}</dd>
+						<dt dir="ltr"><kbd>Alt</kbd> <kbd>N</kbd></dt><dd>{{$.T "editor.key.add"}}</dd>
+					</dl>
+				</div>
 
 				<div class="filters">
-					<button class="btn" type="submit">{{$.T "action.save"}}</button>
 					<button class="btn btn-quiet" type="submit" name="plainer" value="1"
 					        formnovalidate>{{$.T "editor.byfile"}}</button>
 					<a class="btn btn-quiet" href="{{.CancelURL}}">{{$.T "action.cancel"}}</a>

@@ -30,13 +30,15 @@ func TestTheScriptLooksForThingsThatExist(t *testing.T) {
 
 	// Enough of the application that every state the script reaches into is
 	// rendered somewhere: the chord page, a song, both print views, the login
-	// form, and a page carrying a notice.
+	// form, the editor empty and with sections, the import page and what it is
+	// told about files it holds, and a page carrying a notice.
 	ts := newTestServer(t, basicSongs())
 	pages := []string{}
 	for _, path := range []string{
 		"/chords?c=F", "/chords?c=Am7&all=1", "/chords/fragment?c=C&start=5",
 		"/songs/traditional-amazing-grace", "/songs/traditional-amazing-grace/print",
-		"/songbook", "/songbook/print?all=1", "/login", "/",
+		"/songbook", "/songbook/print?all=1", "/login", "/songs/new",
+		"/songs/traditional-amazing-grace/edit", "/import", "/import/known?t=Amazing+Grace", "/",
 	} {
 		pages = append(pages, ts.get(t, path).Body.String())
 	}

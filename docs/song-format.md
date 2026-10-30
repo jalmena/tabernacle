@@ -63,6 +63,34 @@ breaks every alignment on the page, and the whole thing cannot be reflowed onto
 a phone screen. A two-line layout can always be *rendered* from inline chords;
 the reverse is guesswork.
 
+That guess is made once, at the door, and never in the file. A chord sheet —
+text with no metadata block, the chords on the line above the words — is read
+into sections when it is loaded into the editor, pasted into the file view and
+taken back to the fields, or uploaded as a text file on the import page.
+
+- Each chord moves into the words at the column it stood over, or onto the next
+  word when it stood over a gap.
+- Solfege, in capitals or not (`LAm`, `Mi7`), becomes letter names.
+- Lines such as `Intro:`, `ESTRIBILLO` or `-----coro-----` become headings. The
+  first unnamed stanza after one of them starts a verse, and everything up to
+  the next name stays in it, so a sheet with a blank line after every line does
+  not come apart into a section per line.
+- Three or more rows of dashes and frets become a fenced tablature, with or
+  without string names and bars; a single row of dashes is a gap.
+- `Cejilla en 2` becomes `capo: 2`.
+- Words written entirely in capitals are brought down to sentence case. Names
+  lose their capital with them.
+
+The title comes from the file name and, on import, the artist from a field on
+the form. A sheet whose title the collection already has is left out: with no
+artist given, whoever it is by; with one, only if that artist has it. The import
+page says which titles are already there as soon as the files are chosen.
+
+The result is something to check: in the editor before saving, or on the page
+the import report links to. The editor joins ticked sections and splits one at
+the caret, so a section the guess got wrong is two keystrokes to put right. A
+file named `.song` is never read this way, however broken.
+
 ## Metadata
 
 The metadata block is a deliberately small subset of YAML: flat fields, scalar

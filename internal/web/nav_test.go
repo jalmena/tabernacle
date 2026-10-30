@@ -250,6 +250,46 @@ func TestLoadingAFileFillsTheEditorWithoutSaving(t *testing.T) {
 	}
 }
 
+// A chord sheet loads into the fields with its chords moved into the words and
+// its title taken from the file's name, to be checked before it is saved.
+func TestLoadingAChordSheetFillsTheFields(t *testing.T) {
+	ts := newTestServer(t, nil)
+
+	sheet := "Intro: Am G\n\nAm        G\nuna letra inventada\n"
+	w := ts.uploadField(t, "file", "/songs/new", "Una prueba.txt", []byte(sheet))
+	if w.Code != http.StatusOK {
+		t.Fatalf("loading = %d\n%s", w.Code, w.Body.String())
+	}
+	body := w.Body.String()
+	for _, want := range []string{`name="title" value="Una prueba"`, `value="Intro"`, "[Am]una letra [G]inventada"} {
+		if !strings.Contains(body, want) {
+			t.Errorf("the editor has no %q:\n%s", want, body)
+		}
+	}
+	if stats, _ := ts.lib.Stats(contextTODO()); stats.Songs != 0 {
+		t.Error("loading a sheet saved it")
+	}
+}
+
+// Import and export is one of the settings pages, so Ajustes is what is lit in
+// the header there, not Añadir.
+func TestImportLightsSettingsInTheHeader(t *testing.T) {
+	ts := newTestServer(t, basicSongs())
+	ts.as(t, "jose", account.RoleAdmin)
+
+	for target, lit := range map[string]string{"/import": "account", "/songs/new": "add"} {
+		body := ts.get(t, target).Body.String()
+		header := body[strings.Index(body, `class="top`):]
+		header = header[:strings.Index(header, "</header>")]
+		for _, button := range []string{"add", "account"} {
+			on := strings.Contains(header, `class="btn `+button+` on"`)
+			if on != (button == lit) {
+				t.Errorf("%s: %s lit = %v", target, button, on)
+			}
+		}
+	}
+}
+
 func TestLoadingABrokenFileShowsTheLine(t *testing.T) {
 	ts := newTestServer(t, nil)
 	broken := []byte("---\ntitle: Roto\ntitel: mal\n---\n")

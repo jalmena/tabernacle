@@ -984,6 +984,8 @@ input[type="file"].filepick::file-selector-button {
 	cursor: pointer;
 }
 input[type="file"].filepick::file-selector-button:hover { border-color: var(--accent); }
+/* A field that belongs to the file picker above it, and is as wide. */
+.field.narrow { max-width: 32rem; }
 input[type="file"].filepick:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
 /* The account list. A row per person, not a table: four things to do with an
@@ -1586,12 +1588,18 @@ body.scripted select.tonepick { display: block; }
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
 	gap: 0 1rem;
+	/* A fieldset is as wide as its widest content unless told otherwise. */
+	min-inline-size: 0;
 }
 .songfields legend { padding: 0 0.4rem; font-weight: 600; font-size: 0.9rem; }
 .field { margin: 0 0 0.8rem; display: flex; flex-direction: column; gap: 0.25rem; }
-/* The title, the artist and the notes are worth a whole row; a capo is not. */
-.field.wide { grid-column: 1 / -1; }
-.field label { font-size: 0.8125rem; color: var(--ink-faint); }
+/* The notes are worth a whole row and a capo is not. The title and the artist
+ * share one where there is room for both. */
+.field.wide, .field.half { grid-column: 1 / -1; }
+@media (min-width: 40rem) {
+	.field.half { grid-column: span 2; }
+}
+.field label { font-size: 0.8125rem; color: var(--ink-soft); }
 .field input, .field textarea, .sectionlabel, .sectionbody {
 	font: inherit;
 	color: var(--ink);
@@ -1616,31 +1624,92 @@ body.scripted select.tonepick { display: block; }
 	border-radius: var(--radius);
 	padding: 0.7rem 0.8rem 0.8rem;
 	margin: 0 0 0.7rem;
+	/* Without this a phone's section is as wide as its row of buttons, and the
+	 * last of them end up off the screen. */
+	min-inline-size: 0;
+	transition-property: border-color, background-color;
+	transition-duration: 150ms;
+	transition-timing-function: ease-out;
 }
+/* The section the keyboard will act on, and the ones ticked to be joined, can
+ * be told apart from the rest at a glance. */
+.songsection:focus-within { border-color: var(--ink-faint); }
+.songsection:has(.sectionpick:checked) { border-color: var(--accent); background: var(--chord-bg); }
 .sectionhead {
 	display: flex;
+	flex-wrap: wrap;
 	align-items: center;
 	gap: 0.5rem;
 	margin-bottom: 0.5rem;
 }
-.sectionlabel { flex: 1 1 auto; font-weight: 600; }
-.sectiontools { display: flex; gap: 0.25rem; flex: 0 0 auto; }
+.sectionlabel { flex: 1 1 8rem; font-weight: 600; }
+.sectiontools { display: flex; gap: 0.15rem; flex: 0 0 auto; margin-inline-start: auto; }
 .btn-icon {
-	padding: 0.25rem 0.5rem;
-	line-height: 1.1;
+	padding: 0;
+	color: var(--ink-soft);
 	background: none;
 	border: 1px solid transparent;
+	transition-property: color, border-color, background-color;
+	transition-duration: 150ms;
+	transition-timing-function: ease-out;
 }
-.btn-icon:hover { border-color: var(--rule); }
-.btn-icon.danger:hover { border-color: var(--rule); color: var(--accent); }
+.btn-icon:hover { color: var(--ink); border-color: var(--rule); background: var(--paper-raised); }
+/* Removing is the one that cannot be taken back, so it stands a little apart. */
+.btn-icon.danger { margin-inline-start: 0.5rem; }
+.btn-icon.danger:hover { color: var(--accent); }
+.songsection:focus-within [data-split]:enabled { color: var(--accent); }
+.btn:disabled { opacity: 0.45; cursor: default; }
+.btn-icon:disabled { opacity: 0.3; }
+.btn-icon:disabled:hover { border-color: transparent; background: none; }
 
-.addsection {
+/* Line icons, drawn in the colour of the text around them. */
+.icon {
+	inline-size: 1.125rem;
+	block-size: 1.125rem;
+	flex: 0 0 auto;
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 1.75;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
+/* Ticking sections to join them. A real box, big enough to hit. */
+.sectionpick { inline-size: 1.15rem; block-size: 1.15rem; flex: 0 0 auto; accent-color: var(--accent); }
+
+/* The bar at the foot of the editor, which stays on screen while the sections
+ * scroll under it. On a phone it would take a row from the words for good, so
+ * there it stays where it falls. */
+.editbar {
+	position: sticky;
+	inset-block-end: 0;
+	z-index: 5;
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
-	gap: 0.4rem;
-	margin: 0 0 1.2rem;
+	gap: 0.5rem 0.75rem;
+	margin: 0.4rem -0.875rem 1rem;
+	padding: 0.6rem 0.875rem;
+	background: var(--paper-raised);
+	border-block-start: 1px solid var(--rule);
+	box-shadow: 0 -6px 16px rgb(0 0 0 / 6%);
 }
+/* Where the screen has room, the bar reaches past the column of words so that
+ * everything in it fits on one row. */
+@media (min-width: 64rem) {
+	.editbar { margin-inline: -7rem; padding-inline: 1.25rem; }
+}
+@media (max-width: 40rem) {
+	.editbar {
+		position: static;
+		margin-inline: 0;
+		padding-inline: 0;
+		background: none;
+		border: 0;
+		box-shadow: none;
+	}
+}
+.addsection { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; }
 .addsection select {
 	font: inherit;
 	color: var(--ink);
@@ -1650,4 +1719,65 @@ body.scripted select.tonepick { display: block; }
 	padding: 0.35rem 0.5rem;
 }
 .addsection .btn { padding-inline: 0.7rem; font-weight: 700; }
-.addlabel { font-size: 0.8125rem; color: var(--ink-faint); margin-right: 0.15rem; }
+.addlabel { font-size: 0.8125rem; color: var(--ink-soft); margin-inline-end: 0.15rem; }
+.merge { font-weight: 600; }
+.mergecount:empty { display: none; }
+.keysbtn { margin-inline-start: auto; }
+.keysbtn[hidden] { display: none; }
+
+kbd {
+	font: inherit;
+	font-size: 0.75rem;
+	padding: 0 0.3rem;
+	border: 1px solid var(--rule);
+	border-bottom-width: 2px;
+	border-radius: 4px;
+	background: var(--paper);
+	color: var(--ink);
+}
+/* The key on a button, shown only where there is a keyboard and a script
+ * listening to it. */
+.btn .hint {
+	display: none;
+	margin-inline-start: 0.3rem;
+	font-size: 0.6875rem;
+	font-weight: 500;
+	color: var(--ink-soft);
+	white-space: nowrap;
+}
+.btn-primary .hint { color: inherit; background: transparent; border-color: currentColor; opacity: 0.8; }
+@media (hover: hover) and (pointer: fine) {
+	.haskeys .btn .hint { display: inline-block; }
+}
+
+/* Every shortcut, opened from the bar and closed by Esc or a click elsewhere. */
+.keys {
+	max-inline-size: min(26rem, calc(100vw - 2rem));
+	padding: 0.9rem 1rem;
+	background: var(--paper-raised);
+	color: var(--ink);
+	border: 1px solid var(--rule);
+	border-radius: 10px;
+	box-shadow: 0 8px 28px rgb(0 0 0 / 22%);
+}
+.keys:popover-open {
+	position: fixed;
+	margin: 0;
+	inset: auto;
+	inset-block-end: 5rem;
+	inset-inline-end: 1rem;
+}
+.keystitle { margin: 0 0 0.6rem; font-weight: 600; font-size: 0.9rem; }
+.keys dl {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	align-items: baseline;
+	gap: 0.45rem 0.9rem;
+	margin: 0;
+}
+.keys dt { white-space: nowrap; }
+.keys dd { margin: 0; font-size: 0.875rem; color: var(--ink-soft); }
+
+/* What the import page says about files the collection already has. */
+.importknown { max-width: 32rem; margin: 0 0 0.75rem; }
+.importknown .songlist { margin: 0.25rem 0 0.5rem; }

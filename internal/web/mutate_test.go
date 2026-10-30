@@ -591,6 +591,122 @@ func TestImportSingleUpload(t *testing.T) {
 	}
 }
 
+// A chord sheet comes in as a song: its chords moved into the words, its title
+// from the file's name and its artist from the form. A .song file in the same
+// upload keeps the artist it names.
+func TestImportReadsChordSheets(t *testing.T) {
+	ts := newTestServer(t, nil)
+
+	w := ts.importFiles(t, "Los Inventados", map[string]string{
+		"Primera prueba.txt": "Cejilla en 2\n\nAm        G\nuna letra inventada\n",
+		"Segunda prueba.txt": "ESTRIBILLO:\nC    F\notra letra más\n",
+		"anything.song":      pasted,
+	})
+	if w.Code != http.StatusOK {
+		t.Fatalf("import = %d\n%s", w.Code, w.Body.String())
+	}
+	// How many came in is said in the banner.
+	if !strings.Contains(w.Body.String(), `class="flash`) || !strings.Contains(w.Body.String(), "3 canciones añadidas") {
+		t.Error("the banner does not say how many songs came in")
+	}
+
+	for file, wants := range map[string][]string{
+		"Los Inventados/Primera prueba.song": {"title: Primera prueba", "artist: Los Inventados", "capo: 2", "[Am]una letra [G]inventada"},
+		"Los Inventados/Segunda prueba.song": {"## Estribillo", "[C]otra [F]letra más"},
+		"Alguien/Nueva Canción.song":         {"title: Nueva Canción"},
+	} {
+		raw, err := os.ReadFile(filepath.Join(ts.songs, filepath.FromSlash(file)))
+		if err != nil {
+			t.Errorf("%s was not written: %v", file, err)
+			continue
+		}
+		for _, want := range wants {
+			if !strings.Contains(string(raw), want) {
+				t.Errorf("%s has no %q:\n%s", file, want, raw)
+			}
+		}
+	}
+}
+
+// importFiles posts the import form with some files and an artist, as a
+// browser would.
+func (ts *testServer) importFiles(t *testing.T, artist string, files map[string]string) *httptest.ResponseRecorder {
+	t.Helper()
+	var body bytes.Buffer
+	mw := multipart.NewWriter(&body)
+	for name, content := range files {
+		fw, err := mw.CreateFormFile("files", name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		fw.Write([]byte(content))
+	}
+	mw.WriteField("artist", artist)
+	mw.Close()
+	r := httptest.NewRequest(http.MethodPost, "/import", &body)
+	r.Host = "localhost:8080"
+	r.Header.Set("Content-Type", mw.FormDataContentType())
+	r.Header.Set("Sec-Fetch-Site", "same-origin")
+	w := httptest.NewRecorder()
+	ts.h.ServeHTTP(w, r)
+	return w
+}
+
+// A sheet whose title the collection already has is left out unless it says
+// whose it is: with no artist, any song by that name counts, and the reason
+// names its artist so that somebody who meant another knows what to write.
+// With an artist, only that artist's song counts.
+func TestImportLeavesOutATitleItAlreadyHas(t *testing.T) {
+	ts := newTestServer(t, basicSongs())
+	sheet := map[string]string{"Amazing Grace.txt": "G\nuna letra inventada\n"}
+	songs := func() int {
+		stats, _ := ts.lib.Stats(contextTODO())
+		return stats.Songs
+	}
+
+	w := ts.importFiles(t, "", sheet)
+	if songs() != 1 || !strings.Contains(w.Body.String(), "de Traditional") {
+		t.Errorf("a sheet with no artist and a title already there was imported (%d songs)\n%s", songs(), w.Body.String())
+	}
+	w = ts.importFiles(t, "Traditional", sheet)
+	if songs() != 1 || !strings.Contains(w.Body.String(), "ya está en la colección") {
+		t.Errorf("the same artist's song was imported again (%d songs)", songs())
+	}
+	ts.importFiles(t, "Otra Gente", sheet)
+	if songs() != 2 {
+		t.Errorf("another artist's song by the same name was left out (%d songs)", songs())
+	}
+}
+
+// Before anything is sent, the import page can ask which titles are already
+// there, and is answered with their artists to choose from.
+func TestImportKnowsTheTitlesAlreadyThere(t *testing.T) {
+	ts := newTestServer(t, basicSongs())
+	body := ts.get(t, "/import/known?t=Amazing+Grace&t=Nada+de+nada").Body.String()
+	if !strings.Contains(body, `data-artist="Traditional"`) || !strings.Contains(body, "/songs/traditional-amazing-grace") {
+		t.Errorf("the known titles do not offer their artist:\n%s", body)
+	}
+	if body := ts.get(t, "/import/known?t=Nada+de+nada").Body.String(); strings.Contains(body, "importknown") {
+		t.Errorf("a title nobody has was reported as known:\n%s", body)
+	}
+}
+
+// A file named .song is never read as a sheet, however wrong it is: whoever
+// uploaded it is owed the line it went wrong on.
+func TestImportDoesNotGuessAtABrokenSongFile(t *testing.T) {
+	ts := newTestServer(t, nil)
+	w := ts.upload(t, "roto.song", []byte("title: Sin cabecera\n\nAm\nletra\n"))
+	if w.Code != http.StatusOK {
+		t.Fatalf("import = %d", w.Code)
+	}
+	if stats, _ := ts.lib.Stats(contextTODO()); stats.Songs != 0 {
+		t.Error("a broken .song file was imported as a chord sheet")
+	}
+	if !strings.Contains(w.Body.String(), "roto.song") {
+		t.Error("the report does not name the file that failed")
+	}
+}
+
 func TestImportZipThroughTheWeb(t *testing.T) {
 	ts := newTestServer(t, nil)
 

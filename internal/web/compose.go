@@ -2,6 +2,7 @@ package web
 
 import (
 	"net/http"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -28,6 +29,11 @@ type composed struct {
 	Parts song.Parts
 	Raw   string // the text box, when the reader is editing the file directly
 	Plain bool   // true when the reader asked for the file rather than the fields
+
+	// Focus is the section the caret goes back into when the page is redrawn,
+	// counted from one so that nothing asks for none: the one just added,
+	// moved, cut or joined, so the reader carries on where they were.
+	Focus int
 }
 
 // text is the .song file this form stands for.
@@ -100,21 +106,44 @@ func newlines(s string) string {
 // which is how the fret window and transposing already work. Nothing in the
 // editor needs a script to reach it.
 func act(r *http.Request, c *composed, say *i18n.Printer) bool {
+	n := len(c.Parts.Sections)
 	switch {
+	case r.PostFormValue("stay") != "":
+		// Enter in one of the fields, which is not a reason to leave.
+		return true
 	case r.PostFormValue("addnow") != "" && r.PostFormValue("add") != "":
 		kind := r.PostFormValue("add")
-		c.Parts.Sections = append(c.Parts.Sections, song.Part{
+		// After the section the caret is in, when the script has said which,
+		// since that is where somebody working down a song wants it; at the end
+		// otherwise.
+		at := n
+		if a, err := strconv.Atoi(r.PostFormValue("after")); err == nil && a >= 0 && a < n {
+			at = a + 1
+		}
+		c.Parts.Sections = slices.Insert(c.Parts.Sections, at, song.Part{
 			Label: sectionName(say, kind),
 			Body:  scaffold(kind),
 		})
+		c.Focus = at + 1
+		return true
+	case r.PostFormValue("merge") != "":
+		if picks := picked(r, n); len(picks) >= 2 {
+			c.Parts.Sections = fuse(c.Parts.Sections, picks)
+			c.Focus = picks[0] + 1
+		}
 		return true
 	case r.PostFormValue("plainer") != "":
 		c.Plain, c.Raw = true, c.text()
 		return true
 	case r.PostFormValue("fielder") != "":
-		// Back to the fields, from whatever the text now says. A file that will
-		// not parse cannot be shown as fields, so the reader stays where the
-		// mistake is.
+		// Back to the fields, from whatever the text now says. Text with no
+		// metadata block is a chord sheet somebody pasted, and is read as one. A
+		// file that will not parse cannot be shown as fields, so the reader stays
+		// where the mistake is.
+		if !song.IsFile([]byte(c.Raw)) {
+			c.Plain, c.Parts = false, song.FromSheet(c.Raw, say.T("section.verse"))
+			return true
+		}
 		p, err := song.Take([]byte(c.Raw))
 		if err != nil {
 			return false
@@ -122,19 +151,110 @@ func act(r *http.Request, c *composed, say *i18n.Printer) bool {
 		c.Plain, c.Parts = false, p
 		return true
 	}
-	if n, ok := indexed(r, "del"); ok {
-		c.Parts.Sections = drop(c.Parts.Sections, n)
+	// The buttons below belong to one section each. Pressing one at the edge
+	// of the song, the first section's up or the last one's down, changes
+	// nothing and is still not a save.
+	if i, ok := indexed(r, "split"); ok {
+		at, _ := strconv.Atoi(r.PostFormValue("at"))
+		var done bool
+		c.Parts.Sections, done = cut(c.Parts.Sections, i, at)
+		c.Focus = i + 1
+		if done {
+			c.Focus = i + 2
+		}
 		return true
 	}
-	if n, ok := indexed(r, "up"); ok && n > 0 {
-		c.Parts.Sections = swap(c.Parts.Sections, n, n-1)
+	if i, ok := indexed(r, "del"); ok {
+		c.Parts.Sections = drop(c.Parts.Sections, i)
 		return true
 	}
-	if n, ok := indexed(r, "down"); ok && n+1 < len(c.Parts.Sections) {
-		c.Parts.Sections = swap(c.Parts.Sections, n, n+1)
+	if i, ok := indexed(r, "up"); ok {
+		c.Focus = i + 1
+		if i > 0 && i < n {
+			c.Parts.Sections, c.Focus = swap(c.Parts.Sections, i, i-1), i
+		}
+		return true
+	}
+	if i, ok := indexed(r, "down"); ok {
+		c.Focus = i + 1
+		if i+1 < n {
+			c.Parts.Sections, c.Focus = swap(c.Parts.Sections, i, i+1), i+2
+		}
 		return true
 	}
 	return false
+}
+
+// picked lists the sections ticked for joining, in the order they stand.
+func picked(r *http.Request, n int) []int {
+	var out []int
+	for i := 0; i < n; i++ {
+		if r.PostFormValue("pick"+strconv.Itoa(i)) != "" {
+			out = append(out, i)
+		}
+	}
+	return out
+}
+
+// fuse joins the picked sections into one, standing where the first of them
+// stood, with a blank line between what each held.
+//
+// It takes the name most of them share, and the first one's when there is no
+// majority, so three "Estrofa" and a "Coro" make an "Estrofa". A section with no
+// name has no say, since joining it to a named one should not unname them both.
+func fuse(ss []song.Part, picks []int) []song.Part {
+	count := map[string]int{}
+	for _, i := range picks {
+		if ss[i].Label != "" {
+			count[ss[i].Label]++
+		}
+	}
+	merged, best := song.Part{}, 0
+	var bodies []string
+	for _, i := range picks {
+		if l := ss[i].Label; count[l] > best {
+			merged.Label, best = l, count[l]
+		}
+		if b := strings.Trim(ss[i].Body, "\n"); b != "" {
+			bodies = append(bodies, b)
+		}
+	}
+	merged.Body = strings.Join(bodies, "\n\n")
+
+	gone := map[int]bool{}
+	for _, i := range picks[1:] {
+		gone[i] = true
+	}
+	out := make([]song.Part, 0, len(ss)-len(gone))
+	for i, s := range ss {
+		switch {
+		case i == picks[0]:
+			out = append(out, merged)
+		case !gone[i]:
+			out = append(out, s)
+		}
+	}
+	return out
+}
+
+// cut splits a section in two before one of its lines, the second half going
+// after it under the same name, which is the name it most likely still has. It
+// reports false, and leaves the song alone, when either half would be empty.
+func cut(ss []song.Part, i, at int) ([]song.Part, bool) {
+	if i < 0 || i >= len(ss) {
+		return ss, false
+	}
+	lines := strings.Split(strings.TrimLeft(ss[i].Body, "\n"), "\n")
+	if at <= 0 || at >= len(lines) {
+		return ss, false
+	}
+	first := strings.Trim(strings.Join(lines[:at], "\n"), "\n")
+	second := strings.Trim(strings.Join(lines[at:], "\n"), "\n")
+	if first == "" || second == "" {
+		return ss, false
+	}
+	out := append(ss[:i:i], song.Part{Label: ss[i].Label, Body: first}, song.Part{Label: ss[i].Label, Body: second})
+	return append(out, ss[i+1:]...), true
 }
 
 // indexed finds a button named like "del2" and says which section it meant.
