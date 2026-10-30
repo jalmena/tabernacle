@@ -176,6 +176,10 @@ func TestUnplayableChordsShowNoShapeUntilAsked(t *testing.T) {
 		if !strings.Contains(c.Warning, "Simplificar") {
 			t.Errorf("%s does not point at the control: %q", c.Text, c.Warning)
 		}
+		// And it is a sentence, not a formatting error.
+		if strings.Contains(c.Warning, "%!") {
+			t.Errorf("%s warns in broken words: %q", c.Text, c.Warning)
+		}
 	}
 }
 

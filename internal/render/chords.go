@@ -66,8 +66,14 @@ func chordVoicings(say *i18n.Printer, c chord.Chord, text string, opts voicing.O
 		out = append(out, vv)
 	}
 	warning := ""
-	if res.Warning != "" {
+	switch {
+	case res.Warning == "":
+	case res.Tuning != "":
 		warning = say.T(res.Warning, res.Tuning)
+	default:
+		// The other warnings take nothing, and an argument a message does not
+		// take is printed after it.
+		warning = say.T(res.Warning)
 	}
 	return out, warning
 }
