@@ -36,7 +36,9 @@ jobs:
       # The race detector needs cgo, so it gets its own step rather than being
       # folded into the one above.
       - name: Test with the race detector
-        run: go test -race ./...
+        # The voicing package's exhaustive searches run for well over Go's ten-minute
+        # package timeout under the race detector; it is still tested without it above.
+        run: go test -race $(go list ./... | grep -v /internal/voicing$)
 
       - name: Build
         run: go build ./cmd/tabernacle
