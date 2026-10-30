@@ -36,14 +36,15 @@ There is a store, so Tabernacle installs like any other app rather than being
 pasted in by hand. App Store → **Add Source**, and paste
 
 ```
-https://raw.githubusercontent.com/jalmena/tabernacle-appstore/gh-pages/tabernacle-appstore.zip
+https://raw.githubusercontent.com/jalmena/jalmena-appstore/gh-pages/appstore.zip
 ```
 
 Tabernacle then appears in the store and updates itself when a new version is
 published. On ZimaOS, or any client that speaks version 2 of the protocol, the
 same store is also served as `index.json` from the same branch. The store lives
-in [its own repository](https://github.com/jalmena/tabernacle-appstore), which
-carries the compose file CasaOS installs and the metadata that draws its card.
+in [its own repository](https://github.com/jalmena/jalmena-appstore), shared with
+the author's other apps, which carries the compose file CasaOS installs and the
+metadata that draws its card.
 
 Custom Install still works: App Store → **Custom Install** → *Import* → paste
 `compose.yaml`. The `x-casaos` blocks in that file give CasaOS the title, icon,
