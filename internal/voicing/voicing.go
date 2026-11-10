@@ -216,6 +216,16 @@ var knownTunings = []struct {
 		[]string{"opend", "dadfad", "reabierto"}},
 }
 
+// Tunings lists the tunings this package knows by name, the usual one first.
+// They are the ones a song can say and still be given diagrams.
+func Tunings() []Tuning {
+	out := make([]Tuning, len(knownTunings))
+	for i, kt := range knownTunings {
+		out[i] = Tuning{Name: kt.tuning.Name, Open: append([]int(nil), kt.tuning.Open...)}
+	}
+	return out
+}
+
 // ParseTuning interprets a song's tuning field.
 //
 // It reports false for anything it does not recognise, which is not an error:

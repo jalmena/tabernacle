@@ -1603,7 +1603,7 @@ body.scripted select.tonepick { display: block; }
 	.field.half { grid-column: span 2; }
 }
 .field label { font-size: 0.8125rem; color: var(--ink-soft); }
-.field input, .field textarea, .sectionlabel, .sectionbody {
+.field input, .field select, .field textarea, .sectionlabel, .sectionbody {
 	font: inherit;
 	color: var(--ink);
 	background: var(--paper);
@@ -1613,6 +1613,12 @@ body.scripted select.tonepick { display: block; }
 	min-inline-size: 0;
 }
 .field textarea, .sectionbody { resize: vertical; }
+/* The box for a tuning the list does not hold is there only while the list says
+ * "another". Where a browser cannot tell, both are shown and nothing is lost. */
+@supports selector(:has(a)) {
+	.tuningother { display: none; }
+	.field:has(option[value="custom"]:checked) .tuningother { display: block; }
+}
 .sectionbody {
 	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 	font-size: 0.9375rem;

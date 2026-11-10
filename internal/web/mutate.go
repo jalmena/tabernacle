@@ -363,6 +363,10 @@ type editorBody struct {
 	Compose composed
 	Kinds   []kindChoice
 
+	// Offer is what the two free fields of the header can be chosen from as
+	// well as typed.
+	Offer offer
+
 	// Unsaved says the page already holds something that is in no file: it came
 	// back from a button that changed the song without saving it, from a save
 	// that was refused, or from a file loaded to be looked at. The page asks
@@ -393,6 +397,7 @@ func (s *Server) handleNewSong(w http.ResponseWriter, r *http.Request) {
 		CancelURL:   "/",
 		Placeholder: newSongPlaceholder,
 		Kinds:       kindChoices(say),
+		Offer:       s.offerFor(r, say),
 	}))
 }
 
@@ -404,6 +409,7 @@ func (s *Server) handleCreateSong(w http.ResponseWriter, r *http.Request) {
 		CancelURL:   "/",
 		Placeholder: newSongPlaceholder,
 		Kinds:       kindChoices(say),
+		Offer:       s.offerFor(r, say),
 		Unsaved:     true,
 	}
 	c, ok := readCompose(r)
@@ -446,6 +452,7 @@ func (s *Server) handleLoadIntoEditor(w http.ResponseWriter, r *http.Request) {
 		CancelURL:   "/",
 		Placeholder: newSongPlaceholder,
 		Kinds:       kindChoices(say),
+		Offer:       s.offerFor(r, say),
 	}
 
 	r.Body = http.MaxBytesReader(w, r.Body, s.cfg.MaxSongBytes+(1<<16))
@@ -532,6 +539,7 @@ func (s *Server) handleEditSong(w http.ResponseWriter, r *http.Request) {
 		Editing:   true,
 		CancelURL: "/songs/" + slug,
 		Kinds:     kindChoices(say),
+		Offer:     s.offerFor(r, say),
 	}
 	// Shown as fields when it can be taken apart, and as the file when it
 	// cannot. A song that will not parse is exactly the one somebody needs the
@@ -566,6 +574,7 @@ func (s *Server) handleSaveSong(w http.ResponseWriter, r *http.Request) {
 		Editing:   true,
 		CancelURL: "/songs/" + slug,
 		Kinds:     kindChoices(say),
+		Offer:     s.offerFor(r, say),
 		Unsaved:   true,
 	}
 	if act(r, &c, say) {

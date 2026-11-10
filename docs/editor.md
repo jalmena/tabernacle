@@ -10,6 +10,24 @@ what is saved is a `.song` file, checked by the same reader as any other — see
   and for pasting a song in. **Editar el archivo** and **Editar por campos**
   turn one into the other without saving.
 
+## The header
+
+The title and the notes are typed. The rest is chosen where there is little to
+choose from, and offered where there is a lot.
+
+- **Tono** is one of the twenty-four keys, each spelled the way it usually is:
+  Eb and not D#, F#m and not Gbm.
+- **Afinación** is one of the tunings that have diagrams, and starts on the
+  usual one. That one goes without saying: chosen for a song that names no
+  tuning, it writes none. **Personalizada…** brings up a box for any other.
+- **Artista** and **Género** are boxes to type in that also offer a list: the
+  artists the collection has, and its genres, the most used first, followed by
+  the usual ones. Choosing from it is how the same artist is not spelled two
+  ways.
+
+A key or a tuning that the lists do not hold, in a file written by hand, is
+shown as it is written and kept that way.
+
 ## Chords above the words
 
 In the fields, a section shows its words as plain text and every chord floating

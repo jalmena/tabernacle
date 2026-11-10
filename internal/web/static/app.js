@@ -429,6 +429,12 @@ document.body.classList.add("scripted");
 	});
 	form.addEventListener("change", function (e) {
 		if (e.target.matches(".sectionpick")) refresh();
+		// Choosing a tuning the list does not hold brings up the box to type
+		// it in, and the caret goes there.
+		if (e.target.matches("[data-tuning]") && e.target.value === "custom") {
+			var other = form.querySelector(".tuningother");
+			if (other) other.focus();
+		}
 	});
 	// A section's box grows with what is typed into it, as it was drawn to fit
 	// what it held.

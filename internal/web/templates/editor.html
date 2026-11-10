@@ -96,28 +96,60 @@
 							<input id="f-title" name="title" value="{{.Title}}" required
 							       autocomplete="off" spellcheck="false">
 						</p>
+						{{/* The artist and the genre are anybody's words, and stay boxes
+						     to type in. Each offers what the collection already holds,
+						     so that the same one is not spelled two ways. */}}
 						<p class="field half">
 							<label for="f-artist">{{$.T "editor.field.artist"}}</label>
-							<input id="f-artist" name="artist" value="{{.Artist}}" autocomplete="off">
+							<input id="f-artist" name="artist" value="{{.Artist}}" autocomplete="off"
+							       list="artistnames">
+							<datalist id="artistnames">
+								{{range $.Body.Offer.Artists}}<option value="{{.}}">{{end}}
+							</datalist>
 						</p>
+						{{/* The key and the tuning are one of a few, so they are chosen.
+						     One the list does not hold, Gb or a tuning with a name of
+						     its own, is kept as the file writes it. */}}
 						<p class="field">
 							<label for="f-key">{{$.T "editor.field.key"}}</label>
-							<input id="f-key" name="key" value="{{.Key}}" autocomplete="off"
-							       spellcheck="false" placeholder="G">
+							{{$keys := $.Body.Keys}}
+							<select id="f-key" name="key">
+								<option value="">—</option>
+								{{with $keys.Written}}<option value="{{.}}" selected>{{.}}</option>{{end}}
+								<optgroup label="{{$.T `quality.major`}}">
+									{{range $keys.Major}}<option value="{{.Value}}" {{if .On}}selected{{end}}>{{.Label}}</option>{{end}}
+								</optgroup>
+								<optgroup label="{{$.T `quality.minor`}}">
+									{{range $keys.Minor}}<option value="{{.Value}}" {{if .On}}selected{{end}}>{{.Label}}</option>{{end}}
+								</optgroup>
+							</select>
 						</p>
 						<p class="field">
 							<label for="f-capo">{{$.T "editor.field.capo"}}</label>
 							<input id="f-capo" name="capo" value="{{.Capo}}" type="number"
 							       min="0" max="12" inputmode="numeric">
 						</p>
+						{{/* The box under the list is for a tuning the list does not
+						     hold, and counts only when the list says so. The stylesheet
+						     keeps it out of the way until then. */}}
 						<p class="field">
 							<label for="f-tuning">{{$.T "editor.field.tuning"}}</label>
-							<input id="f-tuning" name="tuning" value="{{.Tuning}}" autocomplete="off"
-							       spellcheck="false" placeholder="EADGBE">
+							{{$tunings := $.Body.Tunings $.Print}}
+							<select id="f-tuning" name="tuningpick" data-tuning>
+								{{range $tunings.Known}}<option value="{{.Value}}" {{if .On}}selected{{end}}>{{.Label}}</option>{{end}}
+								<option value="custom" {{if $tunings.Custom}}selected{{end}}>{{$.T "editor.tuning.custom"}}</option>
+							</select>
+							<input class="tuningother" name="tuning" value="{{$tunings.Other}}" autocomplete="off"
+							       spellcheck="false" placeholder="CGCGCE"
+							       aria-label="{{$.T `editor.tuning.custom`}}">
 						</p>
 						<p class="field">
 							<label for="f-genre">{{$.T "editor.field.genre"}}</label>
-							<input id="f-genre" name="genre" value="{{.Genre}}" autocomplete="off">
+							<input id="f-genre" name="genre" value="{{.Genre}}" autocomplete="off"
+							       list="genrenames">
+							<datalist id="genrenames">
+								{{range $.Body.Offer.Genres}}<option value="{{.}}">{{end}}
+							</datalist>
 						</p>
 						<p class="field wide">
 							<label for="f-notes">{{$.T "editor.field.notes"}}</label>

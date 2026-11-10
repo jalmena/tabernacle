@@ -7,8 +7,11 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/jalmena/tabernacle/internal/chord"
 	"github.com/jalmena/tabernacle/internal/i18n"
+	"github.com/jalmena/tabernacle/internal/index"
 	"github.com/jalmena/tabernacle/internal/song"
+	"github.com/jalmena/tabernacle/internal/voicing"
 )
 
 // The editor that shows a song as fields and sections rather than as the text of
@@ -62,6 +65,13 @@ func readCompose(r *http.Request) (composed, bool) {
 	// even an empty one, so its absence is the tell.
 	_, hasFields := r.PostForm["title"]
 	_, hasText := r.PostForm["text"]
+	// The tuning is chosen from a list, with a box beside it for one the list
+	// does not hold. The box is what counts when the list says so, and when
+	// there is no list in what was sent.
+	tuning := r.PostFormValue("tuning")
+	if pick, ok := r.PostForm["tuningpick"]; ok && first(pick) != tuningCustom {
+		tuning = first(pick)
+	}
 	c := composed{
 		Plain: r.PostFormValue("plain") == "1" || (hasText && !hasFields),
 		Raw:   r.PostFormValue("text"),
@@ -70,7 +80,7 @@ func readCompose(r *http.Request) (composed, bool) {
 			Artist: strings.TrimSpace(r.PostFormValue("artist")),
 			Key:    strings.TrimSpace(r.PostFormValue("key")),
 			Capo:   strings.TrimSpace(r.PostFormValue("capo")),
-			Tuning: strings.TrimSpace(r.PostFormValue("tuning")),
+			Tuning: strings.TrimSpace(tuning),
 			Genre:  strings.TrimSpace(r.PostFormValue("genre")),
 			Notes:  strings.Trim(newlines(r.PostFormValue("notes")), "\n"),
 		},
@@ -376,3 +386,168 @@ func scaffold(kind string) string {
 // tabWidth is how many dashes an empty grid starts with: two bars of four in
 // eighths, which is the length of phrase somebody writes down.
 const tabWidth = 32
+
+// The header of a song as lists to choose from.
+//
+// The key and the tuning each have a short list of the values nearly every song
+// has, so they are chosen and not typed. The artist and the genre are anybody's
+// words and stay boxes to type in, with what the collection already holds on
+// offer, so that the same artist is not spelled two ways.
+//
+// None of it changes what a file may say. A value a list does not hold is kept
+// as it is written and shown as itself, and a song that is only opened and
+// saved again is saved with the header it had.
+
+// keyOptions is every key a song is usually in.
+type keyOptions struct {
+	// Written is the song's key when it is none of them, Gb or A7, to be offered
+	// as it stands.
+	Written string
+	Major   []option
+	Minor   []option
+}
+
+// Keys lists the keys, spelled the way each is usually written: Eb and not D#,
+// F#m and not Gbm.
+func (b editorBody) Keys() keyOptions {
+	key := b.Compose.Parts.Key
+	out := keyOptions{Major: make([]option, 0, 12), Minor: make([]option, 0, 12)}
+	found := key == ""
+	for pc := range 12 {
+		major := chord.Spell(pc, chord.SpellingFor(pc, false)).Format(chord.English)
+		minor := chord.Spell(pc, chord.SpellingFor(pc, true)).Format(chord.English) + "m"
+		out.Major = append(out.Major, option{Value: major, Label: major, On: key == major})
+		out.Minor = append(out.Minor, option{Value: minor, Label: minor, On: key == minor})
+		found = found || key == major || key == minor
+	}
+	if !found {
+		out.Written = key
+	}
+	return out
+}
+
+// tuningCustom is what the list of tunings sends when the tuning is one it does
+// not hold, typed in the box beside it.
+const tuningCustom = "custom"
+
+// tuningOptions is the tunings that have diagrams, and the one that is typed.
+type tuningOptions struct {
+	Known  []option
+	Custom bool   // the song's tuning is not one of them
+	Other  string // and is this
+}
+
+// Tunings lists the tunings the application knows, the usual one first.
+//
+// The usual one goes without saying: chosen for a song that names no tuning, it
+// writes none. A song that does name its tuning, "EADGBE" or "drop d", keeps its
+// own words for it, so that opening a song and saving it changes nothing.
+func (b editorBody) Tunings(say *i18n.Printer) tuningOptions {
+	written := b.Compose.Parts.Tuning
+	current, known := voicing.ParseTuning(written)
+	out := tuningOptions{Custom: !known}
+	if !known {
+		out.Other = written
+	}
+	for i, t := range voicing.Tunings() {
+		o := option{Value: t.Name, Label: tuningLabel(t)}
+		if i == 0 {
+			o.Value, o.Label = "", say.T("editor.tuning.standard")
+		}
+		if known && current.Equal(t) {
+			o.On, o.Value = true, written
+		}
+		out.Known = append(out.Known, o)
+	}
+	return out
+}
+
+// tuningLabel is a tuning's name and, when the name does not say them, the
+// notes its strings are tuned to.
+func tuningLabel(t voicing.Tuning) string {
+	spelling := chord.Sharps
+	if len(t.Name) > 1 && t.Name[1] == 'b' {
+		spelling = chord.Flats
+	}
+	names := make([]string, len(t.Open))
+	plain := true
+	for i, midi := range t.Open {
+		names[i] = chord.Spell(midi, spelling).Format(chord.English)
+		plain = plain && len(names[i]) == 1
+	}
+	sep := " "
+	if plain {
+		sep = ""
+	}
+	notes := strings.Join(names, sep)
+	if strings.EqualFold(notes, t.Name) {
+		return t.Name
+	}
+	return t.Name + " (" + notes + ")"
+}
+
+// offer is what the artist and the genre can be chosen from.
+type offer struct {
+	Artists []string
+	Genres  []string
+}
+
+// offerFor gathers the artists the collection has, and its genres followed by
+// the usual ones.
+//
+// The collection's own come first, the most used first, because the genre
+// somebody wants is nearly always one they have used. The rest are there so
+// that the list is worth opening on a collection that has none yet. A failure
+// to read the collection leaves the lists short and the boxes as they were.
+func (s *Server) offerFor(r *http.Request, say *i18n.Printer) offer {
+	var out offer
+	if artists, err := s.lib.Artists(r.Context()); err == nil {
+		for _, a := range artists {
+			out.Artists = append(out.Artists, a.Name)
+		}
+	}
+
+	seen := map[string]bool{}
+	add := func(name string) {
+		name = strings.TrimSpace(name)
+		key := index.Slugify(name)
+		if key == "" {
+			key = strings.ToLower(name) // a script the slug alphabet has no letters for
+		}
+		if name == "" || seen[key] {
+			return
+		}
+		seen[key] = true
+		out.Genres = append(out.Genres, name)
+	}
+	if genres, err := s.lib.Genres(r.Context()); err == nil {
+		for _, g := range genres {
+			add(g.Name)
+		}
+	}
+	usual := append(strings.Split(say.T("editor.genres"), ","), commonGenres...)
+	for i := range usual {
+		usual[i] = strings.TrimSpace(usual[i])
+	}
+	slices.SortFunc(usual, func(a, b string) int {
+		return strings.Compare(strings.ToLower(a), strings.ToLower(b))
+	})
+	for _, g := range usual {
+		add(g)
+	}
+	return out
+}
+
+// commonGenres are the kinds of music that are called the same in most
+// languages, which is why they are not in the catalogue of messages: a rumba is
+// a rumba. The few that are words and not names, "ballad", "children's", are
+// translated there, under editor.genres.
+var commonGenres = []string{
+	"bachata", "bluegrass", "blues", "bolero", "bossa nova", "chacarera", "copla",
+	"corrido", "country", "cumbia", "disco", "fado", "flamenco", "folk", "funk",
+	"gospel", "grunge", "hard rock", "heavy metal", "hip hop", "indie", "jazz",
+	"mariachi", "merengue", "metal", "milonga", "pasodoble", "pop", "pop rock",
+	"punk", "R&B", "ranchera", "reggae", "rock", "rock and roll", "rockabilly",
+	"rumba", "salsa", "samba", "sevillanas", "ska", "soul", "swing", "tango",
+	"trova", "vallenato", "zamba",
+}
