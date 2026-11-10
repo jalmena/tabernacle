@@ -399,7 +399,11 @@ func (s *Server) handleCreateSong(w http.ResponseWriter, r *http.Request) {
 		Placeholder: newSongPlaceholder,
 		Kinds:       kindChoices(say),
 	}
-	c := readCompose(r)
+	c, ok := readCompose(r)
+	if !ok {
+		s.fail(w, r, http.StatusBadRequest, "fail.badvalue", "fail.badrows.detail")
+		return
+	}
 	if act(r, &c, say) {
 		// A section added, removed or moved, or the reader asking for the file
 		// instead of the fields. Nothing is written: the page comes back with
@@ -541,7 +545,11 @@ func (s *Server) handleSaveSong(w http.ResponseWriter, r *http.Request) {
 	slug := r.PathValue("slug")
 	hash := r.PostFormValue("hash")
 
-	c := readCompose(r)
+	c, ok := readCompose(r)
+	if !ok {
+		s.fail(w, r, http.StatusBadRequest, "fail.badvalue", "fail.badrows.detail")
+		return
+	}
 	body := editorBody{
 		Title:     say.T("editor.edit"),
 		Action:    "/songs/" + slug,

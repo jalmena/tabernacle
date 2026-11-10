@@ -494,3 +494,34 @@
 </section>
 {{end}}
 {{end}}
+
+{{/* What a chord in the editor could be changed into: the same chord on each of
+     the twelve notes, each kind of chord on its own note, and each note it could
+     stand over. Every button and every option carries the whole symbol it would
+     make, so the script only ever copies one into place.
+
+     The script asks for this for whatever was typed, and reads what that was
+     understood as from data-symbol. Empty means it is not a chord, and then
+     there is nothing to choose between but a note to start from. */}}
+{{define "chordpick"}}
+<div class="pickbody" data-symbol="{{.Pick.Symbol}}">
+	<p class="rootrow" role="group" aria-label="{{.T "editor.chord.root"}}">
+		{{range .Pick.Roots}}<button type="button" class="rootlink{{if .On}} on{{end}}" data-c="{{.Value}}"
+			{{if .On}}aria-pressed="true"{{end}}>{{.Label}}</button>{{end}}
+	</p>
+	{{if .Pick.Symbol}}
+		<p class="pickline">
+			<label for="pickkind">{{.T "editor.chord.kind"}}</label>
+			<select id="pickkind">
+				{{range .Pick.Qualities}}<option value="{{.Value}}" {{if .On}}selected{{end}}>{{.Label}}</option>{{end}}
+			</select>
+		</p>
+		<p class="pickline">
+			<label for="pickbass">{{.T "editor.chord.bass"}}</label>
+			<select id="pickbass">
+				{{range .Pick.Basses}}<option value="{{.Value}}" {{if .On}}selected{{end}}>{{.Label}}</option>{{end}}
+			</select>
+		</p>
+	{{end}}
+</div>
+{{end}}

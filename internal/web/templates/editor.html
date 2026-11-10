@@ -31,7 +31,7 @@
 		{{/* What the page is for depends on which way the song is being edited.
 		     Filling in fields needs no explanation of a file format; typing the
 		     file does. */}}
-		<p class="count">
+		<p class="quiet">
 			{{if .Compose.Plain}}
 				{{$.T "editor.help.chords"}} <code>A[G]mazing grace</code>.
 				{{$.T "editor.help.sections"}} <code>## {{$.T "editor.help.verse"}}</code>.
@@ -39,7 +39,12 @@
 				{{$.T "editor.help.sheet" ($.T "editor.byfields")}}
 			{{else}}
 				{{$.T "editor.help.fields"}}
-				{{$.T "editor.help.chords"}} <code>A[G]mazing grace</code>.
+				{{/* How a chord is put in depends on whether the script has taken
+				     the sections over: typed in brackets if not, placed above
+				     the words if so. The script says which by a class on the
+				     page, so only one of the two is ever read. */}}
+				<span class="brackets">{{$.T "editor.help.chords"}} <code>A[G]mazing grace</code>.</span>
+				<span class="floating">{{$.T "editor.help.visual"}}</span>
 			{{end}}
 		</p>
 
@@ -160,6 +165,14 @@
 							          autocapitalize="off" autocomplete="off"
 							          {{if eq (add $i 1) $.Body.Compose.Focus}}autofocus{{end}}
 							          aria-label="{{$.T `editor.section.lines`}}">{{$sec.Body}}</textarea>
+							{{/* The same section taken apart, for the script: its
+							     words, and where in them each bracket stood. It
+							     is not sent unless the script has changed it, and
+							     then it is sent instead of the box above. A
+							     section that cannot be taken apart has none, and
+							     stays a box. */}}
+							{{with laid $sec.Body}}<input class="sectionrows" type="hidden" name="rows{{$i}}" value="{{.}}"
+							       autocomplete="off" disabled>{{end}}
 						</fieldset>
 					{{end}}
 				{{end}}
@@ -209,6 +222,10 @@
 						<dt dir="ltr"><kbd>Alt</kbd> <kbd>M</kbd></dt><dd>{{$.T "editor.key.merge"}}</dd>
 						<dt dir="ltr"><kbd>Alt</kbd> <kbd>↑</kbd> <kbd>↓</kbd></dt><dd>{{$.T "editor.key.move"}}</dd>
 						<dt dir="ltr"><kbd>Alt</kbd> <kbd>N</kbd></dt><dd>{{$.T "editor.key.add"}}</dd>
+						<dt dir="ltr"><kbd>[</kbd></dt><dd>{{$.T "editor.key.chord"}}</dd>
+						<dt dir="ltr"><kbd>Alt</kbd> <kbd>←</kbd> <kbd>→</kbd></dt><dd>{{$.T "editor.key.chordmove"}}</dd>
+						<dt dir="ltr"><kbd>{{$.T "key.delete"}}</kbd></dt><dd>{{$.T "editor.key.chordremove"}}</dd>
+						<dt dir="ltr"><kbd>Ctrl</kbd> <kbd>Z</kbd></dt><dd>{{$.T "editor.key.undo"}}</dd>
 					</dl>
 				</div>
 
@@ -219,6 +236,53 @@
 				</div>
 			{{end}}
 		</form>
+
+		{{if not .Compose.Plain}}
+			{{/* What the script builds each section out of once it takes one
+			     over: a box for the words with room above every line for the
+			     chords, a box for a fenced block, and a chord. They are here
+			     rather than made in the script so that their words are the
+			     page's words, in the reader's language. */}}
+			<template id="chordkit">
+				<div class="lyr">
+					<div class="lyrmirror" aria-hidden="true"></div>
+					<textarea class="lyrtext" rows="1" spellcheck="false" autocomplete="off"
+					          aria-label="{{$.T `editor.section.lines`}}"
+					          placeholder="{{$.T `editor.section.words`}}"></textarea>
+					<div class="chips" role="group" aria-label="{{$.T `nav.chords`}}"></div>
+					<span class="chipmark" aria-hidden="true"></span>
+					<span class="chipghost" aria-hidden="true">+</span>
+				</div>
+				<div class="tabbox">
+					<span class="tabtag" aria-hidden="true"></span>
+					<textarea class="tabtext" rows="2" wrap="off" spellcheck="false" autocapitalize="off"
+					          autocomplete="off" aria-label="{{$.T `editor.section.tab`}}"></textarea>
+				</div>
+				<button class="chip" type="button" title="{{$.T `editor.chord.hint`}}"></button>
+			</template>
+
+			{{/* The chooser that opens on a chord. One for the page, moved to
+			     whichever chord was pressed. Typing is always enough; the rest
+			     is there so that nobody has to. What a chord could become is
+			     the server's to say, so that part is asked for and swapped in. */}}
+			<div id="chordpick" class="chordpick" popover tabindex="-1">
+				<p class="pickname">
+					<label class="sr" for="pickname">{{$.T "lab.chord"}}</label>
+					<input id="pickname" type="text" maxlength="64" autocomplete="off" autocapitalize="off"
+					       spellcheck="false" enterkeyhint="done" placeholder="Am7, C/E, x2…">
+					<button class="btn btn-icon danger" type="button" data-remove
+					        title="{{$.T `editor.chord.remove`}}"><svg class="icon" viewBox="0 0 24 24"
+					        aria-hidden="true" focusable="false"><path
+					        d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l.9 12.2a1.5 1.5 0 0 0 1.5 1.3h6.2a1.5 1.5 0 0 0 1.5-1.3L17.5 7M10 11v6M14 11v6"/></svg>
+						<span class="sr">{{$.T "editor.chord.remove"}}</span></button>
+				</p>
+				<div class="pickused" hidden>
+					<p class="picklabel">{{$.T "editor.chord.used"}}</p>
+					<p class="pickchords"></p>
+				</div>
+				<div id="pickbody">{{template "chordpick" (picker $ "")}}</div>
+			</div>
+		{{end}}
 	{{end}}
 </main>
 {{template "scripts" .}}

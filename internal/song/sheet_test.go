@@ -187,3 +187,33 @@ func TestIsFile(t *testing.T) {
 		}
 	}
 }
+
+func TestATypedChordIsReadGenerously(t *testing.T) {
+	for typed, want := range map[string]string{
+		"Am":      "Am",
+		" F#m7 ":  "F#m7",
+		"am":      "Am",
+		"am/g":    "Am/G",
+		"c6/9":    "C6/9",
+		"bb":      "Bb",
+		"Lam":     "Am",
+		"lam":     "Am",
+		"LAm":     "Am",
+		"sol7":    "G7",
+		"do#m":    "C#m",
+		"sib":     "Bb",
+		"mi/sol#": "E/G#",
+		"Fadd9":   "Fadd9",
+		"fa":      "F",
+	} {
+		c, ok := TypedChord(typed)
+		if !ok || c.String() != want {
+			t.Errorf("%q was read as %q (%v), want %q", typed, c.String(), ok, want)
+		}
+	}
+	for _, typed := range []string{"", "x2", "bis", "N.C.", "let ring", "solo", "coda", "dim", "do re mi", "H7"} {
+		if c, ok := TypedChord(typed); ok {
+			t.Errorf("%q was read as the chord %q", typed, c.String())
+		}
+	}
+}

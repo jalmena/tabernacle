@@ -305,6 +305,40 @@ func solfegeCase(s string) string {
 	})
 }
 
+// TypedChord reads what somebody typed where a chord goes.
+//
+// It forgives more than the reader of a file can afford to, because here nothing
+// but a chord could be meant: solfege is read as well as letter names, and a
+// note typed without its capital is given one. What still is not a chord is
+// whatever else goes in brackets, a repeat or a "let ring".
+func TypedChord(text string) (chord.Chord, bool) {
+	text = strings.TrimSpace(text)
+	for _, try := range []string{text, capitalNotes(text)} {
+		if c, err := chord.Parse(try); err == nil {
+			return c, true
+		}
+		if c, err := chord.ParseIn(chord.Solfege, solfegeCase(try)); err == nil {
+			return c, true
+		}
+	}
+	return chord.Chord{}, false
+}
+
+// capitalNotes gives a capital to the letter a chord starts with and to the one
+// its bass starts with, so that "am/g" reads as Am/G.
+func capitalNotes(s string) string {
+	var b strings.Builder
+	start := true
+	for _, r := range s {
+		if start {
+			r = unicode.ToUpper(r)
+		}
+		start = r == '/'
+		b.WriteRune(r)
+	}
+	return b.String()
+}
+
 // fieldsAt splits a line at its spaces, keeping the column each piece starts at.
 // Columns are counted in characters rather than bytes, or every accented letter
 // in front of a chord would push it one place to the right.

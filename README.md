@@ -23,7 +23,7 @@ telemetry. Reading needs no account; changing anything does.
 | **Capo advice** | where to clamp so a barred song becomes open chords, for the same sound |
 | **Play mode** | the sheet scrolls itself at the pace you set, big enough to read from a stand, screen kept awake |
 | **Print** | A4, light paper themes, no interface on the page |
-| **Authoring** | fill in fields section by section — join, split and move them from the keyboard — or edit the file directly; a sheet with the chords above the words is converted on the way in |
+| **Authoring** | write the words and put each chord above its syllable, where it can be dragged, renamed or removed; join, split and move sections from the keyboard; or edit the file directly. A sheet with the chords above the words is converted on the way in |
 | **Songbook** | pick any set of songs and print them as one document |
 | **Accounts** | optional; two roles, and reading stays public |
 | **Language** | 19 languages, per person; right-to-left where it belongs |
@@ -132,9 +132,10 @@ A[G]mazing grace how [G7]sweet the [C]sound
 ```
 
 Full reference: [docs/song-format.md](docs/song-format.md). Also
-[chord diagrams](docs/chord-diagrams.md), [printing](docs/printing.md),
-[accounts](docs/accounts.md), [play mode](docs/play-mode.md),
-[languages](docs/languages.md), [deployment](docs/deployment.md).
+[the editor](docs/editor.md), [chord diagrams](docs/chord-diagrams.md),
+[printing](docs/printing.md), [accounts](docs/accounts.md),
+[play mode](docs/play-mode.md), [languages](docs/languages.md),
+[deployment](docs/deployment.md).
 
 ## Architecture
 

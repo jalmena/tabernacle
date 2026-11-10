@@ -35,6 +35,21 @@ func (s *Server) handleChordFragment(w http.ResponseWriter, r *http.Request) {
 	s.render(w, r, http.StatusOK, "chordfragment.html", s.page(r, "nav.chords", v))
 }
 
+// handleChordPick answers the editor's chord chooser: what was typed where a
+// chord goes, read as a chord, and what that chord could be changed into.
+//
+// The editor asks rather than working it out, so that what counts as a chord,
+// how a note is spelled and what Am becomes on D are decided where they are
+// tested. Something that is not a chord is not an error here either: it is an
+// annotation, and the answer says so by offering nothing to change it into.
+func (s *Server) handleChordPick(w http.ResponseWriter, r *http.Request) {
+	typed := strings.TrimSpace(r.URL.Query().Get("c"))
+	if len(typed) > maxSymbolBytes {
+		typed = ""
+	}
+	s.render(w, r, http.StatusOK, "chordpick.html", s.page(r, "", typed))
+}
+
 // labFor reads the query.
 //
 // Nothing here can fail: a symbol nobody can parse, a fret nobody has and a

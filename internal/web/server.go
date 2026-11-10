@@ -114,6 +114,14 @@ func funcs() template.FuncMap {
 		// whole rather than through a slot: a line more than it has, and never
 		// fewer than two nor more than forty.
 		"rows": func(s string) int { return min(max(strings.Count(s, "\n")+2, 2), 40) },
+		// laid hands the script a section already taken apart, so that nothing
+		// in the browser has to know what a bracket or an escape is.
+		"laid": laidOut,
+		// picker lays the chord chooser out for whatever was typed, in the
+		// language of the page it is on.
+		"picker": func(p page, typed string) pickArg {
+			return pickArg{page: p, Pick: render.Pick(p.Print.Lang(), typed)}
+		},
 	}
 }
 
@@ -166,6 +174,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /genres", s.handleGenres)
 	mux.HandleFunc("GET /chords", s.handleChords)
 	mux.HandleFunc("GET /chords/fragment", s.handleChordFragment)
+	mux.HandleFunc("GET /chords/pick", s.handleChordPick)
 	mux.HandleFunc("GET /import", s.handleImportForm)
 	mux.HandleFunc("GET /import/known", s.handleImportKnown)
 	mux.HandleFunc("GET /export", s.handleExport)
@@ -290,6 +299,12 @@ type navState struct {
 type sheetArg struct {
 	page
 	Sheet render.SheetView
+}
+
+// pickArg carries the chord chooser the same way, for the same reason.
+type pickArg struct {
+	page
+	Pick render.PickView
 }
 
 // navLink is one entry in the header.

@@ -1,6 +1,7 @@
 package web
 
 import (
+	"encoding/json"
 	"net/http"
 	"slices"
 	"strconv"
@@ -50,7 +51,11 @@ func (c composed) text() string {
 // slack rather than content, but a title that really ends in one is content, and
 // song.Put has no way to tell them apart. This does, because only what came out
 // of a form arrives here.
-func readCompose(r *http.Request) composed {
+//
+// It reports false for a form it cannot make a song of: a section sent as words
+// and places that do not read, with no text beside them to stand for it. Saving
+// that would save the section empty, and what was in it would be gone.
+func readCompose(r *http.Request) (composed, bool) {
 	// The file, when the form says so — and also when it posts text and none of
 	// the fields, which is what an upload does and what anything written against
 	// the editor before it had fields does. The field form always posts a title,
@@ -71,17 +76,56 @@ func readCompose(r *http.Request) composed {
 		},
 	}
 	for i := 0; ; i++ {
-		label, ok := r.PostForm["label"+strconv.Itoa(i)]
-		body, ok2 := r.PostForm["body"+strconv.Itoa(i)]
-		if !ok && !ok2 {
+		n := strconv.Itoa(i)
+		label, named := r.PostForm["label"+n]
+		body, written := r.PostForm["body"+n]
+		rows, laid := r.PostForm["rows"+n]
+		if !named && !written && !laid {
 			break
+		}
+		text := first(body)
+		// A section edited with its chords above its words comes back as the
+		// words and where each chord stands, and the brackets are written here.
+		// One that nobody touched comes back as the text it was, untouched.
+		if laid {
+			got, ok := readRows(first(rows))
+			switch {
+			case ok:
+				text = song.FromRows(got)
+			case !written:
+				return c, false
+			}
 		}
 		c.Parts.Sections = append(c.Parts.Sections, song.Part{
 			Label: strings.TrimSpace(first(label)),
-			Body:  strings.Trim(newlines(first(body)), "\n"),
+			Body:  strings.Trim(newlines(text), "\n"),
 		})
 	}
-	return c
+	return c, true
+}
+
+// readRows reads a section the way the script sends one it has edited.
+func readRows(posted string) ([]song.Row, bool) {
+	var rows []song.Row
+	if err := json.Unmarshal([]byte(posted), &rows); err != nil {
+		return nil, false
+	}
+	return rows, true
+}
+
+// laidOut is a section's body taken apart for the script: its words, and where
+// each bracket stood in them. It is empty for a body that cannot be shown that
+// way, a bracket left open or a fence, and that section stays a box of text.
+func laidOut(body string) string {
+	rows, err := song.Rows(body)
+	if err != nil {
+		return ""
+	}
+	out, err := json.Marshal(rows)
+	if err != nil {
+		return ""
+	}
+	return string(out)
 }
 
 func first(v []string) string {

@@ -1778,6 +1778,316 @@ kbd {
 .keys dt { white-space: nowrap; }
 .keys dd { margin: 0; font-size: 0.875rem; color: var(--ink-soft); }
 
+/* The words of a section with its chords above them.
+ *
+ * Once the script has taken a section over, its words are in a box of their own
+ * and each chord floats over the syllable it falls on. The box is an ordinary
+ * text box, so that writing in it is writing: selecting, the phone's keyboard
+ * and its corrections all behave. What makes room for the chords is the height
+ * of its lines, and what puts each chord in its place is a copy of the same
+ * words laid out underneath by the same rules, which can be measured where a
+ * text box cannot.
+ *
+ * So the two must never differ in anything that moves a letter, and every
+ * property that could is set once, for both. */
+
+/* One sentence about brackets for a page with no script, and one about pressing
+ * above a syllable for a page that has taken the sections over. */
+.floating { display: none; }
+.chordsfloat .floating { display: revert; }
+.chordsfloat .brackets { display: none; }
+
+/* The box a section arrived in, once its words and chords have taken its
+ * place. It is still in the form, since it is what goes back for a section
+ * nobody touched. */
+.editor .sectionbody[hidden] { display: none; }
+
+.lyr {
+	position: relative;
+	display: grid;
+	min-inline-size: 0;
+	font-size: var(--song-size);
+	background: var(--paper);
+	border: 1px solid var(--rule);
+	border-radius: var(--radius);
+}
+/* The box the keyboard is in, or one of whose chords it is on. */
+.lyr:focus-within { border-color: var(--ink-faint); }
+.lyr:has(.lyrtext:focus-visible) { outline: 2px solid var(--accent); outline-offset: 1px; }
+.editor .lyr .lyrmirror,
+.editor .lyr .lyrtext {
+	grid-area: 1 / 1;
+	box-sizing: border-box;
+	inline-size: 100%;
+	min-inline-size: 0;
+	margin: 0;
+	/* Room above the first line for its chords, which every other line gets
+	 * from the one before it. */
+	padding: 0.9em 0.6rem 0.25em;
+	border: 0;
+	border-radius: 0;
+	font: inherit;
+	line-height: 2.6;
+	letter-spacing: normal;
+	word-spacing: normal;
+	text-transform: none;
+	text-indent: 0;
+	text-align: start;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+	word-break: normal;
+	tab-size: 4;
+}
+.editor .lyr .lyrmirror { visibility: hidden; pointer-events: none; user-select: none; }
+.editor .lyr .lyrtext {
+	display: block;
+	block-size: 100%;
+	color: var(--ink);
+	background: transparent;
+	resize: none;
+	overflow: hidden;
+}
+/* The ring goes round the whole box, chords and all. */
+.editor .lyr .lyrtext:focus-visible { outline: 0; }
+/* Over the room above a line, where pressing puts a chord. */
+.editor .lyr.reach .lyrtext { cursor: copy; }
+
+/* The layer lets everything through to the words except the chords. It sits
+ * over the line that shows where one stands, which then starts under the chord
+ * and not across it. */
+.chips { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+.chip {
+	position: absolute;
+	left: 0;
+	top: 0;
+	/* The name starts where its syllable does, as it does on the sheet, and the
+	 * padding hangs off to the left of it. It is let down a little towards its
+	 * own words, or it reads as belonging to the line above. */
+	margin: 0.2em 0 0 calc(-0.3em - 1px);
+	padding: 0 0.3em;
+	font: inherit;
+	font-size: 0.8125em;
+	font-weight: 650;
+	line-height: 1.5;
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+	color: var(--chord);
+	background: transparent;
+	border: 1px solid transparent;
+	border-radius: 4px;
+	pointer-events: auto;
+	cursor: grab;
+	/* A finger that starts on a chord and goes sideways moves the chord. One
+	 * that goes up or down is scrolling the page, as it would anywhere else:
+	 * a sheet full of chords must not be a sheet that cannot be scrolled. */
+	touch-action: pan-y;
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	user-select: none;
+	transition-property: background-color, border-color, box-shadow;
+	transition-duration: 120ms;
+	transition-timing-function: ease-out;
+}
+/* A chord is small, and a press that misses it lands in the room above the
+ * line and starts another. What can be pressed reaches a little past what is
+ * drawn. */
+.chip::after { content: ""; position: absolute; inset: -2px -4px; }
+/* Pointed at, held, or the one the chooser is open on. */
+.chip:hover, .chip:focus-visible, .chip.held, .chip.on { background: var(--chord-bg); border-color: var(--chord); }
+.chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+/* What is in brackets and is not a chord: a repeat, a "let ring". */
+.chip.note { font-style: italic; font-weight: 500; color: var(--annotation); }
+.chip.note:hover, .chip.note:focus-visible, .chip.note.held, .chip.note.on {
+	background: var(--paper-raised);
+	border-color: var(--annotation);
+}
+.chip.held { z-index: 2; cursor: grabbing; box-shadow: 0 4px 12px rgb(0 0 0 / 18%); }
+/* One that has no name yet, while it is being given one. */
+.chip.blank {
+	min-inline-size: 1.5em;
+	background: var(--chord-bg);
+	border-style: dashed;
+	border-color: var(--chord);
+}
+/* Two chords closer together than their names are wide cannot both stand over
+ * their syllable, so the second moves along and points back to where it
+ * belongs: an arrowhead inside its own padding, against its name, where it
+ * cannot be read as something between two chords. */
+.chip.pushed::before {
+	content: "";
+	position: absolute;
+	inset-block-start: 50%;
+	right: calc(100% - 0.3em + 2px);
+	translate: 0 -50%;
+	border: 0.28em solid transparent;
+	border-left-width: 0;
+	border-right-color: currentColor;
+	opacity: 0.8;
+}
+
+/* Where a chord stands, to the letter: under the one being pointed at or moved,
+ * and under the place a new one would go. */
+.chipmark {
+	position: absolute;
+	display: none;
+	inline-size: 2px;
+	margin-inline-start: -1px;
+	border-radius: 1px;
+	background: var(--chord);
+	opacity: 0.75;
+	pointer-events: none;
+}
+.chipmark.on { display: block; }
+.chipghost {
+	position: absolute;
+	display: none;
+	margin: 0.2em 0 0 calc(-0.3em - 1px);
+	padding: 0 0.3em;
+	font-size: 0.8125em;
+	font-weight: 650;
+	line-height: 1.5;
+	color: var(--chord);
+	background: var(--chord-bg);
+	border: 1px dashed var(--chord);
+	border-radius: 4px;
+	opacity: 0.85;
+	pointer-events: none;
+}
+.chipghost.on { display: block; }
+
+/* A finger is wider than a pointer: more room above each line, and a chord that
+ * looks like something to press without having to be hovered over first. */
+@media (pointer: coarse) {
+	.editor .lyr .lyrmirror,
+	.editor .lyr .lyrtext { padding: 1.2em 0.85rem 0.25em; line-height: 3.1; }
+	.chip {
+		margin: 0.15em 0 0 calc(-0.5em - 1px);
+		padding-inline: 0.5em;
+		line-height: 1.9;
+		background: var(--chord-bg);
+	}
+	.chip::after { inset: -7px -4px; }
+	.chip.pushed::before { right: calc(100% - 0.5em + 2px); }
+	.chip.note { background: var(--paper-raised); border-color: var(--rule); }
+	/* In the chooser too, everything is the size of a thumb. */
+	.pickchords .chordref { min-block-size: 2.75rem; min-inline-size: 2.75rem; }
+	.pickbody .rootlink, .pickline select { min-block-size: 2.75rem; }
+}
+
+/* A fenced block inside a section: tablature, which is columns and stays in a
+ * fixed-width box of its own. */
+.tabbox { position: relative; }
+/* What kind of block it is, set into the top edge of the box the way a legend
+ * is, where no line of the block can run under it. */
+.tabtag {
+	position: absolute;
+	inset-block-start: -0.5rem;
+	inset-inline-end: 0.6rem;
+	padding: 0 0.3rem;
+	font-size: 0.6875rem;
+	line-height: 1rem;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--ink-soft);
+	background: var(--paper-raised);
+	border-radius: 3px;
+	pointer-events: none;
+}
+.tabtag:empty { display: none; }
+.lyr + .tabbox, .tabbox + .lyr, .tabbox + .tabbox { margin-block-start: 0.7rem; }
+
+/* The chooser that opens on a chord. */
+.chordpick {
+	inline-size: min(21rem, calc(100vw - 1rem));
+	max-block-size: min(28rem, calc(100vh - 1rem));
+	overflow: auto;
+	padding: 0.7rem;
+	background: var(--paper-raised);
+	color: var(--ink);
+	border: 1px solid var(--rule);
+	border-radius: 10px;
+	box-shadow: 0 8px 28px rgb(0 0 0 / 22%);
+}
+.chordpick:popover-open { position: fixed; margin: 0; inset: auto; }
+.chordpick::backdrop { background: transparent; }
+.pickname { display: flex; align-items: center; gap: 0.3rem; margin: 0 0 0.6rem; }
+.pickname input {
+	flex: 1 1 auto;
+	min-inline-size: 0;
+	min-block-size: 2.75rem;
+	padding: 0 0.6rem;
+	font: inherit;
+	font-size: 1.0625rem;
+	font-weight: 650;
+	color: var(--chord);
+	background: var(--paper);
+	border: 1px solid var(--rule);
+	border-radius: var(--radius);
+}
+.pickname input::placeholder { font-weight: 400; color: var(--ink-soft); }
+.pickname input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.pickname .btn-icon.danger { margin-inline-start: 0; }
+.picklabel { margin: 0 0 0.3rem; font-size: 0.75rem; color: var(--ink-soft); }
+.pickchords { display: flex; flex-wrap: wrap; gap: 0.3rem; margin: 0 0 0.7rem; }
+.pickchords .chordref {
+	min-block-size: 2.2rem;
+	padding: 0 0.6rem;
+	font: inherit;
+	font-size: 0.9375rem;
+	font-weight: 650;
+	cursor: pointer;
+}
+/* Twelve notes in two rows of six, which is how an octave divides. */
+.pickbody .rootrow { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); margin: 0 0 0.6rem; }
+.pickbody .rootlink { min-inline-size: 0; font: inherit; font-size: 0.875rem; background: var(--paper); cursor: pointer; }
+.pickbody .rootlink.on { background: var(--chord-bg); font-weight: 650; }
+.pickline {
+	display: grid;
+	grid-template-columns: 4.5rem minmax(0, 1fr);
+	align-items: center;
+	gap: 0.5rem;
+	margin: 0 0 0.4rem;
+}
+.pickline:last-child { margin-block-end: 0; }
+.pickline label { font-size: 0.8125rem; color: var(--ink-soft); }
+.pickline select {
+	min-inline-size: 0;
+	inline-size: 100%;
+	min-block-size: 2.4rem;
+	padding: 0 0.5rem;
+	font: inherit;
+	font-size: 0.9375rem;
+	color: var(--ink);
+	background: var(--paper);
+	border: 1px solid var(--rule);
+	border-radius: var(--radius);
+}
+/* On a phone it is a sheet at the foot of the screen, as the chord panel is.
+ * While it is up the page has room under it, so that the last lines of a song
+ * can be brought out from behind the sheet like any others. */
+@media (max-width: 34rem) {
+	.chordpick:popover-open {
+		left: 0; right: 0; bottom: 0; top: auto;
+		inline-size: auto;
+		max-block-size: 80vh;
+		border-radius: 12px 12px 0 0;
+		border-bottom: 0;
+		padding: 1rem 1rem 1.5rem;
+	}
+	html:has(.chordpick:popover-open) .wrap { padding-block-end: 80vh; }
+}
+
+/* A chord sits over a letter counted from the left, and a chord symbol reads
+ * from the left, whichever way the page around them runs. */
+[dir="rtl"] .lyr,
+[dir="rtl"] .tabbox,
+[dir="rtl"] .pickname,
+[dir="rtl"] .pickchords,
+[dir="rtl"] .pickbody .rootrow,
+[dir="rtl"] .pickline select {
+	direction: ltr;
+}
+
 /* What the import page says about files the collection already has. */
 .importknown { max-width: 32rem; margin: 0 0 0.75rem; }
 .importknown .songlist { margin: 0.25rem 0 0.5rem; }

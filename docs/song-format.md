@@ -87,9 +87,11 @@ artist given, whoever it is by; with one, only if that artist has it. The import
 page says which titles are already there as soon as the files are chosen.
 
 The result is something to check: in the editor before saving, or on the page
-the import report links to. The editor joins ticked sections and splits one at
-the caret, so a section the guess got wrong is two keystrokes to put right. A
-file named `.song` is never read this way, however broken.
+the import report links to. [The editor](editor.md) shows each chord above its
+syllable, where one that landed a word out is dragged back, and it joins ticked
+sections and splits one at the caret, so a section the guess got wrong is two
+keystrokes to put right. A file named `.song` is never read this way, however
+broken.
 
 ## Metadata
 
