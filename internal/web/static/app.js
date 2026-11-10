@@ -273,7 +273,64 @@ document.body.classList.add("scripted");
 			input.value = "";
 			return;
 		}
+		// That was the question. Leaving the page is not asked about again.
+		if (editor) editor.setAttribute("data-leaving", "");
 		bar.submit();
+	});
+})();
+
+// Asking before a song that is being written is left behind.
+//
+// Closing the tab, going back or following a link in the header throws away
+// whatever has not been saved, and none of them asks. This does, with the
+// browser's own question, once there is something to lose: a field typed in, a
+// chord moved, or a page that came back from the server holding a change that
+// is in no file yet. Saving, cancelling and the editor's own buttons are not
+// leaving, and are not asked about.
+//
+// The question is only hung on the page while there is something to lose. A
+// page that listens for it is one a browser will not keep whole to come back
+// to, and most visits to the editor change nothing.
+(function () {
+	"use strict";
+
+	var form = document.querySelector("form.editor");
+	if (!form) return;
+
+	var asking = false;
+
+	function ask(e) {
+		if (form.hasAttribute("data-leaving")) return;
+		// The first is what the standard says; the second is what the browsers
+		// that came before it listen for.
+		e.preventDefault();
+		e.returnValue = "";
+	}
+
+	function unsaved() {
+		if (asking) return;
+		asking = true;
+		window.addEventListener("beforeunload", ask);
+	}
+
+	function changed(e) {
+		// Ticking a section to join it, or choosing which kind to add, changes
+		// nothing in the song.
+		if (e.target.matches(".sectionpick") || e.target.matches("select[name=add]")) return;
+		unsaved();
+	}
+
+	if (form.hasAttribute("data-unsaved")) unsaved();
+	form.addEventListener("input", changed);
+	form.addEventListener("change", changed);
+
+	// Every button in the form goes to the server and comes back with the song,
+	// and Cancel is somebody saying they do not want it.
+	form.addEventListener("submit", function (e) {
+		if (!e.defaultPrevented) form.setAttribute("data-leaving", "");
+	});
+	form.addEventListener("click", function (e) {
+		if (e.target.closest && e.target.closest("[data-discard]")) form.setAttribute("data-leaving", "");
 	});
 })();
 
@@ -710,6 +767,9 @@ document.body.classList.add("scripted");
 		sec.store.value = JSON.stringify(rowsOf(sec));
 		sec.store.disabled = false;
 		sec.raw.disabled = true;
+		// Said the way a field says it, for whatever else on the page wants to
+		// know the song has changed.
+		sec.store.dispatchEvent(new Event("change", { bubbles: true }));
 	}
 
 	// lineOf is the line of the whole section a caret is on, counted the way

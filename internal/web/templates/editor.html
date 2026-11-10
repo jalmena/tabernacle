@@ -56,7 +56,9 @@
 		     and moving one all go to the server and come back with the change
 		     made, the way transposing and the fret window already do, so none of
 		     the editor needs a script to reach it. */}}
-		<form method="post" action="{{.Action}}" class="editor">
+		{{/* A page that already holds something no file has says so, and the
+		     script asks before it is left: see the note on leaving in app.js. */}}
+		<form method="post" action="{{.Action}}" class="editor"{{if .Unsaved}} data-unsaved{{end}}>
 			{{if .Hash}}<input type="hidden" name="hash" value="{{.Hash}}">{{end}}
 
 			{{if .Compose.Plain}}
@@ -70,7 +72,7 @@
 						<kbd class="hint" dir="ltr">Ctrl ↵</kbd></button>
 					<button class="btn btn-quiet" type="submit" name="fielder" value="1"
 					        formnovalidate>{{$.T "editor.byfields"}}</button>
-					<a class="btn btn-quiet" href="{{.CancelURL}}">{{$.T "action.cancel"}}</a>
+					<a class="btn btn-quiet" href="{{.CancelURL}}" data-discard>{{$.T "action.cancel"}}</a>
 				</div>
 			{{else}}
 				{{/* Enter in a one-line field sends the form by the first submit
@@ -232,7 +234,7 @@
 				<div class="filters">
 					<button class="btn btn-quiet" type="submit" name="plainer" value="1"
 					        formnovalidate>{{$.T "editor.byfile"}}</button>
-					<a class="btn btn-quiet" href="{{.CancelURL}}">{{$.T "action.cancel"}}</a>
+					<a class="btn btn-quiet" href="{{.CancelURL}}" data-discard>{{$.T "action.cancel"}}</a>
 				</div>
 			{{end}}
 		</form>

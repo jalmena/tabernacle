@@ -93,6 +93,13 @@ box removes the block.
 | `Alt` `↑` `↓` | In the words: move the section |
 | `Alt` `N` | Add a section |
 
+## Leaving
+
+Closing the tab, going back or following a link asks first when the page holds
+something that is in no file yet, with the browser's own question: a field typed
+in, a chord moved, a section added and not saved. **Guardar**, **Cancelar** and
+the editor's own buttons are not leaving, and do not ask.
+
 ## Without a script
 
 Every section is a box of text with its chords in brackets, and every button is
@@ -102,6 +109,8 @@ the editor is out of reach.
 That box is also what a section stays as when it cannot be shown any other way:
 a bracket left open, a fence with no end. The mistake is in the text, and the
 text is where it is mended.
+
+Nothing asks before the page is left, since only a script can.
 
 ## How it is saved
 

@@ -318,3 +318,34 @@ func TestGoingToTheFileAndBackDoesNotDemandATitle(t *testing.T) {
 		t.Error("its section did not come back either")
 	}
 }
+
+// A page that holds something no file has says so, which is what lets it ask
+// before it is left: one that came back from a button, and one a file was loaded
+// into. A page that was only opened does not.
+func TestThePageSaysWhenItHoldsSomethingUnsaved(t *testing.T) {
+	in := start(t, nil)
+	in.claim("jose")
+	in.writeSong("Quieta.song", "---\ntitle: Quieta\n---\n\n## Estrofa\nla [C]la\n")
+
+	for _, path := range []string{"/songs/new", "/songs/quieta/edit"} {
+		if strings.Contains(in.page(path), "data-unsaved") {
+			t.Errorf("%s says it holds something unsaved before anything was done", path)
+		}
+	}
+
+	res := in.post("/songs/quieta", url.Values{
+		"hash":   {in.editHash("quieta")},
+		"title":  {"Quieta"},
+		"label0": {"Estrofa"}, "body0": {"la [C]la"},
+		"add": {"chorus"}, "addnow": {"1"},
+	})
+	res.mustContain(`class="editor" data-unsaved`)
+
+	res = in.upload("/songs/new", "file", map[string][]byte{"Otra.song": []byte("---\ntitle: Otra\n---\nla\n")})
+	res.mustContain(`class="editor" data-unsaved`)
+
+	// And both ways of not wanting it are marked as such.
+	if n := strings.Count(in.page("/songs/quieta/edit"), "data-discard"); n != 1 {
+		t.Errorf("%d ways to cancel are marked on the page, want the one", n)
+	}
+}

@@ -362,6 +362,12 @@ type editorBody struct {
 	// to reach anything the fields cannot express.
 	Compose composed
 	Kinds   []kindChoice
+
+	// Unsaved says the page already holds something that is in no file: it came
+	// back from a button that changed the song without saving it, from a save
+	// that was refused, or from a file loaded to be looked at. The page asks
+	// before it is left.
+	Unsaved bool
 }
 
 // kindChoice is one button on the add-a-section row.
@@ -398,6 +404,7 @@ func (s *Server) handleCreateSong(w http.ResponseWriter, r *http.Request) {
 		CancelURL:   "/",
 		Placeholder: newSongPlaceholder,
 		Kinds:       kindChoices(say),
+		Unsaved:     true,
 	}
 	c, ok := readCompose(r)
 	if !ok {
@@ -484,6 +491,7 @@ func (s *Server) handleLoadIntoEditor(w http.ResponseWriter, r *http.Request) {
 	}
 
 	body.Loaded = safeName(files[0].Filename)
+	body.Unsaved = true
 	body.Text = newlines(string(asSong(body.Loaded, "", say.T("section.verse"), data)))
 	// Shown as fields when the file can be taken apart, and as the file itself
 	// when it cannot — which for an upload is the useful half of the time, since
@@ -558,6 +566,7 @@ func (s *Server) handleSaveSong(w http.ResponseWriter, r *http.Request) {
 		Editing:   true,
 		CancelURL: "/songs/" + slug,
 		Kinds:     kindChoices(say),
+		Unsaved:   true,
 	}
 	if act(r, &c, say) {
 		body.Compose, body.Text = c, c.text()
