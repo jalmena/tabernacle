@@ -121,6 +121,9 @@ a:hover { text-decoration-thickness: 2px; }
 	min-height: 2.75rem;
 	min-width: 2.75rem;
 	padding: 0 0.7rem;
+	/* A button is a link that does something, and the two stand side by side.
+	 * Left alone, a browser sets a real button in a typeface of its own. */
+	font-family: inherit;
 	font-size: 0.9375rem;
 	font-weight: 500;
 	color: var(--ink);
