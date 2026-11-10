@@ -409,3 +409,14 @@ func cross(a, b HandFinger) bool {
 	return side(a.KnuckleX, a.KnuckleY, a.TipX, a.TipY, b.KnuckleX, b.KnuckleY, b.TipX, b.TipY) &&
 		side(b.KnuckleX, b.KnuckleY, b.TipX, b.TipY, a.KnuckleX, a.KnuckleY, a.TipX, a.TipY)
 }
+
+// A kind the chooser offers has to be one the page can then show: each is asked
+// for by the symbol it carries, and a symbol nobody can read is a dead end with
+// the reader's own choice in it.
+func TestEveryKindTheChooserOffersIsAChord(t *testing.T) {
+	for _, q := range Lab(LabOptions{Symbol: "C"}).Qualities {
+		if v := Lab(LabOptions{Symbol: q.Value}); v.Problem != "" || v.Chord == "" {
+			t.Errorf("choosing %q answers %q", q.Value, v.Problem)
+		}
+	}
+}

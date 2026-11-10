@@ -562,7 +562,7 @@ var qualityChoices = []struct{ suffix, key string }{
 	{"7", "quality.dom7"},
 	{"maj7", "quality.maj7"},
 	{"m7", "quality.min7"},
-	{"mMaj7", "quality.minmaj7"},
+	{"m(maj7)", "quality.minmaj7"},
 	{"6", "quality.six"},
 	{"m6", "quality.min6"},
 	{"sus2", "quality.sus2"},
