@@ -3,6 +3,7 @@
 *.song
 !examples/songs/**/*.song
 !internal/song/testdata/*.song
+!tests/browser/songs/**/*.song
 
 # The index is rebuildable from the song files, so it is never committed.
 *.db
